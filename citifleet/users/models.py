@@ -10,13 +10,16 @@ from django.utils.translation import ugettext_lazy as _
 
 @python_2_unicode_compatible
 class User(AbstractUser):
-
-    # First Name and Last Name do not cover name patterns
-    # around the globe.
-    name = models.CharField(_("Name of User"), blank=True, max_length=255)
+    phone = models.CharField(_('phone'), max_length=50)
+    hack_license = models.CharField(_('hack license'), max_length=150)
+    full_name = models.CharField(_('full name'), max_length=200)
 
     def __str__(self):
-        return self.username
+        return self.email
 
     def get_absolute_url(self):
         return reverse('users:detail', kwargs={'username': self.username})
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
+    AbstractUser._meta.get_field('email')._unique = True

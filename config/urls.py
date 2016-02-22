@@ -12,8 +12,8 @@ urlpatterns = [
     url(r'^about/$', TemplateView.as_view(template_name='pages/about.html'), name="about"),
 
     # Django Admin, use {% url 'admin:index' %}
-    url(settings.ADMIN_URL, include(admin.site.urls)),# User management
-    url(r'^users/', include("citifleet.users.urls", namespace="users")),url(r'^accounts/', include('allauth.urls')),
+    url(settings.ADMIN_URL, include(admin.site.urls)),
+    url(r'^users/', include("citifleet.users.urls", namespace="users")),
 
     # Your stuff: custom urls includes go here
 
