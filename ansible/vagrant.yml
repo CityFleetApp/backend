@@ -1,0 +1,22 @@
+---
+- name: Create a citifleet virtual machine via vagrant
+
+  hosts: all
+  become: yes
+  become_user: root
+  remote_user: vagrant
+  vars:
+    - update_apt_cache: yes
+  vars_files:
+    - host_vars/base.yml
+    - host_vars/vagrant.yml
+
+  roles:
+    - common
+    - postgresql
+    - postgis
+    - redis
+    - rabbitmq
+    
+    - bower
+    - app
