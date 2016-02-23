@@ -225,3 +225,8 @@ BROKER_URL = env("CELERY_BROKER_URL", default='django://')
 ADMIN_URL = r'^admin/'
 
 # Your common stuff: Below this line define 3rd party library settings
+
+# Socrata config
+TLC_URL = 'data.cityofnewyork.us'
+APP_TOKEN = env('APP_TOKEN', default=None)
+TLC_OPEN_DATA_ID = '7drc-shp9'

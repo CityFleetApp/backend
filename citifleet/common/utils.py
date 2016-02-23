@@ -1,0 +1,19 @@
+from urllib2 import HTTPError
+
+from django.conf import settings
+
+from sodapy import Socrata
+
+
+def validate_license(license_number, full_name):
+    if settings.DEBUG:
+        return True
+    else:
+        client = Socrata(settings.TLC_URL, settings.APP_TOKEN)
+        try:
+            resp = client.get(settings.TLC_OPEN_DATA_ID,
+                              license_number=license_number, name=full_name)
+        except HTTPError:
+            return False
+        else:
+            return len(resp) > 0

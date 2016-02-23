@@ -33,3 +33,4 @@ celery==3.1.18
 
 # Your custom requirements go here
 djangorestframework==3.3.2
+sodapy==1.2.0
