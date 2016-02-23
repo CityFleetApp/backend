@@ -18,7 +18,7 @@ class TestSignup(TestCase):
     def test_signup_successful(self):
         signup_data = {
             'full_name': 'John Smith', 'email': 'john@example.com',
-            'phone': '123456', 'hack_license': '123456', 'password': 'password'
+            'phone': '+41524204242', 'hack_license': '123456', 'password': 'password'
         }
 
         resp = self.client.post(reverse('users:signup'), data=signup_data)
@@ -28,7 +28,7 @@ class TestSignup(TestCase):
     def test_signup_unsuccessful(self):
         signup_data = {
             'email': 'john@example.com',
-            'phone': '123456', 'hack_license': '123456', 'password': 'password'
+            'phone': '+41524204242', 'hack_license': '123456', 'password': 'password'
         }
 
         resp = self.client.post(reverse('users:signup'), data=signup_data)
@@ -39,7 +39,7 @@ class TestSignup(TestCase):
     def test_login_after_signup_successful(self):
         signup_data = {
             'full_name': 'John Smith', 'email': 'john@example.com',
-            'phone': '123456', 'hack_license': '123456', 'password': 'password'
+            'phone': '+41524204242', 'hack_license': '123456', 'password': 'password'
         }
         resp = self.client.post(reverse('users:signup'), data=signup_data)
         token = Token.objects.get(user__email='john@example.com')
