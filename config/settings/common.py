@@ -36,6 +36,8 @@ DJANGO_APPS = (
 )
 THIRD_PARTY_APPS = (
     'crispy_forms',
+    'rest_framework',
+    'rest_framework.authtoken'
 )
 
 # Apps specific for this project go here.
@@ -202,21 +204,13 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # ------------------------------------------------------------------------------
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
-)# Some really nice defaults
-INSTALLED_APPS += (
-    'allauth',  # registration
-    'allauth.account',  # registration
-    'allauth.socialaccount',  # registration
-    )
-AUTHENTICATION_BACKENDS += ('allauth.account.auth_backends.AuthenticationBackend',)
-ACCOUNT_AUTHENTICATION_METHOD = 'username'
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_EMAIL_VERIFICATION = 'mandatory'# Custom user app defaults
+)
+
 # Select the correct user model
 INSTALLED_APPS += ('citifleet.users',)
 AUTH_USER_MODEL = 'users.User'
 LOGIN_REDIRECT_URL = 'users:redirect'
-LOGIN_URL = 'account_login'
+# LOGIN_URL = 'account_login'
 
 # SLUGLIFIER
 AUTOSLUG_SLUGIFY_FUNCTION = 'slugify.slugify'
@@ -231,3 +225,8 @@ BROKER_URL = env("CELERY_BROKER_URL", default='django://')
 ADMIN_URL = r'^admin/'
 
 # Your common stuff: Below this line define 3rd party library settings
+
+# Socrata config
+TLC_URL = 'data.cityofnewyork.us'
+APP_TOKEN = env('APP_TOKEN', default=None)
+TLC_OPEN_DATA_ID = '7drc-shp9'
