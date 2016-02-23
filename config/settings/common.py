@@ -42,7 +42,7 @@ THIRD_PARTY_APPS = (
 
 # Apps specific for this project go here.
 LOCAL_APPS = (
-    # Your stuff: custom apps go here
+    'citifleet.reports',
 )
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -230,3 +230,11 @@ ADMIN_URL = r'^admin/'
 TLC_URL = 'data.cityofnewyork.us'
 APP_TOKEN = env('APP_TOKEN', default=None)
 TLC_OPEN_DATA_ID = '7drc-shp9'
+
+
+# DRF config
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    )
+}
