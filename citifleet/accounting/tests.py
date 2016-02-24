@@ -15,10 +15,12 @@ class TestAccountingViewSet(TestCase):
         self.user = UserFactory(email='test@example.com')
         self.client = APIClient()
 
+    # Unauthorized user requests list of accounting services
     def test_login_required(self):
         resp = self.client.get(reverse('accounting:api-list'))
         self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
 
+    # Authorized user requests list of accounting services
     def test_list(self):
         AccountingFactory.create_batch(10)
         self.client.login(username='test@example.com', password='password')

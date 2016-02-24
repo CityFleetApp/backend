@@ -10,6 +10,10 @@ from .serializers import ReportSerializer
 
 
 class ReportViewSet(viewsets.ModelViewSet):
+    '''
+    GET - returns list of nearby reports
+    DELETE - removes report
+    '''
     serializer_class = ReportSerializer
     queryset = Report.objects.all()
 
@@ -19,6 +23,9 @@ class ReportViewSet(viewsets.ModelViewSet):
 
     @detail_route(methods=['post'])
     def confirm_report(self, request, pk=None):
+        '''
+        Updates report's last updated date so that it still appears on the map
+        '''
         report = self.get_object()
         report.save()
         return Response(status.HTTP_200_OK)

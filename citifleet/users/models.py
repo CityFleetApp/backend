@@ -25,6 +25,13 @@ class UserManager(BaseUserManager):
 
 @python_2_unicode_compatible
 class User(AbstractUser):
+    '''
+    Custom user model.
+    phone and email fields - unique
+    location is saved using data from mobile app
+    hack_license is verified via SODA API
+    phone format - international (+41524204242)
+    '''
     phone = PhoneNumberField(_('phone'))
     hack_license = models.CharField(_('hack license'), max_length=150)
     full_name = models.CharField(_('full name'), max_length=200)

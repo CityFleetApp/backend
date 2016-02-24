@@ -15,6 +15,7 @@ class TestSignup(TestCase):
     def setUp(self):
         self.client = APIClient()
 
+    # User posts valid sign up data
     def test_signup_successful(self):
         signup_data = {
             'full_name': 'John Smith', 'email': 'john@example.com', 'username': 'johnsmith12',
@@ -26,6 +27,7 @@ class TestSignup(TestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(User.objects.count(), 1)
 
+    # User posts sign up data with missing full_name field
     def test_signup_unsuccessful(self):
         signup_data = {
             'email': 'john@example.com', 'username': 'johnsmith12',
@@ -38,6 +40,7 @@ class TestSignup(TestCase):
         self.assertEqual(User.objects.count(), 0)
         self.assertEqual(resp.data, {'full_name': ['This field is required.']})
 
+    # User posts valid sign up data and receives authorization token
     def test_login_after_signup_successful(self):
         signup_data = {
             'full_name': 'John Smith', 'email': 'john@example.com', 'username': 'johnsmith12',

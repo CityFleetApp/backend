@@ -9,6 +9,11 @@ from sodapy import Socrata
 
 
 def validate_license(license_number, full_name):
+    '''
+    Verifies full driver's name and license number via SODA API.
+    Returns True if license is verified, otherwise - False.
+    In DEBUG mode always returns False.
+    '''
     if settings.DEBUG:
         return True
     else:
@@ -23,6 +28,9 @@ def validate_license(license_number, full_name):
 
 
 class FuzzyPoint(BaseFuzzyAttribute):
+    '''
+    Generates random location for factories in tests
+    '''
     def fuzz(self):
         return Point(random.uniform(-90.0, -90.0),
                      random.uniform(-100.0, -100.0))

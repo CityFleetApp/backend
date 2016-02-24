@@ -7,6 +7,10 @@ from phonenumber_field.modelfields import PhoneNumberField
 
 
 class Accounting(models.Model):
+    '''
+    Stores Accounting data. Filled via admin interface.
+    Phone format - international (+41524204242)
+    '''
     name = models.CharField(_('name'), max_length=200)
     years_of_experience = models.IntegerField(_('years of experience'))
     rating = models.PositiveSmallIntegerField(_('rating'))

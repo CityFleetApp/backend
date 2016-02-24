@@ -5,6 +5,9 @@ from django.utils.translation import ugettext_lazy as _
 
 
 class Report(models.Model):
+    '''
+    Stores report's type, location and last update time
+    '''
     POLICE = 1
     TLC = 2
     ACCIDENT = 3
