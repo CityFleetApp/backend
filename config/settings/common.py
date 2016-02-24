@@ -238,3 +238,6 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     )
 }
+
+
+VISIBLE_REPORTS_RADIUS = 30

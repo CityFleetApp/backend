@@ -1,4 +1,5 @@
 from django.core.urlresolvers import reverse
+from django.contrib.gis.geos import Point
 
 from test_plus.test import TestCase
 from rest_framework.test import APIClient
@@ -13,7 +14,8 @@ from .factories import ReportFactory
 class TestReportViewSet(TestCase):
 
     def setUp(self):
-        self.user = UserFactory(email='test@example.com')
+        self.point = Point(-47.0, -47.0)
+        self.user = UserFactory(email='test@example.com', location=self.point)
         self.client = APIClient()
 
     def test_login_required(self):
@@ -30,7 +32,7 @@ class TestReportViewSet(TestCase):
         self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_list(self):
-        ReportFactory.create_batch(10)
+        ReportFactory.create_batch(10, location=self.point)
         self.client.login(username='test@example.com', password='password')
         resp = self.client.get(reverse('reports:api-list'))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -49,14 +51,14 @@ class TestReportViewSet(TestCase):
         self.assertEqual(report.location.y, 51.0)
 
     def test_delete_report(self):
-        report = ReportFactory()
+        report = ReportFactory(location=self.point)
         self.client.login(username='test@example.com', password='password')
         resp = self.client.delete(reverse('reports:api-detail', args=[report.id]))
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Report.objects.count(), 0)
 
     def test_confirm_report(self):
-        report = ReportFactory()
+        report = ReportFactory(location=self.point)
         self.client.login(username='test@example.com', password='password')
         resp = self.client.post(reverse('reports:api-confirm-report', args=[report.id]))
         self.assertEqual(resp.status_code, 200)
