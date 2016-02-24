@@ -3,7 +3,7 @@ from __future__ import unicode_literals, absolute_import
 
 from django.contrib.auth.models import AbstractUser, UserManager as BaseUserManager
 from django.core.urlresolvers import reverse
-from django.db import models
+from django.contrib.gis.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 
@@ -24,6 +24,7 @@ class User(AbstractUser):
     phone = PhoneNumberField(_('phone'))
     hack_license = models.CharField(_('hack license'), max_length=150)
     full_name = models.CharField(_('full name'), max_length=200)
+    location = models.PointField(_('location'), null=True, blank=True)
     objects = UserManager()
 
     def __str__(self):

@@ -1,7 +1,10 @@
 from urllib2 import HTTPError
+import random
 
 from django.conf import settings
+from django.contrib.gis.geos import Point
 
+from factory.fuzzy import BaseFuzzyAttribute
 from sodapy import Socrata
 
 
@@ -17,3 +20,9 @@ def validate_license(license_number, full_name):
             return False
         else:
             return len(resp) > 0
+
+
+class FuzzyPoint(BaseFuzzyAttribute):
+    def fuzz(self):
+        return Point(random.uniform(-90.0, -90.0),
+                     random.uniform(-100.0, -100.0))
