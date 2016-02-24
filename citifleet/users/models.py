@@ -18,6 +18,10 @@ class UserManager(BaseUserManager):
         user.save()
         return user
 
+    def create_superuser(self, email, password):
+        return self.create_user(email=email, password=password, phone='1', hack_license='1',
+                                full_name='admin', is_staff=True, is_superuser=True)
+
 
 @python_2_unicode_compatible
 class User(AbstractUser):
