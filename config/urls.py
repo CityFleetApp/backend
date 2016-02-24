@@ -11,4 +11,5 @@ urlpatterns = [
     url(settings.ADMIN_URL, include(admin.site.urls)),
     url(r'^users/', include('citifleet.users.urls', namespace='users')),
     url(r'^reports/', include('citifleet.reports.urls', namespace='reports')),
+    url(r'^accounting/', include('citifleet.accounting.urls', namespace='accounting')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
