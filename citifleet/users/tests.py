@@ -17,8 +17,9 @@ class TestSignup(TestCase):
 
     def test_signup_successful(self):
         signup_data = {
-            'full_name': 'John Smith', 'email': 'john@example.com',
-            'phone': '+41524204242', 'hack_license': '123456', 'password': 'password'
+            'full_name': 'John Smith', 'email': 'john@example.com', 'username': 'johnsmith12',
+            'phone': '+41524204242', 'hack_license': '123456', 'password': 'password',
+            'password_confirm': 'password'
         }
 
         resp = self.client.post(reverse('users:signup'), data=signup_data)
@@ -27,8 +28,9 @@ class TestSignup(TestCase):
 
     def test_signup_unsuccessful(self):
         signup_data = {
-            'email': 'john@example.com',
-            'phone': '+41524204242', 'hack_license': '123456', 'password': 'password'
+            'email': 'john@example.com', 'username': 'johnsmith12',
+            'phone': '+41524204242', 'hack_license': '123456', 'password': 'password',
+            'password_confirm': 'password'
         }
 
         resp = self.client.post(reverse('users:signup'), data=signup_data)
@@ -38,8 +40,9 @@ class TestSignup(TestCase):
 
     def test_login_after_signup_successful(self):
         signup_data = {
-            'full_name': 'John Smith', 'email': 'john@example.com',
-            'phone': '+41524204242', 'hack_license': '123456', 'password': 'password'
+            'full_name': 'John Smith', 'email': 'john@example.com', 'username': 'johnsmith12',
+            'phone': '+41524204242', 'hack_license': '123456', 'password': 'password',
+            'password_confirm': 'password'
         }
         resp = self.client.post(reverse('users:signup'), data=signup_data)
         token = Token.objects.get(user__email='john@example.com')
@@ -48,3 +51,40 @@ class TestSignup(TestCase):
         resp = self.client.post(reverse('users:login'), data=login_data)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(resp.data, {'token': token.key})
+
+    def test_unique_email(self):
+        signup_data = {
+            'full_name': 'John Smith', 'email': 'john@example.com', 'username': 'johnsmith12',
+            'phone': '+41524204242', 'hack_license': '123456', 'password': 'password',
+            'password_confirm': 'password'
+        }
+        self.client.post(reverse('users:signup'), data=signup_data)
+
+        signup_data['username'] = 'johnsmith13'
+        resp = self.client.post(reverse('users:signup'), data=signup_data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(resp.data, {'email': ['User with this email address already exists.']})
+
+    def test_unique_username(self):
+        signup_data = {
+            'full_name': 'John Smith', 'email': 'john@example.com', 'username': 'johnsmith12',
+            'phone': '+41524204242', 'hack_license': '123456', 'password': 'password',
+            'password_confirm': 'password'
+        }
+        self.client.post(reverse('users:signup'), data=signup_data)
+
+        signup_data['email'] = 'john12@example.com'
+        resp = self.client.post(reverse('users:signup'), data=signup_data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(resp.data, {'username': ['A user with that username already exists.']})
+
+    def test_password_dont_match(self):
+        signup_data = {
+            'full_name': 'John Smith', 'email': 'john@example.com', 'username': 'johnsmith12',
+            'phone': '+41524204242', 'hack_license': '123456', 'password': 'password',
+            'password_confirm': 'password1'
+        }
+
+        resp = self.client.post(reverse('users:signup'), data=signup_data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(resp.data, {'non_field_errors': ["Passwords don't match"]})
