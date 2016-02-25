@@ -37,12 +37,14 @@ DJANGO_APPS = (
 THIRD_PARTY_APPS = (
     'crispy_forms',
     'rest_framework',
-    'rest_framework.authtoken'
+    'rest_framework.authtoken',
+    'rest_framework_swagger',
 )
 
 # Apps specific for this project go here.
 LOCAL_APPS = (
     'citifleet.reports',
+    'citifleet.accounting'
 )
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps

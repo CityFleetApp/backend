@@ -10,6 +10,9 @@ from .serializers import SignupSerializer
 
 
 class SignUpView(APIView):
+    '''
+    POST - signs up new user and returns authorization token
+    '''
     serializer_class = SignupSerializer
     permission_classes = (AllowAny,)
 

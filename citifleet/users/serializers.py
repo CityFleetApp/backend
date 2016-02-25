@@ -7,6 +7,9 @@ from .models import User
 
 
 class SignupSerializer(serializers.ModelSerializer):
+    '''
+    Serializes sign up data. Creates new user and logins it automatically
+    '''
     password_confirm = serializers.CharField(max_length=100)
 
     class Meta:
@@ -15,6 +18,9 @@ class SignupSerializer(serializers.ModelSerializer):
                   'password', 'password_confirm')
 
     def validate(self, attrs):
+        '''
+        Validates driver's hack license and full name via SODA API
+        '''
         if not validate_license(attrs['hack_license'], attrs['full_name']):
             raise serializers.ValidationError('Invalid license number')
 
@@ -25,6 +31,9 @@ class SignupSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        '''
+        Saves user, creates and returns authentication token to skip login step
+        '''
         user = User.objects.create_user(**validated_data)
         token = Token.objects.create(user=user)
         return token

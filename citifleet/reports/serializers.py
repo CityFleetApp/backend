@@ -6,6 +6,9 @@ from .models import Report
 
 
 class ReportSerializer(serializers.ModelSerializer):
+    '''
+    Reports Model serializer. Serializes lat and lng to report's location
+    '''
     lat = serializers.FloatField(source='location.x')
     lng = serializers.FloatField(source='location.y')
 

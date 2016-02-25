@@ -18,9 +18,20 @@ class UserManager(BaseUserManager):
         user.save()
         return user
 
+    def create_superuser(self, email, password):
+        return self.create_user(email=email, password=password, phone='1', hack_license='1',
+                                full_name='admin', is_staff=True, is_superuser=True)
+
 
 @python_2_unicode_compatible
 class User(AbstractUser):
+    '''
+    Custom user model.
+    phone and email fields - unique
+    location is saved using data from mobile app
+    hack_license is verified via SODA API
+    phone format - international (+41524204242)
+    '''
     phone = PhoneNumberField(_('phone'))
     hack_license = models.CharField(_('hack license'), max_length=150)
     full_name = models.CharField(_('full name'), max_length=200)
