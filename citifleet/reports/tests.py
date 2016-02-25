@@ -21,28 +21,28 @@ class TestReportViewSet(TestCase):
     # Unauthorized user tries to make a request to reports API
     def test_login_required(self):
         resp = self.client.get(reverse('reports:api-list'))
-        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
         resp = self.client.post(reverse('reports:api-list'), data={})
-        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
         resp = self.client.delete(reverse('reports:api-detail', args=[1]))
-        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
         resp = self.client.post(reverse('reports:api-confirm-report', args=[1]))
-        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # Authorized user fetches list of nearby reports
     def test_list(self):
         ReportFactory.create_batch(10, location=self.point)
-        self.client.login(username='test@example.com', password='password')
+        self.client.force_authenticate(user=self.user)
         resp = self.client.get(reverse('reports:api-list'))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(len(resp.data), 10)
 
     # Authorized post data to create a new report
     def test_create_report(self):
-        self.client.login(username='test@example.com', password='password')
+        self.client.force_authenticate(user=self.user)
         report_data = {'report_type': Report.POLICE, 'lat': 47.0, 'lng': 51.0}
         resp = self.client.post(reverse('reports:api-list'), data=report_data)
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
@@ -56,7 +56,7 @@ class TestReportViewSet(TestCase):
     # Authorized user deletes report by it's id
     def test_delete_report(self):
         report = ReportFactory(location=self.point)
-        self.client.login(username='test@example.com', password='password')
+        self.client.force_authenticate(user=self.user)
         resp = self.client.delete(reverse('reports:api-detail', args=[report.id]))
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Report.objects.count(), 0)
@@ -64,7 +64,7 @@ class TestReportViewSet(TestCase):
     # Authorized user confirms report and it's updated value is changed
     def test_confirm_report(self):
         report = ReportFactory(location=self.point)
-        self.client.login(username='test@example.com', password='password')
+        self.client.force_authenticate(user=self.user)
         resp = self.client.post(reverse('reports:api-confirm-report', args=[report.id]))
         self.assertEqual(resp.status_code, 200)
         self.assertNotEqual(report.updated, Report.objects.get().updated)
