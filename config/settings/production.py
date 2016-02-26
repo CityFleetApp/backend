@@ -1,119 +1,52 @@
 # -*- coding: utf-8 -*-
-'''
-Production Configurations
-- Use djangosecure
-
-'''
 from __future__ import absolute_import, unicode_literals
-
-from django.utils import six
 
 from .common import *  # noqa
 
-# SECRET CONFIGURATION
-# ------------------------------------------------------------------------------
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#secret-key
-# Raises ImproperlyConfigured exception if DJANGO_SECRET_KEY not in os.environ
-SECRET_KEY = env("DJANGO_SECRET_KEY")
+DEBUG = env.bool('DJANGO_DEBUG')
 
-# This ensures that Django will be able to detect a secure connection
-# properly on Heroku.
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECRET_KEY = env('DJANGO_SECRET_KEY')
 
-# django-secure
-# ------------------------------------------------------------------------------
-INSTALLED_APPS += ("djangosecure", )
+ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS')
 
-SECURITY_MIDDLEWARE = (
-    'djangosecure.middleware.SecurityMiddleware',
-)
+# Emails for server notifications.
+ADMINS = tuple([tuple(admins.split(':')) for admins in env.list('DJANGO_ADMINS')])
 
+# Emails for project notifications.
+# MANAGERS = tuple([tuple(managers.split(':')) for managers in env.list('DJANGO_MANAGERS')])
 
-# Make sure djangosecure.middleware.SecurityMiddleware is listed first
-MIDDLEWARE_CLASSES = SECURITY_MIDDLEWARE + MIDDLEWARE_CLASSES
-
-
-# set this to 60 seconds and then to 518400 when you can prove it works
-SECURE_HSTS_SECONDS = 60
-SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
-    "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", default=True)
-SECURE_FRAME_DENY = env.bool("DJANGO_SECURE_FRAME_DENY", default=True)
-SECURE_CONTENT_TYPE_NOSNIFF = env.bool(
-    "DJANGO_SECURE_CONTENT_TYPE_NOSNIFF", default=True)
-SECURE_BROWSER_XSS_FILTER = True
-SESSION_COOKIE_SECURE = False
-SESSION_COOKIE_HTTPONLY = True
-SECURE_SSL_REDIRECT = env.bool("DJANGO_SECURE_SSL_REDIRECT", default=True)
-
-# SITE CONFIGURATION
-# ------------------------------------------------------------------------------
-# Hosts/domain names that are valid for this site
-# See https://docs.djangoproject.com/en/1.6/ref/settings/#allowed-hosts
-ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', default=['example.com'])
-# END SITE CONFIGURATION
-
-INSTALLED_APPS += ("gunicorn", )
-
-
-# Static Assets
-# ------------------------
-STATIC_URL = MEDIA_URL
-
-# See: https://github.com/antonagestam/collectfast
-# For Django 1.7+, 'collectfast' should come before
-# 'django.contrib.staticfiles'
-AWS_PRELOAD_METADATA = True
-INSTALLED_APPS = ('collectfast', ) + INSTALLED_APPS
-
-# EMAIL
-# ------------------------------------------------------------------------------
-DEFAULT_FROM_EMAIL = env('DJANGO_DEFAULT_FROM_EMAIL',
-                         default='citifleet <noreply@example.com>')
-EMAIL_SUBJECT_PREFIX = env("DJANGO_EMAIL_SUBJECT_PREFIX", default='[citifleet] ')
-SERVER_EMAIL = env('DJANGO_SERVER_EMAIL', default=DEFAULT_FROM_EMAIL)
-
-# TEMPLATE CONFIGURATION
-# ------------------------------------------------------------------------------
-# See:
-# https://docs.djangoproject.com/en/dev/ref/templates/api/#django.template.loaders.cached.Loader
-TEMPLATES[0]['OPTIONS']['loaders'] = [
-    ('django.template.loaders.cached.Loader', [
-        'django.template.loaders.filesystem.Loader', 'django.template.loaders.app_directories.Loader', ]),
-]
-
-# DATABASE CONFIGURATION
-# ------------------------------------------------------------------------------
-# Raises ImproperlyConfigured exception if DATABASE_URL not in os.environ
-DATABASES['default'] = env.db("DATABASE_URL")# CACHING
-# ------------------------------------------------------------------------------
-# Heroku URL does not pass the DB number, so we parse it in
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "{0}/{1}".format(env.cache_url('REDIS_URL', default="redis://127.0.0.1:6379"), 0),
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "IGNORE_EXCEPTIONS": True,  # mimics memcache behavior.
-                                        # http://niwinz.github.io/django-redis/latest/#_memcached_exceptions_behavior
-        }
-    }
+DATABASES = {
+    'default': env.db('DJANGO_DATABASE_URL')
 }
 
-# LOGGING CONFIGURATION
-# ------------------------------------------------------------------------------
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#logging
-# A sample logging configuration. The only tangible logging
-# performed by this configuration is to send an email to
-# the site admins on every HTTP 500 error when DEBUG=False.
-# See http://docs.djangoproject.com/en/dev/topics/logging for
-# more details on how to customize your logging configuration.
+EMAIL_URL = env.email_url('DJANGO_EMAIL_URL', default='smtp://user:password@localhost:25')
+EMAIL_BACKEND = EMAIL_URL['EMAIL_BACKEND']
+EMAIL_HOST = EMAIL_URL.get('EMAIL_HOST', '')
+if EMAIL_URL.get('EMAIL_HOST_PASSWORD', '') == 'special':
+    EMAIL_HOST_PASSWORD = env('DJANGO_EMAIL_HOST_PASSWORD_SPECIAL')
+else:
+    EMAIL_HOST_PASSWORD = EMAIL_URL.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_HOST_USER = EMAIL_URL.get('EMAIL_HOST_USER', '')
+EMAIL_PORT = EMAIL_URL.get('EMAIL_PORT', '')
+EMAIL_USE_SSL = 'EMAIL_USE_SSL' in EMAIL_URL
+EMAIL_USE_TLS = 'EMAIL_USE_TLS' in EMAIL_URL
+EMAIL_FILE_PATH = EMAIL_URL.get('EMAIL_FILE_PATH', '')
+
+DEFAULT_FROM_EMAIL = env('DJANGO_DEFAULT_FROM_EMAIL')
+
+STATIC_ROOT = env('DJANGO_STATIC_ROOT')
+MEDIA_ROOT = env('DJANGO_MEDIA_ROOT')
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'filters': {
         'require_debug_false': {
             '()': 'django.utils.log.RequireDebugFalse'
-        }
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
     },
     'formatters': {
         'verbose': {
@@ -134,6 +67,11 @@ LOGGING = {
         },
     },
     'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'propagate': True,
+            'level': 'WARN',
+        },
         'django.request': {
             'handlers': ['mail_admins'],
             'level': 'ERROR',
@@ -143,8 +81,6 @@ LOGGING = {
             'level': 'ERROR',
             'handlers': ['console', 'mail_admins'],
             'propagate': True
-        }
+        },
     }
 }
-
-# Your production stuff: Below this line define 3rd party library settings
