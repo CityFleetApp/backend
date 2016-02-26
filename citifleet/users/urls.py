@@ -10,4 +10,5 @@ urlpatterns = [
     url(r'^login/$', views.login, name='login'),
     url(r'^reset-password/$', views.reset_password, name='reset_password'),
     url(r'^change-password/$', views.change_password, name='change_password'),
+    url(r'^add-contacts-friends/$', views.add_contacts_friends, name='add_friends_from_contacts')
 ]
