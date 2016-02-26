@@ -1,5 +1,6 @@
 from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
+from django.core import mail
 
 from test_plus.test import TestCase
 from rest_framework.test import APIClient
@@ -7,6 +8,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 
 from .models import User
+from .factories import UserFactory
 
 
 @override_settings(DEBUG=True)
@@ -91,3 +93,49 @@ class TestSignup(TestCase):
         resp = self.client.post(reverse('users:signup'), data=signup_data)
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(resp.data, {'non_field_errors': ["Passwords don't match"]})
+
+
+class TestResetPassword(TestCase):
+
+    def setUp(self):
+        self.user = UserFactory(email='test@example.com')
+        self.client = APIClient()
+        self.token = Token.objects.create(user=self.user)
+
+    # User sends email and receives new password
+    def test_password_reset(self):
+        data = {'email': 'test@example.com'}
+        self.client.post(reverse('users:reset_password'), data=data)
+        self.assertEqual(len(mail.outbox), 1)
+
+        new_password = mail.outbox[0].body.split()[-1]
+
+        login_data = {'username': 'test@example.com', 'password': new_password}
+        resp = self.client.post(reverse('users:login'), data=login_data)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data, {'token': self.token.key})
+
+
+class TestChangePassword(TestCase):
+
+    def setUp(self):
+        self.user = UserFactory(email='test@example.com')
+        self.client = APIClient()
+        self.token = Token.objects.create(user=self.user)
+
+    # Unauthorized user tries to change password
+    def test_login_required(self):
+        data = {'email': 'test@example.com'}
+        resp = self.client.post(reverse('users:change_password'), data=data)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    # Authorized user sends request to change password
+    def test_password_reset(self):
+        self.client.force_authenticate(user=self.user)
+        data = {'password': 'newpassword'}
+        resp = self.client.post(reverse('users:change_password'), data=data)
+
+        login_data = {'username': 'test@example.com', 'password': 'newpassword'}
+        resp = self.client.post(reverse('users:login'), data=login_data)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data, {'token': self.token.key})

@@ -10,4 +10,6 @@ from . import views
 urlpatterns = [
     url(r'^signup/$', views.signup, name='signup'),
     url(r'^login/$', obtain_auth_token, name='login'),
+    url(r'^reset-password/$', views.reset_password, name='reset_password'),
+    url(r'^change-password/$', views.change_password, name='change_password'),
 ]
