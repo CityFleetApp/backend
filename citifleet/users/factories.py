@@ -3,7 +3,7 @@ from django.contrib.auth.hashers import make_password
 import factory
 from factory import DjangoModelFactory
 
-from citifleet.common.utils import FuzzyPoint
+from citifleet.common.test_utils import FuzzyPoint
 
 from .models import User
 
