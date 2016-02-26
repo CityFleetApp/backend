@@ -1,6 +1,6 @@
 from factory import DjangoModelFactory
 
-from citifleet.common.utils import FuzzyPoint
+from citifleet.common.test_utils import FuzzyPoint
 
 from .models import Report
 
