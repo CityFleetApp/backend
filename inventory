@@ -1,0 +1,4 @@
+[staging]
+citifleet.steelkiwi.com ansible_ssh_user=webmaster ansible_ssh_port=2205
+
+[production]

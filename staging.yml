@@ -1,0 +1,53 @@
+# vim:ft=ansible:
+
+---
+- hosts: staging
+  become: no
+  vars:
+    project:
+      name: citifleet
+      repo: git@git.steelkiwi.com:web/citifleet.git
+      branch: master
+  tasks:
+
+  - name: get updater name
+    local_action: command git config user.name
+    register: updater
+
+  - name: clone/update repository
+    git: >
+      repo={{ project.repo }}
+      dest=/home/webmaster/project
+      accept_hostkey=yes
+      version={{ project.branch }}
+
+  - name: install project requirements
+    pip: >
+      requirements=/home/webmaster/project/requirements.txt
+      virtualenv=/home/webmaster/venv
+
+  - name: migrate database
+    django_manage: >
+      command=migrate
+      app_path=/home/webmaster/project
+      settings=config.settings.production
+      virtualenv=/home/webmaster/venv
+
+  - name: collect static
+    django_manage: >
+      command=collectstatic
+      app_path=/home/webmaster/project
+      settings=config.settings.production
+      virtualenv=/home/webmaster/venv
+
+  - name: restart all supervisor tasks
+    supervisorctl: >
+      name='{{ project.name }}:'
+      state=restarted
+
+  - name: send notification via Slack
+    local_action:
+      module: slack
+      token: T03P6BDDB/B0P7LS9G8/XzrJHLM4aLBCxLmOit3o4jtb
+      msg: "*Staging* server has been updated by *{{ updater.stdout }}*"
+      parse: "full"
