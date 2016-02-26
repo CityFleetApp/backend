@@ -55,7 +55,7 @@ class TestSignup(TestCase):
         login_data = {'username': 'john@example.com', 'password': 'password'}
         resp = self.client.post(reverse('users:login'), data=login_data)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertEqual(resp.data, {'token': token.key})
+        self.assertEqual(resp.data['token'], token.key)
 
     def test_unique_email(self):
         signup_data = {
@@ -113,7 +113,7 @@ class TestResetPassword(TestCase):
         login_data = {'username': 'test@example.com', 'password': new_password}
         resp = self.client.post(reverse('users:login'), data=login_data)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertEqual(resp.data, {'token': self.token.key})
+        self.assertEqual(resp.data['token'], self.token.key)
 
 
 class TestChangePassword(TestCase):
@@ -138,4 +138,4 @@ class TestChangePassword(TestCase):
         login_data = {'username': 'test@example.com', 'password': 'newpassword'}
         resp = self.client.post(reverse('users:login'), data=login_data)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertEqual(resp.data, {'token': self.token.key})
+        self.assertEqual(resp.data['token'], self.token.key)

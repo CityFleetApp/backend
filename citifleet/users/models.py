@@ -6,8 +6,11 @@ from django.core.urlresolvers import reverse
 from django.contrib.gis.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.sites.models import Site
 
 from phonenumber_field.modelfields import PhoneNumberField
+
+from citifleet.common.utils import get_protocol
 
 
 class UserManager(BaseUserManager):
@@ -36,6 +39,10 @@ class User(AbstractUser):
     hack_license = models.CharField(_('hack license'), max_length=150)
     full_name = models.CharField(_('full name'), max_length=200)
     location = models.PointField(_('location'), null=True, blank=True)
+    bio = models.TextField(_('bio'), blank=True)
+    drives = models.CharField(_('drives'), max_length=200, blank=True)
+    avatar = models.ImageField(_('avatar'), upload_to='avatars/', null=True, blank=True)
+
     objects = UserManager()
 
     def __str__(self):
@@ -43,6 +50,15 @@ class User(AbstractUser):
 
     def get_absolute_url(self):
         return reverse('users:detail', kwargs={'username': self.username})
+
+    def avatar_url(self):
+        '''
+        Return full avatar url
+        '''
+        if self.avatar:
+            return '{}{}{}'.format(get_protocol(), Site.objects.get_current().domain, self.avatar.url)
+        else:
+            return ''
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []

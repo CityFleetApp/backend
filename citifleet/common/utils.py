@@ -22,3 +22,10 @@ def validate_license(license_number, full_name):
             return False
         else:
             return len(resp) > 0
+
+
+def get_protocol():
+    if settings.SECURE_SSL_REDIRECT:
+        return 'https://'
+    else:
+        return 'http://'
