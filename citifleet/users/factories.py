@@ -13,8 +13,12 @@ class UserFactory(DjangoModelFactory):
     phone = factory.Faker('phone_number')
     email = factory.Faker('email')
     full_name = factory.Faker('name')
+    username = factory.Faker('name')
     password = make_password('password')
     location = FuzzyPoint()
+    bio = factory.Faker('text')
+    drives = factory.Faker('word')
+    avatar = factory.django.ImageField(color='blue')
 
     class Meta:
         model = User

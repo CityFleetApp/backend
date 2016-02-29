@@ -85,3 +85,14 @@ class ChangePasswordSerializer(serializers.Serializer):
         user = self.context['user']
         user.set_password(self.validated_data['password'])
         user.save()
+
+
+class UserDetailSerializer(serializers.ModelSerializer):
+    '''
+    Serializer for user details screen
+    '''
+
+    class Meta:
+        model = User
+        fields = ('email', 'full_name', 'phone', 'hack_license', 'username',
+                  'bio', 'drives', 'avatar_url')
