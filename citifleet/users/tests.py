@@ -139,3 +139,25 @@ class TestChangePassword(TestCase):
         resp = self.client.post(reverse('users:login'), data=login_data)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(resp.data['token'], self.token.key)
+
+
+class AddFriendsFromContacts(TestCase):
+
+    def setUp(self):
+        self.user = UserFactory(email='test@example.com')
+        self.friend = UserFactory()
+        self.client = APIClient()
+        self.token = Token.objects.create(user=self.user)
+
+    # Unauthorized user tries to add friend
+    def test_login_required(self):
+        data = {'contacts': ['123-456-7890']}
+        resp = self.client.post(reverse('users:add_friends_from_contacts'), data=data)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    # Authorized user adds friend
+    def test_add_friend(self):
+        self.client.force_authenticate(user=self.user)
+        data = {'contacts': [self.friend.phone]}
+        self.client.post(reverse('users:add_friends_from_contacts'), data=data)
+        self.assertEqual(self.user.friends.get(), self.friend)

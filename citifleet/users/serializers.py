@@ -96,3 +96,14 @@ class UserDetailSerializer(serializers.ModelSerializer):
         model = User
         fields = ('email', 'full_name', 'phone', 'hack_license', 'username',
                   'bio', 'drives', 'avatar_url')
+
+
+class ContactsSerializer(serializers.Serializer):
+    '''
+    Take list of phone numbers and return list of users with these numbers
+    '''
+    contacts = serializers.ListField(child=serializers.CharField())
+
+    def validate(self, attrs):
+        attrs['users'] = User.objects.filter(phone__in=attrs['contacts'])
+        return attrs

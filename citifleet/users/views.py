@@ -3,14 +3,13 @@ from __future__ import absolute_import, unicode_literals
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import viewsets
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 
 from .serializers import (SignupSerializer, ResetPasswordSerializer, ChangePasswordSerializer,
-                          UserDetailSerializer)
+                          UserDetailSerializer, ContactsSerializer)
 
 
 class SignUpView(APIView):
@@ -79,3 +78,22 @@ class LoginView(ObtainAuthToken):
         return Response(user_data)
 
 login = LoginView.as_view()
+
+
+class AddFriendsFromContactsView(APIView):
+    '''
+    Receive driver's contact numbers, find drivers with these numbers,
+    add these drivers to user friends field, return list of user's friends
+    '''
+
+    def post(self, request, *args, **kwargs):
+        serializer = ContactsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        friends = serializer.validated_data['users']
+        request.user.friends.add(*friends)
+
+        user_data = UserDetailSerializer(friends, many=True).data
+        return Response(user_data)
+
+add_contacts_friends = AddFriendsFromContactsView.as_view()

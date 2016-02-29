@@ -42,6 +42,7 @@ class User(AbstractUser):
     bio = models.TextField(_('bio'), blank=True)
     drives = models.CharField(_('drives'), max_length=200, blank=True)
     avatar = models.ImageField(_('avatar'), upload_to='avatars/', null=True, blank=True)
+    friends = models.ManyToManyField("self", null=True)
 
     objects = UserManager()
 
