@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+    # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
 from rest_framework.views import APIView
@@ -9,7 +9,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 
 from .serializers import (SignupSerializer, ResetPasswordSerializer, ChangePasswordSerializer,
-                          UserDetailSerializer, ContactsSerializer)
+                          UserDetailSerializer, ContactsSerializer, FacebookSerializer)
 
 
 class SignUpView(APIView):
@@ -80,14 +80,12 @@ class LoginView(ObtainAuthToken):
 login = LoginView.as_view()
 
 
-class AddFriendsFromContactsView(APIView):
+class BaseAddFriendsView(APIView):
     '''
-    Receive driver's contact numbers, find drivers with these numbers,
-    add these drivers to user friends field, return list of user's friends
+    Base view to add friends from different sources
     '''
-
     def post(self, request, *args, **kwargs):
-        serializer = ContactsSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         friends = serializer.validated_data['users']
@@ -96,4 +94,28 @@ class AddFriendsFromContactsView(APIView):
         user_data = UserDetailSerializer(friends, many=True).data
         return Response(user_data)
 
+
+class AddFriendsFromContactsView(APIView):
+    '''
+    Receive driver's contact numbers, find drivers with these numbers,
+    add these drivers to user friends field, return list of user's friends
+    '''
+    serializer_class = ContactsSerializer
+
+
 add_contacts_friends = AddFriendsFromContactsView.as_view()
+
+
+class AddFriendsFromFacebookView(APIView):
+    '''
+    Receive driver's facebook token and retrieve facebook friends.
+    Find drivers among facebook friends and add them to driver's friends
+    '''
+    serializer_class = FacebookSerializer
+
+
+class AddFriendsFromTwitterView(APIView):
+    '''
+
+    '''
+    serializer_class = TwitterSerializer

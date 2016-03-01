@@ -3,6 +3,7 @@ from django.conf import settings
 
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
+from open_facebook import OpenFacebook
 
 from citifleet.common.utils import validate_license
 
@@ -106,4 +107,17 @@ class ContactsSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         attrs['users'] = User.objects.filter(phone__in=attrs['contacts'])
+        return attrs
+
+
+class FacebookSerializer(serializers.Serializer):
+    '''
+    Take facebook token, fetches friends list from facebook
+    '''
+    token = serializers.CharField()
+
+    def validate(self, attrs):
+        graph = OpenFacebook(attrs['token'])
+        friends_emails = graph.get('me/friends', fields='email')
+        attrs['users'] = User.objects.filter(email__in=friends_emails)
         return attrs
