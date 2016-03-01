@@ -1,5 +1,6 @@
 from django.core.urlresolvers import reverse
 from django.contrib.gis.geos import Point
+from django.test.utils import override_settings
 
 from test_plus.test import TestCase
 from rest_framework.test import APIClient
@@ -9,6 +10,7 @@ from citifleet.users.factories import UserFactory
 
 from .models import Report
 from .factories import ReportFactory
+from .tasks import delete_unconfirmed_reports
 
 
 class TestReportViewSet(TestCase):
@@ -68,3 +70,10 @@ class TestReportViewSet(TestCase):
         resp = self.client.post(reverse('reports:api-confirm-report', args=[report.id]))
         self.assertEqual(resp.status_code, 200)
         self.assertNotEqual(report.updated, Report.objects.get().updated)
+
+    # Outdated task is deleted
+    @override_settings(AUTOCLOSE_INTERVAL=0)
+    def test_unconfirmed_report_removed(self):
+        ReportFactory()
+        delete_unconfirmed_reports()
+        self.assertEqual(Report.objects.count(), 0)
