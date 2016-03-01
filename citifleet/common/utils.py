@@ -17,7 +17,7 @@ def validate_license(license_number, full_name):
         client = Socrata(settings.TLC_URL, settings.APP_TOKEN)
         try:
             resp = client.get(settings.TLC_OPEN_DATA_ID,
-                              license_number=license_number, name=full_name)
+                              license_number=license_number, q=full_name)
         except HTTPError:
             return False
         else:
