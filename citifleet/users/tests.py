@@ -6,6 +6,7 @@ from test_plus.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
 from rest_framework.authtoken.models import Token
+from mock import patch
 
 from .models import User
 from .factories import UserFactory
@@ -161,3 +162,27 @@ class AddFriendsFromContacts(TestCase):
         data = {'contacts': [self.friend.phone]}
         self.client.post(reverse('users:add_friends_from_contacts'), data=data)
         self.assertEqual(self.user.friends.get(), self.friend)
+
+
+class AddFriendsFromFacebook(TestCase):
+
+    def setUp(self):
+        self.user = UserFactory(email='test@example.com')
+        self.friend = UserFactory(facebook_id='friend_id')
+        self.client = APIClient()
+
+    @patch('open_facebook.api.OpenFacebook.get', return_value=['other_id'])
+    def test_no_friends_added(self, _):
+        self.client.force_authenticate(user=self.user)
+        data = {'token': 'token', 'facebook_id': 'user_id'}
+        self.client.post(reverse('users:add_friends_from_facebook'), data=data)
+        self.assertEqual(self.user.friends.count(), 0)
+        self.assertEqual(self.user.facebook_id, 'user_id')
+
+    @patch('open_facebook.api.OpenFacebook.get', return_value=['other_id', 'friend_id'])
+    def test_add_friend_from_facebook(self, _):
+        self.client.force_authenticate(user=self.user)
+        data = {'token': 'token', 'facebook_id': 'user_id'}
+        self.client.post(reverse('users:add_friends_from_facebook'), data=data)
+        self.assertEqual(self.user.friends.get(), self.friend)
+        self.assertEqual(self.user.facebook_id, 'user_id')

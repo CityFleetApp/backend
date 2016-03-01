@@ -16,6 +16,7 @@ ROOT_DIR = environ.Path(__file__) - 3  # (/a/b/myfile.py - 3 = /)
 APPS_DIR = ROOT_DIR.path('citifleet')
 
 env = environ.Env()
+environ.Env.read_env()
 
 # APP CONFIGURATION
 # ------------------------------------------------------------------------------
@@ -248,3 +249,7 @@ REST_FRAMEWORK = {
 VISIBLE_REPORTS_RADIUS = 30
 
 AUTOCLOSE_INTERVAL = 60
+
+# Twitter keys
+TWITTER_CONSUMER_KEY = env('CONSUMER_KEY')
+TWITTER_CONSUMER_SECRET = env('CONSUMER_SECRET')
