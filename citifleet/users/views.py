@@ -82,9 +82,7 @@ login = LoginView.as_view()
 
 
 class BaseAddFriendsView(APIView):
-    '''
-    Base view to add friends from different sources
-    '''
+
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data, context={'user': request.user})
         serializer.is_valid(raise_exception=True)
@@ -97,10 +95,19 @@ class BaseAddFriendsView(APIView):
 
 
 class AddFriendsFromContactsView(BaseAddFriendsView):
-    '''
+    """
     Receive driver's contact numbers, find drivers with these numbers,
     add these drivers to user friends field, return list of user's friends
-    '''
+    ---
+    POST:
+        parameters:
+            - name: contacts
+              description: List of phone numbers
+              required: true
+              type: array
+              paramType: form
+        response_serializer: UserDetailSerializer
+    """
     serializer_class = ContactsSerializer
 
 add_contacts_friends = AddFriendsFromContactsView.as_view()
@@ -110,6 +117,10 @@ class AddFriendsFromFacebookView(BaseAddFriendsView):
     '''
     Receive driver's facebook token and retrieve facebook friends.
     Find drivers among facebook friends and add them to driver's friends
+    ---
+    POST:
+        request_serializer: FacebookSerializer
+        response_serializer: UserDetailSerializer
     '''
     serializer_class = FacebookSerializer
 
@@ -120,6 +131,10 @@ class AddFriendsFromTwitterView(BaseAddFriendsView):
     '''
     Receive driver's twitter token and token secret. Retrieve twitter friends.
     Find drivers among twitter friends and add them to driver's friends
+    ---
+    POST:
+        request_serializer: TwitterSerializer
+        response_serializer: UserDetailSerializer
     '''
     serializer_class = TwitterSerializer
 
@@ -130,6 +145,10 @@ class AddFriendsFromInstagramView(BaseAddFriendsView):
     '''
     Receive driver's instagram token. Retrieve instagram friends.
     Find drivers among instagram friends and add them to driver's friends
+    ---
+    POST:
+        request_serializer: InstagramSerializer
+        response_serializer: UserDetailSerializer
     '''
     serializer_class = InstagramSerializer
 
