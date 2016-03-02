@@ -118,16 +118,16 @@ class FacebookSerializer(serializers.Serializer):
     Fetch friends list from facebook
     '''
     token = serializers.CharField()
-    facebook_id = serializers.CharField()
 
     def validate(self, attrs):
         graph = OpenFacebook(attrs['token'])
+        self_id = graph.get('me', fields='id')
         friends_ids = graph.get('me/friends', fields='id')
         attrs['users'] = User.objects.filter(facebook_id__in=friends_ids)
 
         user = self.context['user']
         if not user.facebook_id:
-            user.facebook_id = attrs['facebook_id']
+            user.facebook_id = self_id
             user.save()
         return attrs
 
