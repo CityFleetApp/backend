@@ -121,9 +121,9 @@ class FacebookSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         graph = OpenFacebook(attrs['token'])
-        self_id = graph.get('me', fields='id')
-        friends_ids = graph.get('me/friends', fields='id')
-        attrs['users'] = User.objects.filter(facebook_id__in=friends_ids)
+        self_id = graph.get('me', fields='id')['id']
+        friends_ids = graph.get('me/friends', fields='id')['data']
+        attrs['users'] = User.objects.filter(facebook_id__in=[f['id'] for f in friends_ids])
 
         user = self.context['user']
         if not user.facebook_id:
@@ -139,19 +139,19 @@ class TwitterSerializer(serializers.Serializer):
     '''
     token = serializers.CharField()
     token_secret = serializers.CharField()
-    twitter_id = serializers.CharField()
 
     def validate(self, attrs):
         auth = tweepy.OAuthHandler(settings.TWITTER_CONSUMER_KEY, settings.TWITTER_CONSUMER_SECRET)
         auth.set_access_token(attrs['token'], attrs['token_secret'])
         api = tweepy.API(auth)
 
-        friends_ids = api.friends_ids(attrs['twitter_id'])
+        me = api.me()
+        friends_ids = api.friends_ids(me.id)
         attrs['users'] = User.objects.filter(twitter_id__in=friends_ids)
 
         user = self.context['user']
         if not user.twitter_id:
-            user.twitter_id = attrs['twitter_id']
+            user.twitter_id = me.id
             user.save()
         return attrs
 
@@ -162,12 +162,12 @@ class InstagramSerializer(serializers.Serializer):
     Fetch friends list from instagram
     '''
     token = serializers.CharField()
-    instagram_id = serializers.CharField()
 
     def validate(self, attrs):
         api = InstagramAPI(access_token=attrs['token'], client_secret=settings.INSTAGRAM_CLIENT_SECRET)
 
-        follows, next_ = api.user_follows(attrs['instagram_id'])['data']
+        me = api.user()
+        follows, next_ = api.user_follows()
         while next_:
             more_follows, next_ = api.user_follows(with_next_url=next_)
             follows.extend(more_follows)
@@ -176,6 +176,6 @@ class InstagramSerializer(serializers.Serializer):
 
         user = self.context['user']
         if not user.instagram_id:
-            user.instagram_id = attrs['instagram_id']
+            user.instagram_id = me.id
             user.save()
         return attrs
