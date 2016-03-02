@@ -165,9 +165,14 @@ class InstagramSerializer(serializers.Serializer):
     instagram_id = serializers.CharField()
 
     def validate(self, attrs):
-        api = InstagramAPI(access_token=attrs['token'], client_secret=settings.CLIENT_SECRET)
-        friends_ids = api.user_follows(attrs['instagram_id'])
-        attrs['users'] = User.objects.filter(insagram_id__in=friends_ids)
+        api = InstagramAPI(access_token=attrs['token'], client_secret=settings.INSTAGRAM_CLIENT_SECRET)
+
+        follows, next_ = api.user_follows(attrs['instagram_id'])['data']
+        while next_:
+            more_follows, next_ = api.user_follows(with_next_url=next_)
+            follows.extend(more_follows)
+
+        attrs['users'] = User.objects.filter(insagram_id__in=[f['id'] for f in follows])
 
         user = self.context['user']
         if not user.instagram_id:
