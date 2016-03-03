@@ -46,6 +46,7 @@ THIRD_PARTY_APPS = (
 LOCAL_APPS = (
     'citifleet.reports',
     'citifleet.legalaid',
+    'citifleet.documents',
 )
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
