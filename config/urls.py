@@ -11,7 +11,6 @@ urlpatterns = [
     url(settings.ADMIN_URL, include(admin.site.urls)),
     url(r'^api/users', include('citifleet.users.urls', namespace='users')),
     url(r'^api/reports', include('citifleet.reports.urls', namespace='reports')),
-    url(r'^api/accounting', include('citifleet.accounting.urls', namespace='accounting')),
-    url(r'^api/insurance', include('citifleet.insurance.urls', namespace='insurance')),
+    url(r'^api/legalaid', include('citifleet.legalaid.urls', namespace='legalaid')),
     url(r'^docs/', include('rest_framework_swagger.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
