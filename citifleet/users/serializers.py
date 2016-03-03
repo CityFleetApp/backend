@@ -179,3 +179,12 @@ class InstagramSerializer(serializers.Serializer):
             user.instagram_id = me.id
             user.save()
         return attrs
+
+
+class PhotoSerializer(serializers.ModelSerializer):
+    '''
+    Update user avatar
+    '''
+    class Meta:
+        model = User
+        fields = ('avatar',)

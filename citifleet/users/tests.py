@@ -1,3 +1,5 @@
+from tempfile import NamedTemporaryFile
+
 from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
 from django.core import mail
@@ -7,6 +9,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from mock import patch
+from PIL import Image
 
 from .models import User
 from .factories import UserFactory
@@ -171,7 +174,7 @@ class AddFriendsFromFacebook(TestCase):
         self.friend = UserFactory(facebook_id='friend_id')
         self.client = APIClient()
 
-    @patch('open_facebook.api.OpenFacebook.get', return_value=['other_id'])
+    @patch('open_facebook.api.OpenFacebook.get', return_value={'id': 'user_id', 'data': []})
     def test_no_friends_added(self, _):
         self.client.force_authenticate(user=self.user)
         data = {'token': 'token', 'facebook_id': 'user_id'}
@@ -179,10 +182,41 @@ class AddFriendsFromFacebook(TestCase):
         self.assertEqual(self.user.friends.count(), 0)
         self.assertEqual(self.user.facebook_id, 'user_id')
 
-    @patch('open_facebook.api.OpenFacebook.get', return_value=['other_id', 'friend_id'])
+    @patch('open_facebook.api.OpenFacebook.get', return_value={'id': 'user_id', 'data': [{'id': 'friend_id'}]})
     def test_add_friend_from_facebook(self, _):
         self.client.force_authenticate(user=self.user)
         data = {'token': 'token', 'facebook_id': 'user_id'}
         self.client.post(reverse('users:add_friends_from_facebook'), data=data)
         self.assertEqual(self.user.friends.get(), self.friend)
         self.assertEqual(self.user.facebook_id, 'user_id')
+
+
+class TestUploadAvatar(TestCase):
+
+    def setUp(self):
+        self.user = UserFactory(email='test@example.com', avatar=None)
+        self.client = APIClient()
+
+    # Unauthorized user tries to upload avatar
+    def test_login_required(self):
+        tmp_file = NamedTemporaryFile(suffix='.jpg')
+
+        image = Image.new('RGB', (100, 100))
+        image.save(tmp_file)
+
+        data = {'avatar': tmp_file}
+        resp = self.client.put(reverse('users:upload_avatar'), data=data)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    # User uploads avatar successfuly
+    def test_upload_avatar(self):
+        self.client.force_authenticate(user=self.user)
+        tmp_file = NamedTemporaryFile(suffix='.jpg')
+
+        image = Image.new('RGB', (100, 100))
+        image.save(tmp_file)
+
+        data = {'avatar': tmp_file}
+        resp = self.client.put(reverse('users:upload_avatar'), data=data)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertTrue(self.user.avatar.url.endswith('.jpg'))

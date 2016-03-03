@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
+from rest_framework.generics import UpdateAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -10,7 +11,7 @@ from rest_framework.authtoken.views import ObtainAuthToken
 
 from .serializers import (SignupSerializer, ResetPasswordSerializer, ChangePasswordSerializer,
                           UserDetailSerializer, ContactsSerializer, FacebookSerializer, TwitterSerializer,
-                          InstagramSerializer)
+                          InstagramSerializer, PhotoSerializer)
 
 
 class SignUpView(APIView):
@@ -153,3 +154,15 @@ class AddFriendsFromInstagramView(BaseAddFriendsView):
     serializer_class = InstagramSerializer
 
 add_instagram_friends = AddFriendsFromInstagramView.as_view()
+
+
+class UploadAvatarView(UpdateAPIView):
+    '''
+    Update driver avatar
+    '''
+    serializer_class = PhotoSerializer
+
+    def get_object(self):
+        return self.request.user
+
+upload_avatar = UploadAvatarView.as_view()
