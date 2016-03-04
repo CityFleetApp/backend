@@ -44,6 +44,10 @@ class User(AbstractUser):
     avatar = models.ImageField(_('avatar'), upload_to='avatars/', null=True, blank=True)
     friends = models.ManyToManyField("self", null=True)
 
+    facebook_id = models.CharField(_('facebook id'), max_length=200, blank=True)
+    twitter_id = models.CharField(_('twitter id'), max_length=200, blank=True)
+    instagram_id = models.CharField(_('instagram id'), max_length=200, blank=True)
+
     objects = UserManager()
 
     def __str__(self):

@@ -3,6 +3,9 @@ from django.conf import settings
 
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
+from open_facebook import OpenFacebook
+from instagram.client import InstagramAPI
+import tweepy
 
 from citifleet.common.utils import validate_license
 
@@ -106,4 +109,73 @@ class ContactsSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         attrs['users'] = User.objects.filter(phone__in=attrs['contacts'])
+        return attrs
+
+
+class FacebookSerializer(serializers.Serializer):
+    '''
+    Take facebook token and facebook id
+    Fetch friends list from facebook
+    '''
+    token = serializers.CharField()
+
+    def validate(self, attrs):
+        graph = OpenFacebook(attrs['token'])
+        self_id = graph.get('me', fields='id')['id']
+        friends_ids = graph.get('me/friends', fields='id')['data']
+        attrs['users'] = User.objects.filter(facebook_id__in=[f['id'] for f in friends_ids])
+
+        user = self.context['user']
+        if not user.facebook_id:
+            user.facebook_id = self_id
+            user.save()
+        return attrs
+
+
+class TwitterSerializer(serializers.Serializer):
+    '''
+    Take twitter token and secret token
+    Fetch friends list from twitter
+    '''
+    token = serializers.CharField()
+    token_secret = serializers.CharField()
+
+    def validate(self, attrs):
+        auth = tweepy.OAuthHandler(settings.TWITTER_CONSUMER_KEY, settings.TWITTER_CONSUMER_SECRET)
+        auth.set_access_token(attrs['token'], attrs['token_secret'])
+        api = tweepy.API(auth)
+
+        me = api.me()
+        friends_ids = api.friends_ids(me.id)
+        attrs['users'] = User.objects.filter(twitter_id__in=friends_ids)
+
+        user = self.context['user']
+        if not user.twitter_id:
+            user.twitter_id = me.id
+            user.save()
+        return attrs
+
+
+class InstagramSerializer(serializers.Serializer):
+    '''
+    Take instagram token
+    Fetch friends list from instagram
+    '''
+    token = serializers.CharField()
+
+    def validate(self, attrs):
+        api = InstagramAPI(access_token=attrs['token'], client_secret=settings.INSTAGRAM_CLIENT_SECRET)
+
+        me = api.user()
+        follows, next_ = api.user_follows()
+        while next_:
+            more_follows, next_ = api.user_follows(with_next_url=next_)
+            follows.extend(more_follows)
+
+        attrs['users'] = User.objects.filter(insagram_id__in=[f['id'] for f in follows])
+
+        user = self.context['user']
+        if not user.instagram_id:
+            user.instagram_id = me.id
+            user.save()
         return attrs
