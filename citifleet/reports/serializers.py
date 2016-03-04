@@ -5,6 +5,15 @@ from rest_framework import serializers
 from .models import Report
 
 
+class LocationSerializer(serializers.Serializer):
+    lat = serializers.FloatField()
+    lng = serializers.FloatField()
+
+    def validate(self, attrs):
+        attrs['location'] = Point(attrs['lat'], attrs['lng'])
+        return attrs
+
+
 class ReportSerializer(serializers.ModelSerializer):
     '''
     Reports Model serializer. Serializes lat and lng to report's location

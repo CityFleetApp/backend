@@ -1,15 +1,16 @@
 from django.conf import settings
 from django.contrib.gis.measure import D
+from django.shortcuts import get_object_or_404
 
 from rest_framework import viewsets, status
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
 
 from .models import Report
-from .serializers import ReportSerializer
+from .serializers import ReportSerializer, LocationSerializer
 
 
-class ReportViewSet(viewsets.ModelViewSet):
+class BaseReportViewSet(viewsets.ModelViewSet):
     '''
     GET - returns list of nearby reports
     DELETE - removes report
@@ -17,9 +18,21 @@ class ReportViewSet(viewsets.ModelViewSet):
     serializer_class = ReportSerializer
     queryset = Report.objects.all()
 
+    def list(self, request, *args, **kwargs):
+        serializer = LocationSerializer(data=request.GET)
+        serializer.is_valid(raise_exception=True)
+        self.location = serializer.validated_data['location']
+        return super(BaseReportViewSet, self).list(request, *args, **kwargs)
+
+    def get_object(self):
+        '''
+        Return object by passed pk from all reports, not from get_queryset result
+        '''
+        return get_object_or_404(Report, pk=self.kwargs['pk'])
+
     def get_queryset(self):
-        return super(ReportViewSet, self).get_queryset().filter(
-            location__distance_lte=(self.request.user.location, D(settings.VISIBLE_REPORTS_RADIUS)))
+        return super(BaseReportViewSet, self).get_queryset().filter(
+            location__distance_lte=(self.location, D(settings.VISIBLE_REPORTS_RADIUS)))
 
     @detail_route(methods=['post'])
     def confirm_report(self, request, pk=None):
@@ -29,3 +42,16 @@ class ReportViewSet(viewsets.ModelViewSet):
         report = self.get_object()
         report.save()
         return Response(status.HTTP_200_OK)
+
+
+class NearbyReportViewSet(BaseReportViewSet):
+
+    def list(self, request, *args, **kwargs):
+        resp = super(NearbyReportViewSet, self).list(request, *args, **kwargs)
+        self.request.user.location = self.location
+        self.request.user.save()
+        return resp
+
+
+class MapReportViewSet(BaseReportViewSet):
+    pass
