@@ -9,7 +9,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Document
-        fields = ('file', 'expiry_date', 'plate_number', 'document_type')
+        fields = ('file', 'expiry_date', 'plate_number', 'document_type', 'expired')
 
     def validate(self, attrs):
         if attrs['document_type'] == Document.TLC_PLATE_NUMBER and not attrs['plate_number']:
@@ -17,4 +17,5 @@ class DocumentSerializer(serializers.ModelSerializer):
         elif attrs['document_type'] != Document.TLC_PLATE_NUMBER and not attrs['expiry_date']:
             raise serializers.ValidationError(_('Epxiry date can not be blank'))
 
+        attrs['user'] = self.context['request'].user
         return attrs

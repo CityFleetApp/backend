@@ -1,4 +1,8 @@
+from datetime import timedelta
+
 from django.core.urlresolvers import reverse
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils import timezone
 
 from test_plus.test import TestCase
 from rest_framework.test import APIClient
@@ -36,6 +40,37 @@ class TestDocumentViewSet(TestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(len(resp.data), 2)
 
-    # Authorized post data to upload document
-    def test_create_report(self):
+    # Authorized user post data to upload document
+    def test_upload_document(self):
         self.client.force_authenticate(user=self.user)
+        doc = SimpleUploadedFile('insurance.doc', 'text', content_type='text/plain')
+        data = {'file': doc, 'document_type': Document.INSURANCE,
+                'expiry_date': (timezone.now().date() + timedelta(days=30)).isoformat()}
+
+        resp = self.client.post(reverse('documents:api-list'), data=data)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        document = Document.objects.get()
+        self.assertEqual(document.user, self.user)
+        self.assertEqual(document.document_type, Document.INSURANCE)
+
+    # Authorized user updates existing document
+    def test_update_document(self):
+        self.client.force_authenticate(user=self.user)
+        document = DocumentFactory(user=self.user)
+        doc = SimpleUploadedFile('insurance.doc', 'text', content_type='text/plain')
+        data = {'expiry_date': (timezone.now().date() + timedelta(days=15)).isoformat(),
+                'file': doc, 'document_type': Document.INSURANCE}
+        resp = self.client.put(reverse('documents:api-detail', args=[document.id]), data=data)
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(Document.objects.get().expiry_date, timezone.now().date() + timedelta(days=15))
+
+    # Authorized user get list with expired document and has appropriate status
+    def test_expired_document(self):
+        self.client.force_authenticate(user=self.user)
+        DocumentFactory(user=self.user, document_type=Document.DMV_LICENSE,
+                        expiry_date=timezone.now() - timedelta(days=15))
+
+        resp = self.client.get(reverse('documents:api-list'))
+        self.assertEqual(resp.data[0]['expired'], True)
+        self.assertEqual(self.user.has_expired_documents, True)

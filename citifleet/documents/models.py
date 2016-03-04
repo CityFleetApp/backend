@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
+from django.utils import timezone
 
 
 class Document(models.Model):
@@ -26,11 +27,15 @@ class Document(models.Model):
         (DRUG_TEST, _('Drug Test')),
     )
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_('user'))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_('user'), related_name='documents')
     file = models.FileField(_('document'), upload_to='documents/')
     expiry_date = models.DateField(_('expiry date'), null=True)
     document_type = models.PositiveSmallIntegerField(_('document type'), choices=DOCUMENT_TYPES)
     plate_number = models.CharField(_('tlc plate number'), max_length=100, blank=True)
+
+    @property
+    def expired(self):
+        return self.document_type != self.TLC_PLATE_NUMBER and self.expiry_date < timezone.now().date()
 
     class Meta:
         unique_together = ('user', 'document_type')
