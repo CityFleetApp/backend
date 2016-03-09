@@ -15,4 +15,5 @@ urlpatterns = [
     url(r'^add-twitter-friends/$', views.add_twitter_friends, name='add_friends_from_twitter'),
     url(r'^add-instagram-friends/$', views.add_instagram_friends, name='add_friends_from_instagram'),
     url(r'^upload-avatar/$', views.upload_avatar, name='upload_avatar'),
+    url(r'^info/$', views.info, name='info'),
 ]

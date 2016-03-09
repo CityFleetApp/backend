@@ -220,3 +220,22 @@ class TestUploadAvatar(TestCase):
         resp = self.client.put(reverse('users:upload_avatar'), data=data)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertTrue(self.user.avatar.url.endswith('.jpg'))
+
+
+class TestUserInfo(TestCase):
+
+    def setUp(self):
+        self.user = UserFactory(email='test@example.com', avatar=None)
+        self.client = APIClient()
+
+    # Unauthorized user tries to profile's info
+    def test_login_required(self):
+        resp = self.client.get(reverse('users:info'))
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    # Authorized user retrieves profile's info successfully
+    def test_user_info_retrieve(self):
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.get(reverse('users:info'))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['email'], self.user.email)

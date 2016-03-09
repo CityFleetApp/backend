@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
-from rest_framework.generics import UpdateAPIView
+from rest_framework.generics import UpdateAPIView, RetrieveAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -166,3 +166,15 @@ class UploadAvatarView(UpdateAPIView):
         return self.request.user
 
 upload_avatar = UploadAvatarView.as_view()
+
+
+class UserInfoView(RetrieveAPIView):
+    '''
+    Retrieve driver's info for dashboard
+    '''
+    serializer_class = UserDetailSerializer
+
+    def get_object(self):
+        return self.request.user
+
+info = UserInfoView.as_view()
