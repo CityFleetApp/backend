@@ -133,10 +133,34 @@ class TestChangePassword(TestCase):
         resp = self.client.post(reverse('users:change_password'), data=data)
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    # Authorized user sends request to change password
-    def test_password_reset(self):
+    # Authorized user tries to change password with invalid current password
+    def test_old_password_invalid(self):
         self.client.force_authenticate(user=self.user)
-        data = {'password': 'newpassword'}
+        data = {'old_password': 'wrong_password', 'password': 'newpassword', 'password_confirm': 'newpassword'}
+        resp = self.client.post(reverse('users:change_password'), data=data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(resp.data, {'old_password': ['Wrong password']})
+
+        login_data = {'username': 'test@example.com', 'password': 'newpassword'}
+        resp = self.client.post(reverse('users:login'), data=login_data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    # Authorized user tries to change password with wrong password confirm
+    def test_password_dont_match(self):
+        self.client.force_authenticate(user=self.user)
+        data = {'old_password': 'password', 'password': 'newpassword', 'password_confirm': 'newpassword2'}
+        resp = self.client.post(reverse('users:change_password'), data=data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(resp.data, {'non_field_errors': ["Passwords don't match"]})
+
+        login_data = {'username': 'test@example.com', 'password': 'newpassword'}
+        resp = self.client.post(reverse('users:login'), data=login_data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    # Authorized user sends request to change password
+    def test_password_change(self):
+        self.client.force_authenticate(user=self.user)
+        data = {'old_password': 'password', 'password': 'newpassword', 'password_confirm': 'newpassword'}
         resp = self.client.post(reverse('users:change_password'), data=data)
 
         login_data = {'username': 'test@example.com', 'password': 'newpassword'}

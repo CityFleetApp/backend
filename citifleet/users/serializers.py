@@ -79,7 +79,21 @@ class ChangePasswordSerializer(serializers.Serializer):
     '''
     Serialize new password's length and provide method to change password
     '''
+    old_password = serializers.CharField(max_length=128)
     password = serializers.CharField(max_length=128)
+    password_confirm = serializers.CharField(max_length=128)
+
+    def validate_old_password(self, value):
+        if not self.context['user'].check_password(value):
+            raise serializers.ValidationError('Wrong password')
+        return value
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password_confirm']:
+            raise serializers.ValidationError("Passwords don't match")
+
+        del attrs['password_confirm']
+        return attrs
 
     def change_password(self):
         '''
