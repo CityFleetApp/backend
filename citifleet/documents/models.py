@@ -7,6 +7,10 @@ from django.utils import timezone
 
 
 class Document(models.Model):
+    '''
+    Store document info that driver can upload from app
+    Unique together index prevent from creating several documents of the same type for one driver
+    '''
     DMV_LICENSE = 1
     HACK_LICENSE = 2
     INSURANCE = 3
@@ -39,3 +43,5 @@ class Document(models.Model):
 
     class Meta:
         unique_together = ('user', 'document_type')
+        verbose_name = _('Document')
+        verbose_name_plural = _('Documents')
