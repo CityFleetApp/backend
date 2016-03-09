@@ -19,6 +19,9 @@ class BaseReportViewSet(viewsets.ModelViewSet):
     queryset = Report.objects.all()
 
     def list(self, request, *args, **kwargs):
+        '''
+        Validate location passed in GET request
+        '''
         serializer = LocationSerializer(data=request.GET)
         serializer.is_valid(raise_exception=True)
         self.location = serializer.validated_data['location']
@@ -47,6 +50,9 @@ class BaseReportViewSet(viewsets.ModelViewSet):
 class NearbyReportViewSet(BaseReportViewSet):
 
     def list(self, request, *args, **kwargs):
+        '''
+        Save current user location on GET request
+        '''
         resp = super(NearbyReportViewSet, self).list(request, *args, **kwargs)
         self.request.user.location = self.location
         self.request.user.save()
