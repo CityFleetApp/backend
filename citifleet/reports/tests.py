@@ -5,6 +5,8 @@ from django.test.utils import override_settings
 from test_plus.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
+from mock import patch
+from push_notifications.models import APNSDevice, GCMDevice
 
 from citifleet.users.factories import UserFactory
 
@@ -98,3 +100,56 @@ class TestMapReportViewSet(TestCase):
         self.assertEqual(len(resp.data), 10)
         self.assertEqual(self.user.location.x, -50.0)
         self.assertEqual(self.user.location.y, -50.0)
+
+
+class TestPushNotificationSent(TestCase):
+
+    def setUp(self):
+        self.user_point = Point(-50.0, -50.0)
+        self.point = Point(-50.0, -50.0)
+        self.user = UserFactory(email='test@example.com', location=self.user_point)
+        self.client = APIClient()
+        self.report = ReportFactory(location=self.point)
+        self.apns = APNSDevice.objects.create(user=self.user)
+        self.gcm = GCMDevice.objects.create(user=self.user)
+
+    # Push notification sent on report creation
+    @patch('push_notifications.apns.apns_send_bulk_message')
+    @patch('push_notifications.gcm.gcm_send_bulk_message')
+    def test_push_sent_on_new_report(self, gcm_mock, apns_mock):
+        report = ReportFactory(location=self.point)
+        self.assertEqual(apns_mock.call_count, 1)
+        apns_mock.assert_called_with(
+            alert={'action': 'added', 'id': report.id, 'location': report.location,
+                   'type': report.report_type},
+            registration_ids=[''])
+        self.assertEqual(gcm_mock.call_count, 1)
+        gcm_mock.assert_called_with(
+            data={'message': {'action': 'added', 'id': report.id, 'location': report.location,
+                              'type': report.report_type}},
+            registration_ids=[''])
+
+    # Push notification sent on report delete
+    @patch('push_notifications.apns.apns_send_bulk_message')
+    @patch('push_notifications.gcm.gcm_send_bulk_message')
+    def test_push_sent_on_report_remove(self, gcm_mock, apns_mock):
+        report_id = self.report.id
+        self.report.delete()
+        apns_mock.assert_called_with(
+            alert={'action': 'removed', 'id': report_id, 'location': self.report.location,
+                   'type': self.report.report_type}, registration_ids=[''])
+        gcm_mock.assert_called_with(
+            data={'message': {'action': 'removed', 'id': report_id, 'location': self.report.location,
+                  'type': self.report.report_type}}, registration_ids=[''])
+
+    # Push notification not sent for not nearby drivers
+    @patch('push_notifications.apns.apns_send_bulk_message')
+    @patch('push_notifications.gcm.gcm_send_bulk_message')
+    def test_push_not_sent(self, gcm_mock, apns_mock):
+        report = ReportFactory(location=Point(20, 20))
+        self.assertEqual(apns_mock.call_count, 0)
+        self.assertEqual(gcm_mock.call_count, 0)
+
+        report.delete()
+        self.assertEqual(apns_mock.call_count, 0)
+        self.assertEqual(gcm_mock.call_count, 0)
