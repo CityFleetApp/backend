@@ -12,7 +12,7 @@ class LegalAidBase(models.Model):
     '''
     name = models.CharField(_('name'), max_length=200)
     years_of_experience = models.IntegerField(_('years of experience'))
-    rating = models.PositiveSmallIntegerField(_('rating'))
+    rating = models.PositiveSmallIntegerField(_('rating'), choices=zip(range(6), range(6)))
     phone = PhoneNumberField(_('phone'))
     address = models.CharField(_('address'), max_length=250)
 
@@ -20,12 +20,12 @@ class LegalAidBase(models.Model):
         abstract = True
 
     def __unicode__(self):
-        return '{}, {}'.foramt(self.name, self.phone)
+        return '{}, {}'.format(self.name, self.phone)
 
 
 class Accounting(LegalAidBase):
     '''
-    Stores Accounting data. Filled via admin interface.
+    Store Accounting data. Filled via admin interface.
     '''
     class Meta:
         verbose_name = _('Accounting')
@@ -39,3 +39,21 @@ class InsuranceBroker(LegalAidBase):
     class Meta:
         verbose_name = _('Insurance Broker')
         verbose_name_plural = _('Insurance Brokers')
+
+
+class DMVLawyer(LegalAidBase):
+    '''
+    Store DMV lawyer info
+    '''
+    class Meta:
+        verbose_name = _('DMV Lawyer')
+        verbose_name_plural = _('DMV Lawyers')
+
+
+class TLCLawyer(LegalAidBase):
+    '''
+    Store TLC lawyer info
+    '''
+    class Meta:
+        verbose_name = _('TLC Lawyer')
+        verbose_name_plural = _('TLC Lawyers')

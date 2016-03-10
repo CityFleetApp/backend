@@ -1,6 +1,6 @@
 from factory import DjangoModelFactory, Faker
 
-from .models import InsuranceBroker, Accounting
+from .models import InsuranceBroker, Accounting, DMVLawyer, TLCLawyer
 
 
 class LegalAidBaseFactory(DjangoModelFactory):
@@ -21,3 +21,15 @@ class AccountingFactory(LegalAidBaseFactory):
 
     class Meta:
         model = Accounting
+
+
+class DMVLawyerFactory(LegalAidBaseFactory):
+
+    class Meta:
+        model = DMVLawyer
+
+
+class TLCLawyerFactory(LegalAidBaseFactory):
+
+    class Meta:
+        model = TLCLawyer
