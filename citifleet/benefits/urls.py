@@ -7,8 +7,7 @@ from rest_framework.routers import DefaultRouter
 from . import views
 
 router = DefaultRouter()
-router.register(r'insurance', views.BrokerViewSet, base_name='insurance')
-router.register(r'accouting', views.AccountingViewSet, base_name='accounting')
+router.register(r'', views.BenefitViewSet, base_name='api')
 
 
 urlpatterns = [
