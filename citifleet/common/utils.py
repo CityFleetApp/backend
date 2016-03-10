@@ -1,6 +1,7 @@
 from urllib2 import HTTPError
 
 from django.conf import settings
+from django.contrib.sites.models import Site
 
 from sodapy import Socrata
 
@@ -29,3 +30,7 @@ def get_protocol():
         return 'https://'
     else:
         return 'http://'
+
+
+def get_full_path(relative_url):
+    return '{}{}{}'.format(get_protocol(), Site.objects.get_current().domain, relative_url)

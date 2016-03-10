@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 from __future__ import absolute_import, unicode_literals
 
 import environ
+from easy_thumbnails.conf import Settings as thumbnail_settings
 
 ROOT_DIR = environ.Path(__file__) - 3  # (/a/b/myfile.py - 3 = /)
 APPS_DIR = ROOT_DIR.path('citifleet')
@@ -40,6 +41,8 @@ THIRD_PARTY_APPS = (
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_swagger',
+    'easy_thumbnails',
+    'image_cropping',
 )
 
 # Apps specific for this project go here.
@@ -47,6 +50,7 @@ LOCAL_APPS = (
     'citifleet.reports',
     'citifleet.legalaid',
     'citifleet.documents',
+    'citifleet.benefits',
 )
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -257,3 +261,8 @@ TWITTER_CONSUMER_SECRET = env('CONSUMER_SECRET')
 
 # Instagram keys
 INSTAGRAM_CLIENT_SECRET = env('CLIENT_SECRET')
+
+# Thumbnail config
+THUMBNAIL_PROCESSORS = (
+    'image_cropping.thumbnail_processors.crop_corners',
+) + thumbnail_settings.THUMBNAIL_PROCESSORS

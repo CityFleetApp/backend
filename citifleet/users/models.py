@@ -11,7 +11,7 @@ from django.contrib.sites.models import Site
 
 from phonenumber_field.modelfields import PhoneNumberField
 
-from citifleet.common.utils import get_protocol
+from citifleet.common.utils import get_full_path
 
 
 class UserManager(BaseUserManager):
@@ -62,7 +62,7 @@ class User(AbstractUser):
         Return full avatar url
         '''
         if self.avatar:
-            return '{}{}{}'.format(get_protocol(), Site.objects.get_current().domain, self.avatar.url)
+            return get_full_path(self.avatar.url)
         else:
             return ''
 
