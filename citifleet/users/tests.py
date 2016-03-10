@@ -1,3 +1,5 @@
+from tempfile import NamedTemporaryFile
+
 from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
 from django.core import mail
@@ -7,6 +9,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from mock import patch
+from PIL import Image
 
 from .models import User
 from .factories import UserFactory
@@ -130,10 +133,34 @@ class TestChangePassword(TestCase):
         resp = self.client.post(reverse('users:change_password'), data=data)
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    # Authorized user sends request to change password
-    def test_password_reset(self):
+    # Authorized user tries to change password with invalid current password
+    def test_old_password_invalid(self):
         self.client.force_authenticate(user=self.user)
-        data = {'password': 'newpassword'}
+        data = {'old_password': 'wrong_password', 'password': 'newpassword', 'password_confirm': 'newpassword'}
+        resp = self.client.post(reverse('users:change_password'), data=data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(resp.data, {'old_password': ['Wrong password']})
+
+        login_data = {'username': 'test@example.com', 'password': 'newpassword'}
+        resp = self.client.post(reverse('users:login'), data=login_data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    # Authorized user tries to change password with wrong password confirm
+    def test_password_dont_match(self):
+        self.client.force_authenticate(user=self.user)
+        data = {'old_password': 'password', 'password': 'newpassword', 'password_confirm': 'newpassword2'}
+        resp = self.client.post(reverse('users:change_password'), data=data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(resp.data, {'non_field_errors': ["Passwords don't match"]})
+
+        login_data = {'username': 'test@example.com', 'password': 'newpassword'}
+        resp = self.client.post(reverse('users:login'), data=login_data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    # Authorized user sends request to change password
+    def test_password_change(self):
+        self.client.force_authenticate(user=self.user)
+        data = {'old_password': 'password', 'password': 'newpassword', 'password_confirm': 'newpassword'}
         resp = self.client.post(reverse('users:change_password'), data=data)
 
         login_data = {'username': 'test@example.com', 'password': 'newpassword'}
@@ -171,7 +198,7 @@ class AddFriendsFromFacebook(TestCase):
         self.friend = UserFactory(facebook_id='friend_id')
         self.client = APIClient()
 
-    @patch('open_facebook.api.OpenFacebook.get', return_value=['other_id'])
+    @patch('open_facebook.api.OpenFacebook.get', return_value={'id': 'user_id', 'data': []})
     def test_no_friends_added(self, _):
         self.client.force_authenticate(user=self.user)
         data = {'token': 'token', 'facebook_id': 'user_id'}
@@ -179,10 +206,60 @@ class AddFriendsFromFacebook(TestCase):
         self.assertEqual(self.user.friends.count(), 0)
         self.assertEqual(self.user.facebook_id, 'user_id')
 
-    @patch('open_facebook.api.OpenFacebook.get', return_value=['other_id', 'friend_id'])
+    @patch('open_facebook.api.OpenFacebook.get', return_value={'id': 'user_id', 'data': [{'id': 'friend_id'}]})
     def test_add_friend_from_facebook(self, _):
         self.client.force_authenticate(user=self.user)
         data = {'token': 'token', 'facebook_id': 'user_id'}
         self.client.post(reverse('users:add_friends_from_facebook'), data=data)
         self.assertEqual(self.user.friends.get(), self.friend)
         self.assertEqual(self.user.facebook_id, 'user_id')
+
+
+class TestUploadAvatar(TestCase):
+
+    def setUp(self):
+        self.user = UserFactory(email='test@example.com', avatar=None)
+        self.client = APIClient()
+
+    # Unauthorized user tries to upload avatar
+    def test_login_required(self):
+        tmp_file = NamedTemporaryFile(suffix='.jpg')
+
+        image = Image.new('RGB', (100, 100))
+        image.save(tmp_file)
+
+        data = {'avatar': tmp_file}
+        resp = self.client.put(reverse('users:upload_avatar'), data=data)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    # User uploads avatar successfuly
+    def test_upload_avatar(self):
+        self.client.force_authenticate(user=self.user)
+        tmp_file = NamedTemporaryFile(suffix='.jpg')
+
+        image = Image.new('RGB', (100, 100))
+        image.save(tmp_file)
+
+        data = {'avatar': tmp_file}
+        resp = self.client.put(reverse('users:upload_avatar'), data=data)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertTrue(self.user.avatar.url.endswith('.jpg'))
+
+
+class TestUserInfo(TestCase):
+
+    def setUp(self):
+        self.user = UserFactory(email='test@example.com', avatar=None)
+        self.client = APIClient()
+
+    # Unauthorized user tries to profile's info
+    def test_login_required(self):
+        resp = self.client.get(reverse('users:info'))
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    # Authorized user retrieves profile's info successfully
+    def test_user_info_retrieve(self):
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.get(reverse('users:info'))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['email'], self.user.email)

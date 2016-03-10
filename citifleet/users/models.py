@@ -6,6 +6,7 @@ from django.core.urlresolvers import reverse
 from django.contrib.gis.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
+from django.utils import timezone
 from django.contrib.sites.models import Site
 
 from phonenumber_field.modelfields import PhoneNumberField
@@ -64,6 +65,10 @@ class User(AbstractUser):
             return '{}{}{}'.format(get_protocol(), Site.objects.get_current().domain, self.avatar.url)
         else:
             return ''
+
+    @property
+    def has_expired_documents(self):
+        return self.documents.filter(expiry_date__isnull=False, expiry_date__lt=timezone.now().date()).exists()
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
