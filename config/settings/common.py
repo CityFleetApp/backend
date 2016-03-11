@@ -51,6 +51,7 @@ LOCAL_APPS = (
     'citifleet.legalaid',
     'citifleet.documents',
     'citifleet.benefits',
+    'citifleet.notifications',
 )
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
