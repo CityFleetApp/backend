@@ -263,3 +263,5 @@ class TestUserInfo(TestCase):
         resp = self.client.get(reverse('users:info'))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(resp.data['email'], self.user.email)
+        self.assertTrue('rating' in resp.data)
+        self.assertTrue('jobs_completed' in resp.data)

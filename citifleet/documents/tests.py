@@ -9,6 +9,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from citifleet.users.factories import UserFactory
+from citifleet.users.models import User
 
 from .models import Document
 from .factories import DocumentFactory
@@ -69,8 +70,7 @@ class TestDocumentViewSet(TestCase):
     def test_expired_document(self):
         self.client.force_authenticate(user=self.user)
         DocumentFactory(user=self.user, document_type=Document.DMV_LICENSE,
-                        expiry_date=timezone.now() - timedelta(days=15))
-
+                        expiry_date=timezone.now() + timedelta(days=15), status=Document.CONFIRMED)
         resp = self.client.get(reverse('documents:api-list'))
-        self.assertEqual(resp.data[0]['expired'], True)
-        self.assertEqual(self.user.has_expired_documents, True)
+        self.assertEqual(resp.data[0]['expired'], False)
+        self.assertEqual(User.objects.get(id=self.user.id).documents_up_to_date, True)
