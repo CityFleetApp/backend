@@ -84,3 +84,13 @@ class User(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
     AbstractUser._meta.get_field('email')._unique = True
+
+
+class Photo(models.Model):
+    file = models.FileField(_('photo'))
+    user = models.ForeignKey(User, verbose_name=_('photo'))
+    created = models.DateTimeField(_('created'), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('Photo')
+        verbose_name_plural = _('Photos')
