@@ -14,5 +14,6 @@ urlpatterns = [
     url(r'^api/legalaid/', include('citifleet.legalaid.urls', namespace='legalaid')),
     url(r'^api/documents', include('citifleet.documents.urls', namespace='documents')),
     url(r'^api/benefits', include('citifleet.benefits.urls', namespace='benefits')),
+    url(r'^api/notifications', include('citifleet.notifications.urls', namespace='notifications')),
     url(r'^docs/', include('rest_framework_swagger.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
