@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import InsuranceBroker, Accounting, DMVLawyer, TLCLawyer
+from .models import InsuranceBroker, Accounting, DMVLawyer, TLCLawyer, Location
 
 
 class LegalAidBaseSerializer(serializers.ModelSerializer):
@@ -31,3 +31,9 @@ class TLCLawyerSerializer(serializers.ModelSerializer):
 
     class Meta(LegalAidBaseSerializer.Meta):
         model = TLCLawyer
+
+
+class LocationSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Location

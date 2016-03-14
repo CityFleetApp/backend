@@ -6,6 +6,17 @@ from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 
 
+class Location(models.Model):
+    name = models.CharField(_('name'), max_length=150)
+
+    def __unicode__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _('Location')
+        verbose_name_plural = _('Locations')
+
+
 class LegalAidBase(models.Model):
     '''
     Base class for models in Legal Aid section
@@ -15,6 +26,7 @@ class LegalAidBase(models.Model):
     rating = models.PositiveSmallIntegerField(_('rating'), choices=zip(range(6), range(6)))
     phone = PhoneNumberField(_('phone'))
     address = models.CharField(_('address'), max_length=250)
+    location = models.ForeignKey(Location, verbose_name=_('location'), null=True)
 
     class Meta:
         abstract = True
