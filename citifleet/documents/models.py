@@ -31,15 +31,26 @@ class Document(models.Model):
         (DRUG_TEST, _('Drug Test')),
     )
 
+    UNDER_REVIEW = 1
+    DECLINED = 2
+    CONFIRMED = 3
+
+    STATUS_CHOICES = (
+        (UNDER_REVIEW, _('Under Review')),
+        (DECLINED, _('Declined')),
+        (CONFIRMED, _('Confirmed')),
+    )
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_('user'), related_name='documents')
     file = models.FileField(_('document'), upload_to='documents/')
-    expiry_date = models.DateField(_('expiry date'), null=True)
+    expiry_date = models.DateField(_('expiry date'), null=True, blank=True)
     document_type = models.PositiveSmallIntegerField(_('document type'), choices=DOCUMENT_TYPES)
     plate_number = models.CharField(_('tlc plate number'), max_length=100, blank=True)
+    status = models.PositiveSmallIntegerField(_('status'), choices=STATUS_CHOICES, default=UNDER_REVIEW)
 
-    @property
     def expired(self):
-        return self.document_type != self.TLC_PLATE_NUMBER and self.expiry_date < timezone.now().date()
+        return self.document_type != Document.TLC_PLATE_NUMBER and self.expiry_date < timezone.now().date()
+    expired.boolean = True
 
     class Meta:
         unique_together = ('user', 'document_type')

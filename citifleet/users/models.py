@@ -7,10 +7,10 @@ from django.contrib.gis.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
-from django.contrib.sites.models import Site
 
 from phonenumber_field.modelfields import PhoneNumberField
 
+from citifleet.documents.models import Document
 from citifleet.common.utils import get_full_path
 
 
@@ -67,9 +67,30 @@ class User(AbstractUser):
             return ''
 
     @property
-    def has_expired_documents(self):
-        return self.documents.filter(expiry_date__isnull=False, expiry_date__lt=timezone.now().date()).exists()
+    def documents_up_to_date(self):
+        return self.documents.filter(status=Document.CONFIRMED,
+                                     expiry_date__isnull=False, expiry_date__gt=timezone.now().date()).exists()
+
+    @property
+    def jobs_completed(self):
+        # Returns dummy result till jobs section is done
+        return 12
+
+    @property
+    def rating(self):
+        # Returns dummy result till jobs section is done
+        return 4
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
     AbstractUser._meta.get_field('email')._unique = True
+
+
+class Photo(models.Model):
+    file = models.ImageField(_('photo'), upload_to='photos/')
+    user = models.ForeignKey(User, verbose_name=_('user'))
+    created = models.DateTimeField(_('created'), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('Photo')
+        verbose_name_plural = _('Photos')

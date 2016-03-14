@@ -1,4 +1,6 @@
 from django.utils.translation import ugettext as _
+from django.core.mail import mail_admins
+from django.core.urlresolvers import reverse
 
 from rest_framework import serializers
 
@@ -25,3 +27,15 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         attrs['user'] = self.context['request'].user
         return attrs
+
+    def save(self, **kwargs):
+        instance = super(DocumentSerializer, self).save(**kwargs)
+        instance.status = Document.UNDER_REVIEW
+        instance.save()
+
+        mail_admins(
+            _('Document requires verification'),
+            _('Verity the document using the link {}').format(
+                reverse('admin:documents_document_change', args=[instance.id])))
+
+        return instance

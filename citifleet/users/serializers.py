@@ -9,7 +9,7 @@ import tweepy
 
 from citifleet.common.utils import validate_license
 
-from .models import User
+from .models import User, Photo
 
 
 class SignupSerializer(serializers.ModelSerializer):
@@ -112,7 +112,8 @@ class UserDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('email', 'full_name', 'phone', 'hack_license', 'username',
-                  'bio', 'drives', 'avatar_url')
+                  'bio', 'drives', 'avatar_url', 'documents_up_to_date', 'jobs_completed',
+                  'rating')
 
 
 class ContactsSerializer(serializers.Serializer):
@@ -195,10 +196,23 @@ class InstagramSerializer(serializers.Serializer):
         return attrs
 
 
-class PhotoSerializer(serializers.ModelSerializer):
+class AvatarSerializer(serializers.ModelSerializer):
     '''
     Update user avatar
     '''
     class Meta:
         model = User
         fields = ('avatar',)
+
+
+class PhotoSerializer(serializers.ModelSerializer):
+    '''
+    Serialize uploaded photo
+    '''
+    class Meta:
+        model = Photo
+        fields = ('file',)
+
+    def validate(self, attrs):
+        attrs['user'] = self.context['request'].user
+        return attrs

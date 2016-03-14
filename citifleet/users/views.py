@@ -2,6 +2,7 @@
 from __future__ import absolute_import, unicode_literals
 
 from rest_framework.generics import UpdateAPIView, RetrieveAPIView
+from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -11,7 +12,8 @@ from rest_framework.authtoken.views import ObtainAuthToken
 
 from .serializers import (SignupSerializer, ResetPasswordSerializer, ChangePasswordSerializer,
                           UserDetailSerializer, ContactsSerializer, FacebookSerializer, TwitterSerializer,
-                          InstagramSerializer, PhotoSerializer)
+                          InstagramSerializer, PhotoSerializer, AvatarSerializer)
+from .models import Photo
 
 
 class SignUpView(APIView):
@@ -160,7 +162,7 @@ class UploadAvatarView(UpdateAPIView):
     '''
     Update driver avatar
     '''
-    serializer_class = PhotoSerializer
+    serializer_class = AvatarSerializer
 
     def get_object(self):
         return self.request.user
@@ -178,3 +180,14 @@ class UserInfoView(RetrieveAPIView):
         return self.request.user
 
 info = UserInfoView.as_view()
+
+
+class PhotoModelViewSet(ModelViewSet):
+    '''
+    Model viewset for create/delete photos
+    '''
+    serializer_class = PhotoSerializer
+    queryset = Photo.objects.all()
+
+    def get_queryset(self):
+        return super(PhotoModelViewSet, self).get_queryset().filter(user=self.request.user)

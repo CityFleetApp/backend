@@ -11,8 +11,8 @@ from rest_framework.authtoken.models import Token
 from mock import patch
 from PIL import Image
 
-from .models import User
-from .factories import UserFactory
+from .models import User, Photo
+from .factories import UserFactory, PhotoFactory
 
 
 @override_settings(DEBUG=True)
@@ -263,3 +263,38 @@ class TestUserInfo(TestCase):
         resp = self.client.get(reverse('users:info'))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(resp.data['email'], self.user.email)
+        self.assertTrue('rating' in resp.data)
+        self.assertTrue('jobs_completed' in resp.data)
+
+
+class TestPhotoUpload(TestCase):
+    def setUp(self):
+        self.user = UserFactory(email='test@example.com')
+        self.client = APIClient()
+
+    def test_photo_list(self):
+        PhotoFactory.create_batch(10, user=self.user)
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.get(reverse('users:photos-list'))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 10)
+
+    def test_upload_photo(self):
+        self.client.force_authenticate(user=self.user)
+        tmp_file = NamedTemporaryFile(suffix='.jpg')
+
+        image = Image.new('RGB', (100, 100))
+        image.save(tmp_file)
+        data = {'file': tmp_file}
+
+        resp = self.client.post(reverse('users:photos-list'), data=data)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Photo.objects.filter(user=self.user).count(), 1)
+
+    def test_remove_photo(self):
+        photo = PhotoFactory(user=self.user)
+        self.client.force_authenticate(user=self.user)
+
+        resp = self.client.delete(reverse('users:photos-detail', args=[photo.id]))
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Photo.objects.filter(user=self.user).count(), 0)
