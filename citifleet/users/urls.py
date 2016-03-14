@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
-from django.conf.urls import url
+from django.conf.urls import url, include
+from rest_framework.routers import DefaultRouter
 
 from . import views
+
+router = DefaultRouter()
+router.register(r'', views.PhotoModelViewSet, base_name='photos')
 
 urlpatterns = [
     url(r'^signup/$', views.signup, name='signup'),
@@ -16,4 +20,5 @@ urlpatterns = [
     url(r'^add-instagram-friends/$', views.add_instagram_friends, name='add_friends_from_instagram'),
     url(r'^upload-avatar/$', views.upload_avatar, name='upload_avatar'),
     url(r'^info/$', views.info, name='info'),
+    url(r'^photos', include(router.urls)),
 ]

@@ -87,8 +87,8 @@ class User(AbstractUser):
 
 
 class Photo(models.Model):
-    file = models.FileField(_('photo'))
-    user = models.ForeignKey(User, verbose_name=_('photo'))
+    file = models.ImageField(_('photo'), upload_to='photos/')
+    user = models.ForeignKey(User, verbose_name=_('user'))
     created = models.DateTimeField(_('created'), auto_now_add=True)
 
     class Meta:

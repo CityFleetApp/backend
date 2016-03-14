@@ -5,7 +5,7 @@ from factory import DjangoModelFactory
 
 from citifleet.common.test_utils import FuzzyPoint
 
-from .models import User
+from .models import User, Photo
 
 
 class UserFactory(DjangoModelFactory):
@@ -22,3 +22,10 @@ class UserFactory(DjangoModelFactory):
 
     class Meta:
         model = User
+
+
+class PhotoFactory(DjangoModelFactory):
+    file = factory.django.ImageField(color='blue')
+
+    class Meta:
+        model = Photo
