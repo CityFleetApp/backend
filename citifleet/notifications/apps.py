@@ -4,4 +4,7 @@ from django.apps import AppConfig
 
 
 class NotificationsConfig(AppConfig):
-    name = 'notifications'
+    name = 'citifleet.notifications'
+
+    def ready(self):
+        from . import signals
