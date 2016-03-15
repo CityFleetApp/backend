@@ -9,6 +9,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
 
 from phonenumber_field.modelfields import PhoneNumberField
+from easy_thumbnails.files import get_thumbnailer
 
 from citifleet.documents.models import Document
 from citifleet.common.utils import get_full_path
@@ -94,3 +95,14 @@ class Photo(models.Model):
     class Meta:
         verbose_name = _('Photo')
         verbose_name_plural = _('Photos')
+
+    @property
+    def thumbnail(self):
+        '''
+        Return url to cropped benefit's image
+        '''
+        return get_full_path(get_thumbnailer(self.file).get_thumbnail({
+            'size': (250, 250),
+            'crop': True,
+            'detail': True,
+        }).url)
