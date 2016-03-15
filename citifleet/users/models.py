@@ -88,6 +88,9 @@ class User(AbstractUser):
 
 
 class Photo(models.Model):
+    '''
+    Store uploaded user's photos
+    '''
     file = models.ImageField(_('photo'), upload_to='photos/')
     user = models.ForeignKey(User, verbose_name=_('user'))
     created = models.DateTimeField(_('created'), auto_now_add=True)
@@ -99,7 +102,7 @@ class Photo(models.Model):
     @property
     def thumbnail(self):
         '''
-        Return url to cropped benefit's image
+        Return photo's thumbnail url
         '''
         return get_full_path(get_thumbnailer(self.file).get_thumbnail({
             'size': (250, 250),
