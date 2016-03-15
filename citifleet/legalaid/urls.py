@@ -9,6 +9,9 @@ from . import views
 router = DefaultRouter()
 router.register(r'insurance', views.BrokerViewSet, base_name='insurance')
 router.register(r'accouting', views.AccountingViewSet, base_name='accounting')
+router.register(r'dmv-lawyers', views.DMVLawyerViewSet, base_name='dmv_lawyers')
+router.register(r'tlc-lawyers', views.TLCLawyerViewSet, base_name='tlc_lawyers')
+router.register(r'locations', views.LocationViewSet, base_name='locations')
 
 
 urlpatterns = [
