@@ -105,7 +105,7 @@ class Photo(models.Model):
         Return photo's thumbnail url
         '''
         return get_full_path(get_thumbnailer(self.file).get_thumbnail({
-            'size': (250, 250),
+            'size': (255, 255),
             'crop': True,
             'detail': True,
         }).url)

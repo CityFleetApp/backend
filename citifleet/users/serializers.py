@@ -211,7 +211,7 @@ class PhotoSerializer(serializers.ModelSerializer):
     '''
     class Meta:
         model = Photo
-        fields = ('file', 'thumbnail')
+        fields = ('id', 'file', 'thumbnail')
 
     def validate(self, attrs):
         attrs['user'] = self.context['request'].user

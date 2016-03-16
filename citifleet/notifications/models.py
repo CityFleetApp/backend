@@ -32,3 +32,27 @@ class Notification(models.Model):
     class Meta:
         verbose_name = _('Notification')
         verbose_name_plural = _('Notifications')
+
+
+class NotificationTemplate(models.Model):
+    NEW_BENEFIT = 1
+    DOCUMENT_EXPIRED = 2
+    DOCUMENT_VERIFIED = 3
+
+    NOTIFICATION_CHOICES = (
+        (NEW_BENEFIT, _('New Benefit')),
+        (DOCUMENT_EXPIRED, _('Document Expired')),
+        (DOCUMENT_VERIFIED, _('Document Verified')),
+    )
+
+    type = models.PositiveSmallIntegerField(_('type'), choices=NOTIFICATION_CHOICES)
+    title = models.CharField(_('title'), max_length=255)
+    message = models.CharField(_('message'), max_length=255)
+    enabled = models.BooleanField(_('enabled'), default=True)
+
+    def __unicode__(self):
+        return self.get_type_display()
+
+    class Meta:
+        verbose_name = _('Notification Template')
+        verbose_name_plural = _('Notification Templates')
