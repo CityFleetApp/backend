@@ -6,9 +6,20 @@ from django.utils.translation import ugettext_lazy as _
 from citifleet.users.models import User
 
 
-class MassNotification(models.Model):
+class NotificationBase(models.Model):
     title = models.CharField(_('title'), max_length=255)
     message = models.CharField(_('message'), max_length=255)
+    category = models.CharField(_('category'), max_length=50)
+
+    @property
+    def to_dict(self):
+        return {'title': self.title, 'message': self.message, 'category': self.category}
+
+    class Meta:
+        abstract = True
+
+
+class MassNotification(NotificationBase):
     created = models.DateField(_('created'), auto_now_add=True)
 
     def __unicode__(self):
@@ -19,12 +30,10 @@ class MassNotification(models.Model):
         verbose_name_plural = _('Mass notifications')
 
 
-class Notification(models.Model):
-    created = models.DateField(_('created'), auto_now_add=True)
-    title = models.CharField(_('title'), max_length=255)
-    message = models.CharField(_('message'), max_length=255)
+class Notification(NotificationBase):
     user = models.ForeignKey(User)
     unseen = models.BooleanField(_('unseen'), default=True)
+    created = models.DateField(_('created'), auto_now_add=True)
 
     def __unicode__(self):
         return '{}, {}'.format(self.title, self.message)
@@ -34,10 +43,11 @@ class Notification(models.Model):
         verbose_name_plural = _('Notifications')
 
 
-class NotificationTemplate(models.Model):
+class NotificationTemplate(NotificationBase):
     NEW_BENEFIT = 1
     DOCUMENT_EXPIRED = 2
     DOCUMENT_VERIFIED = 3
+    REPORT_CREATED = 4
 
     NOTIFICATION_CHOICES = (
         (NEW_BENEFIT, _('New Benefit')),
@@ -46,8 +56,6 @@ class NotificationTemplate(models.Model):
     )
 
     type = models.PositiveSmallIntegerField(_('type'), choices=NOTIFICATION_CHOICES)
-    title = models.CharField(_('title'), max_length=255)
-    message = models.CharField(_('message'), max_length=255)
     enabled = models.BooleanField(_('enabled'), default=True)
 
     def __unicode__(self):

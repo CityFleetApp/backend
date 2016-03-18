@@ -216,3 +216,12 @@ class PhotoSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         attrs['user'] = self.context['request'].user
         return attrs
+
+
+class SettingsSerializer(serializers.ModelSerializer):
+    '''
+    Serialize user's settings info
+    '''
+    class Meta:
+        model = User
+        fields = ('notifications_enabled', 'chat_privacy', 'visible')

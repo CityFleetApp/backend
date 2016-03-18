@@ -27,6 +27,15 @@ class UserManager(BaseUserManager):
         return self.create_user(email=email, password=password, phone='1', hack_license='1',
                                 full_name='admin', is_staff=True, is_superuser=True)
 
+    def get_queryset(self):
+        return super(UserManager, self).get_queryset().filter(is_staff=False)
+
+
+class AllowNotificationManager(UserManager):
+
+    def get_queryset(self):
+        return super(UserManager, self).get_queryset().filter(notifications_enabled=True)
+
 
 @python_2_unicode_compatible
 class User(AbstractUser):
@@ -50,7 +59,12 @@ class User(AbstractUser):
     twitter_id = models.CharField(_('twitter id'), max_length=200, blank=True)
     instagram_id = models.CharField(_('instagram id'), max_length=200, blank=True)
 
+    notifications_enabled = models.BooleanField(_('notifications enabled'), default=True)
+    chat_privacy = models.BooleanField(_('chat privacy'), default=True)
+    visible = models.BooleanField(_('visible'), default=True)
+
     objects = UserManager()
+    with_notifications = AllowNotificationManager()
 
     def __str__(self):
         return self.email

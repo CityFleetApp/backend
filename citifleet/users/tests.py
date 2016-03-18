@@ -298,3 +298,32 @@ class TestPhotoUpload(TestCase):
         resp = self.client.delete(reverse('users:photos-detail', args=[photo.id]))
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Photo.objects.filter(user=self.user).count(), 0)
+
+
+class TestUserSettings(TestCase):
+
+    def setUp(self):
+        self.user = UserFactory(email='test@example.com')
+        self.client = APIClient()
+
+    # Unauthorized user tries to retrieve settings info
+    def test_login_required(self):
+        resp = self.client.get(reverse('users:settings'))
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    # User retrieves settings info
+    def test_retrieve_settings(self):
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.get(reverse('users:settings'))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data, {'visible': True, 'chat_privacy': True, 'notifications_enabled': True})
+
+    def test_update_settings(self):
+        self.client.force_authenticate(user=self.user)
+        data = {
+            'visible': False, 'chat_privacy': False, 'notifications_enabled': False
+        }
+
+        resp = self.client.put(reverse('users:settings'), data=data)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data, {'visible': False, 'chat_privacy': False, 'notifications_enabled': False})
