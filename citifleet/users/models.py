@@ -19,6 +19,7 @@ class UserManager(BaseUserManager):
 
     def create_user(self, **kwargs):
         user = User(**kwargs)
+        user.username = user.email
         user.set_password(kwargs['password'])
         user.save()
         return user
@@ -63,7 +64,7 @@ class User(AbstractUser):
     chat_privacy = models.BooleanField(_('chat privacy'), default=True)
     visible = models.BooleanField(_('visible'), default=True)
 
-    objects = UserManager()
+    # objects = UserManager()
     with_notifications = AllowNotificationManager()
 
     def __str__(self):

@@ -9,6 +9,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
+from push_notifications.models import GCMDevice, APNSDevice
 
 from .serializers import (SignupSerializer, ResetPasswordSerializer, ChangePasswordSerializer,
                           UserDetailSerializer, ContactsSerializer, FacebookSerializer, TwitterSerializer,
