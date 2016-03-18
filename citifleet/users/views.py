@@ -9,11 +9,13 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
+from push_notifications.models import GCMDevice, APNSDevice
 
 from .serializers import (SignupSerializer, ResetPasswordSerializer, ChangePasswordSerializer,
                           UserDetailSerializer, ContactsSerializer, FacebookSerializer, TwitterSerializer,
-                          InstagramSerializer, PhotoSerializer, AvatarSerializer, SettingsSerializer)
-from .models import Photo
+                          InstagramSerializer, PhotoSerializer, AvatarSerializer, SettingsSerializer,
+                          HelpSerializer)
+from .models import Photo, Help
 
 
 class SignUpView(APIView):
@@ -200,3 +202,12 @@ class SettingsView(RetrieveUpdateAPIView):
         return self.request.user
 
 settings = SettingsView.as_view()
+
+
+class HelpAPIView(RetrieveAPIView):
+    serializer_class = HelpSerializer
+
+    def get_object(self):
+        return Help.objects.get()
+
+help_page = HelpAPIView.as_view()

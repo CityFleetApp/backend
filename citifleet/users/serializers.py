@@ -9,7 +9,7 @@ import tweepy
 
 from citifleet.common.utils import validate_license
 
-from .models import User, Photo
+from .models import User, Photo, Help
 
 
 class SignupSerializer(serializers.ModelSerializer):
@@ -225,3 +225,10 @@ class SettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('notifications_enabled', 'chat_privacy', 'visible')
+
+
+class HelpSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Help
+        fields = ('content',)
