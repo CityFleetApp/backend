@@ -2,12 +2,18 @@
 from __future__ import absolute_import, unicode_literals
 
 from django.conf.urls import url, include
+
 from rest_framework.routers import DefaultRouter
+from push_notifications.api.rest_framework import APNSDeviceAuthorizedViewSet, GCMDeviceAuthorizedViewSet
 
 from . import views
 
 router = DefaultRouter()
 router.register(r'', views.PhotoModelViewSet, base_name='photos')
+
+device_router = DefaultRouter()
+device_router.register(r'device/apns', APNSDeviceAuthorizedViewSet)
+device_router.register(r'device/gcm', GCMDeviceAuthorizedViewSet)
 
 urlpatterns = [
     url(r'^signup/$', views.signup, name='signup'),
@@ -22,4 +28,5 @@ urlpatterns = [
     url(r'^info/$', views.info, name='info'),
     url(r'^settings/$', views.settings, name='settings'),
     url(r'^photos', include(router.urls)),
+    url(r'^devices', include(device_router.urls)),
 ]
