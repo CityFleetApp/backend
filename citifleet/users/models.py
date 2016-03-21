@@ -28,9 +28,6 @@ class UserManager(BaseUserManager):
         return self.create_user(email=email, password=password, phone='1', hack_license='1',
                                 full_name='admin', is_staff=True, is_superuser=True)
 
-    def get_queryset(self):
-        return super(UserManager, self).get_queryset().filter(is_staff=False)
-
 
 class AllowNotificationManager(UserManager):
 
@@ -64,7 +61,7 @@ class User(AbstractUser):
     chat_privacy = models.BooleanField(_('chat privacy'), default=True)
     visible = models.BooleanField(_('visible'), default=True)
 
-    # objects = UserManager()
+    objects = UserManager()
     with_notifications = AllowNotificationManager()
 
     def __str__(self):
