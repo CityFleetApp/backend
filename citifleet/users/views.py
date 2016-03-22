@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
-from rest_framework.generics import UpdateAPIView, RetrieveAPIView
+from rest_framework.generics import UpdateAPIView, RetrieveAPIView, RetrieveUpdateAPIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -9,10 +9,11 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
+from push_notifications.models import GCMDevice, APNSDevice
 
 from .serializers import (SignupSerializer, ResetPasswordSerializer, ChangePasswordSerializer,
                           UserDetailSerializer, ContactsSerializer, FacebookSerializer, TwitterSerializer,
-                          InstagramSerializer, PhotoSerializer, AvatarSerializer)
+                          InstagramSerializer, PhotoSerializer, AvatarSerializer, SettingsSerializer)
 from .models import Photo
 
 
@@ -191,3 +192,12 @@ class PhotoModelViewSet(ModelViewSet):
 
     def get_queryset(self):
         return super(PhotoModelViewSet, self).get_queryset().filter(user=self.request.user)
+
+
+class SettingsView(RetrieveUpdateAPIView):
+    serializer_class = SettingsSerializer
+
+    def get_object(self):
+        return self.request.user
+
+settings = SettingsView.as_view()

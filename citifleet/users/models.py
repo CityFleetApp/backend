@@ -19,6 +19,7 @@ class UserManager(BaseUserManager):
 
     def create_user(self, **kwargs):
         user = User(**kwargs)
+        user.username = user.email
         user.set_password(kwargs['password'])
         user.save()
         return user
@@ -26,6 +27,12 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email, password):
         return self.create_user(email=email, password=password, phone='1', hack_license='1',
                                 full_name='admin', is_staff=True, is_superuser=True)
+
+
+class AllowNotificationManager(UserManager):
+
+    def get_queryset(self):
+        return super(UserManager, self).get_queryset().filter(notifications_enabled=True)
 
 
 @python_2_unicode_compatible
@@ -50,7 +57,12 @@ class User(AbstractUser):
     twitter_id = models.CharField(_('twitter id'), max_length=200, blank=True)
     instagram_id = models.CharField(_('instagram id'), max_length=200, blank=True)
 
+    notifications_enabled = models.BooleanField(_('notifications enabled'), default=True)
+    chat_privacy = models.BooleanField(_('chat privacy'), default=True)
+    visible = models.BooleanField(_('visible'), default=True)
+
     objects = UserManager()
+    with_notifications = AllowNotificationManager()
 
     def __str__(self):
         return self.email
@@ -105,7 +117,7 @@ class Photo(models.Model):
         Return photo's thumbnail url
         '''
         return get_full_path(get_thumbnailer(self.file).get_thumbnail({
-            'size': (250, 250),
+            'size': (255, 255),
             'crop': True,
             'detail': True,
         }).url)

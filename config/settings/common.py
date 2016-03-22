@@ -29,6 +29,7 @@ DJANGO_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.flatpages',
 
     # Useful template tags:
     # 'django.contrib.humanize',
@@ -43,11 +44,12 @@ THIRD_PARTY_APPS = (
     'rest_framework_swagger',
     'easy_thumbnails',
     'image_cropping',
+    'push_notifications',
 )
 
 # Apps specific for this project go here.
 LOCAL_APPS = (
-    'citifleet.reports',
+    'citifleet.reports.apps.ReportsConfig',
     'citifleet.legalaid',
     'citifleet.documents',
     'citifleet.benefits',
@@ -67,6 +69,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.contrib.flatpages.middleware.FlatpageFallbackMiddleware',
 )
 
 # MIGRATIONS CONFIGURATION
@@ -267,3 +270,9 @@ INSTAGRAM_CLIENT_SECRET = env('CLIENT_SECRET')
 THUMBNAIL_PROCESSORS = (
     'image_cropping.thumbnail_processors.crop_corners',
 ) + thumbnail_settings.THUMBNAIL_PROCESSORS
+
+# Push notifications config
+PUSH_NOTIFICATIONS_SETTINGS = {
+        "GCM_API_KEY": env('GCM_API_KEY', default=None),
+        "APNS_CERTIFICATE": env('APNS_CERTIFICATE_PATH', default=None),
+}

@@ -4,4 +4,7 @@ from django.apps import AppConfig
 
 
 class ReportsConfig(AppConfig):
-    name = 'reports'
+    name = 'citifleet.reports'
+
+    def ready(self):
+        from . import signals

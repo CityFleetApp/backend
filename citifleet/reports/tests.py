@@ -5,6 +5,8 @@ from django.test.utils import override_settings
 from test_plus.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
+from mock import patch
+from push_notifications.models import APNSDevice, GCMDevice
 
 from citifleet.users.factories import UserFactory
 
@@ -13,40 +15,42 @@ from .factories import ReportFactory
 from .tasks import delete_unconfirmed_reports
 
 
-class TestReportViewSet(TestCase):
+class TestNearbyReportViewSet(TestCase):
 
     def setUp(self):
         self.point = Point(-47.0, -47.0)
-        self.user = UserFactory(email='test@example.com', location=self.point)
+        self.user = UserFactory(email='test@example.com')
         self.client = APIClient()
 
     # Unauthorized user tries to make a request to reports API
     def test_login_required(self):
-        resp = self.client.get(reverse('reports:api-list'))
+        resp = self.client.get(reverse('reports:nearby-list'))
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        resp = self.client.post(reverse('reports:api-list'), data={})
+        resp = self.client.post(reverse('reports:nearby-list'), data={})
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        resp = self.client.delete(reverse('reports:api-detail', args=[1]))
+        resp = self.client.delete(reverse('reports:nearby-detail', args=[1]))
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        resp = self.client.post(reverse('reports:api-confirm-report', args=[1]))
+        resp = self.client.post(reverse('reports:nearby-confirm-report', args=[1]))
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # Authorized user fetches list of nearby reports
     def test_list(self):
         ReportFactory.create_batch(10, location=self.point)
         self.client.force_authenticate(user=self.user)
-        resp = self.client.get(reverse('reports:api-list'))
+        resp = self.client.get('{}{}'.format(reverse('reports:nearby-list'), '?lat=-47.0&lng=-47.0'))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(len(resp.data), 10)
+        self.assertEqual(self.user.location.x, -47.0)
+        self.assertEqual(self.user.location.y, -47.0)
 
     # Authorized post data to create a new report
     def test_create_report(self):
         self.client.force_authenticate(user=self.user)
         report_data = {'report_type': Report.POLICE, 'lat': 47.0, 'lng': 51.0}
-        resp = self.client.post(reverse('reports:api-list'), data=report_data)
+        resp = self.client.post(reverse('reports:nearby-list'), data=report_data)
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Report.objects.count(), 1)
 
@@ -59,7 +63,7 @@ class TestReportViewSet(TestCase):
     def test_delete_report(self):
         report = ReportFactory(location=self.point)
         self.client.force_authenticate(user=self.user)
-        resp = self.client.delete(reverse('reports:api-detail', args=[report.id]))
+        resp = self.client.delete(reverse('reports:nearby-detail', args=[report.id]))
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Report.objects.count(), 0)
 
@@ -67,7 +71,7 @@ class TestReportViewSet(TestCase):
     def test_confirm_report(self):
         report = ReportFactory(location=self.point)
         self.client.force_authenticate(user=self.user)
-        resp = self.client.post(reverse('reports:api-confirm-report', args=[report.id]))
+        resp = self.client.post(reverse('reports:nearby-confirm-report', args=[report.id]))
         self.assertEqual(resp.status_code, 200)
         self.assertNotEqual(report.updated, Report.objects.get().updated)
 
@@ -77,3 +81,75 @@ class TestReportViewSet(TestCase):
         ReportFactory()
         delete_unconfirmed_reports()
         self.assertEqual(Report.objects.count(), 0)
+
+
+class TestMapReportViewSet(TestCase):
+
+    def setUp(self):
+        self.user_point = Point(-50.0, -50.0)
+        self.point = Point(-47.0, -47.0)
+        self.user = UserFactory(email='test@example.com', location=self.user_point)
+        self.client = APIClient()
+
+    # Authorized user fetches list of nearby reports
+    def test_list(self):
+        ReportFactory.create_batch(10, location=self.point)
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.get('{}{}'.format(reverse('reports:map-list'), '?lat=-47.0&lng=-47.0'))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 10)
+        self.assertEqual(self.user.location.x, -50.0)
+        self.assertEqual(self.user.location.y, -50.0)
+
+
+class TestPushNotificationSent(TestCase):
+
+    def setUp(self):
+        self.user_point = Point(-50.0, -50.0)
+        self.point = Point(-50.0, -50.0)
+        self.user = UserFactory(email='test@example.com', location=self.user_point)
+        self.client = APIClient()
+        self.report = ReportFactory(location=self.point)
+        self.apns = APNSDevice.objects.create(user=self.user)
+        self.gcm = GCMDevice.objects.create(user=self.user)
+
+    # Push notification sent on report creation
+    @patch('push_notifications.apns.apns_send_bulk_message')
+    @patch('push_notifications.gcm.gcm_send_bulk_message')
+    def test_push_sent_on_new_report(self, gcm_mock, apns_mock):
+        report = ReportFactory(location=self.point)
+        self.assertEqual(apns_mock.call_count, 1)
+        apns_mock.assert_called_with(
+            alert={'action': 'added', 'id': report.id, 'location': report.location,
+                   'type': report.report_type},
+            registration_ids=[''])
+        self.assertEqual(gcm_mock.call_count, 1)
+        gcm_mock.assert_called_with(
+            data={'message': {'action': 'added', 'id': report.id, 'location': report.location,
+                              'type': report.report_type}},
+            registration_ids=[''])
+
+    # Push notification sent on report delete
+    @patch('push_notifications.apns.apns_send_bulk_message')
+    @patch('push_notifications.gcm.gcm_send_bulk_message')
+    def test_push_sent_on_report_remove(self, gcm_mock, apns_mock):
+        report_id = self.report.id
+        self.report.delete()
+        apns_mock.assert_called_with(
+            alert={'action': 'removed', 'id': report_id, 'location': self.report.location,
+                   'type': self.report.report_type}, registration_ids=[''])
+        gcm_mock.assert_called_with(
+            data={'message': {'action': 'removed', 'id': report_id, 'location': self.report.location,
+                  'type': self.report.report_type}}, registration_ids=[''])
+
+    # Push notification not sent for not nearby drivers
+    @patch('push_notifications.apns.apns_send_bulk_message')
+    @patch('push_notifications.gcm.gcm_send_bulk_message')
+    def test_push_not_sent(self, gcm_mock, apns_mock):
+        report = ReportFactory(location=Point(20, 20))
+        self.assertEqual(apns_mock.call_count, 0)
+        self.assertEqual(gcm_mock.call_count, 0)
+
+        report.delete()
+        self.assertEqual(apns_mock.call_count, 0)
+        self.assertEqual(gcm_mock.call_count, 0)
