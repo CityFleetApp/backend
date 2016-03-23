@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
+from citifleet.users.models import User
+
 
 class CarMake(models.Model):
     name = models.CharField(_('Name'), max_length=150)
@@ -67,6 +69,8 @@ class Car(models.Model):
     seats = models.PositiveSmallIntegerField(_('Seats'), choices=[(i, i) for i in range(4, 9)])
     price = models.DecimalField(_('Price'), max_digits=7, decimal_places=2)
     description = models.TextField(_('Description'))
+    rent = models.BooleanField(_('For rent'), default=False)
+    owner = models.ForeignKey(User, verbose_name=_('Owner'))
 
     def __unicode__(self):
         return '{}{}'.format(self.make, self.model)
