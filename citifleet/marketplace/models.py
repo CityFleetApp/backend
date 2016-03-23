@@ -17,6 +17,7 @@ class CarMake(models.Model):
 
 class CarModel(models.Model):
     name = models.CharField(_('Name'), max_length=150)
+    make = models.ForeignKey(CarMake, verbose_name=_('Make'))
 
     def __unicode__(self):
         return self.name
@@ -68,7 +69,7 @@ class Car(models.Model):
     description = models.TextField(_('Description'))
 
     def __unicode__(self):
-        return '{}{}'.format(self.get_make_display(), self.get_model_display())
+        return '{}{}'.format(self.make, self.model)
 
     class Meta:
         verbose_name = _('Car')
