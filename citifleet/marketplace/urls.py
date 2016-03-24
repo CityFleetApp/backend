@@ -15,4 +15,8 @@ router.register(r'make', views.CarMakeViewSet, base_name='make')
 
 urlpatterns = [
     url(r'^/cars/', include(router.urls)),
+    url(r'^/fuel/$', views.fuel_types, name='fuel'),
+    url(r'^/types/$', views.car_types, name='types'),
+    url(r'^/colors/$', views.colors, name='colors'),
+    url(r'^/seats/$', views.seats, name='seats'),
 ]

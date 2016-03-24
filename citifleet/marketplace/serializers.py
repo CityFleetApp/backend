@@ -22,6 +22,7 @@ class CarSerializer(serializers.ModelSerializer):
     model = serializers.ReadOnlyField(source='model.name')
     type = serializers.ReadOnlyField(source='get_type_display')
     fuel = serializers.ReadOnlyField(source='get_fuel_display')
+    color = serializers.ReadOnlyField(source='get_color_display')
     photo = serializers.SerializerMethodField()
 
     def get_photo(self, obj):

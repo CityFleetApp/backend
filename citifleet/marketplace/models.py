@@ -60,10 +60,20 @@ class Car(models.Model):
         (LUX, _('LUX')),
     )
 
+    BLACK = 1
+    WHITE = 2
+    RED = 3
+
+    COLORS = (
+        (BLACK, _('Black')),
+        (WHITE, _('White')),
+        (RED, _('Red')),
+    )
+
     make = models.ForeignKey(CarMake, verbose_name=_('Make'))
     model = models.ForeignKey(CarModel, verbose_name=_('Model'))
     type = models.PositiveSmallIntegerField(_('Type'), choices=TYPES)
-    color = models.CharField(_('Color'), max_length=50)
+    color = models.PositiveSmallIntegerField(_('Color'), choices=COLORS)
     year = models.IntegerField(_('Year'))
     fuel = models.PositiveSmallIntegerField(_('Fuel'), choices=FUEL_TYPES)
     seats = models.PositiveSmallIntegerField(_('Seats'), choices=[(i, i) for i in range(4, 9)])
