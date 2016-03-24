@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Car, CarMake, CarModel
+from .models import Car, CarMake, CarModel, CarPhoto
 
 
 class CarMakeSerializer(serializers.ModelSerializer):
@@ -16,13 +16,25 @@ class CarModelSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'make')
         model = CarModel
 
+    def validate(self, attrs):
+        print(attrs)
+        return attrs
+
 
 class CarPostingSerializer(serializers.ModelSerializer):
+    photos = serializers.ListField(child=serializers.ImageField(), write_only=True)
 
     class Meta:
         fields = ('id', 'make', 'model', 'type', 'color', 'year', 'fuel', 'seats',
-                  'price', 'description')
+                  'price', 'description', 'photos')
         model = Car
+
+    def create(self, validated_data):
+        photos_data = validated_data.pop('photos')
+        car = Car.objects.create(**validated_data)
+        for photo_data in photos_data:
+            CarPhoto.objects.create(car=car, file=photo_data)
+        return car
 
     def validate(self, attrs):
         attrs['owner'] = self.context['request'].user
@@ -51,12 +63,9 @@ class CarSerializer(serializers.ModelSerializer):
     type = serializers.ReadOnlyField(source='get_type_display')
     fuel = serializers.ReadOnlyField(source='get_fuel_display')
     color = serializers.ReadOnlyField(source='get_color_display')
-    photo = serializers.SerializerMethodField()
-
-    def get_photo(self, obj):
-        return 'http://citifleet.steelkiwi.com/media/benefits/discount-tire-direct.jpg.1400x900_q85_box-145%2C0%2C2428%2C1468_crop_detail.jpg'
+    photos = serializers.StringRelatedField(many=True)
 
     class Meta:
         fields = ('id', 'make', 'model', 'type', 'color', 'year', 'fuel', 'seats',
-                  'price', 'description', 'rent', 'photo')
+                  'price', 'description', 'rent', 'photos')
         model = Car

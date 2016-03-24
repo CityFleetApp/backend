@@ -7,8 +7,8 @@ from rest_framework.routers import DefaultRouter
 from . import views
 
 router = DefaultRouter()
-router.register(r'posting/rent', views.PostCarRentViewSet, base_name='postings-sale')
-router.register(r'posting/sale', views.PostCarSaleViewSet, base_name='postings-rent')
+router.register(r'posting/rent', views.PostCarRentViewSet, base_name='postings-rent')
+router.register(r'posting/sale', views.PostCarSaleViewSet, base_name='postings-sale')
 router.register(r'sale', views.CarSaleModelViewSet, base_name='sale')
 router.register(r'rent', views.CarRentModelViewSet, base_name='rent')
 router.register(r'model', views.CarModelViewSet, base_name='model')

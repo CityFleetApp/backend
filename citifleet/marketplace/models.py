@@ -4,6 +4,7 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 from citifleet.users.models import User
+from citifleet.common.utils import get_full_path
 
 
 class CarMake(models.Model):
@@ -88,3 +89,15 @@ class Car(models.Model):
     class Meta:
         verbose_name = _('Car')
         verbose_name_plural = _('Cars')
+
+
+class CarPhoto(models.Model):
+    car = models.ForeignKey(Car, verbose_name=_('Car'), related_name='photos')
+    file = models.ImageField(_('Photo'), upload_to='cars/')
+
+    class Meta:
+        verbose_name = _('Photo')
+        verbose_name_plural = _('Photos')
+
+    def __unicode__(self):
+        return get_full_path(self.file.url)
