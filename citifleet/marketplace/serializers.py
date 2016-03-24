@@ -17,6 +17,34 @@ class CarModelSerializer(serializers.ModelSerializer):
         model = CarModel
 
 
+class CarPostingSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        fields = ('id', 'make', 'model', 'type', 'color', 'year', 'fuel', 'seats',
+                  'price', 'description')
+        model = Car
+
+    def validate(self, attrs):
+        attrs['owner'] = self.context['request'].user
+        return attrs
+
+
+class RentCarPostingSerializer(CarPostingSerializer):
+
+    def validate(self, attrs):
+        attrs = super(RentCarPostingSerializer, self).validate(attrs)
+        attrs['rent'] = True
+        return attrs
+
+
+class SaleCarPostingSerializer(CarPostingSerializer):
+
+    def validate(self, attrs):
+        attrs = super(SaleCarPostingSerializer, self).validate(attrs)
+        attrs['rent'] = False
+        return attrs
+
+
 class CarSerializer(serializers.ModelSerializer):
     make = serializers.ReadOnlyField(source='make.name')
     model = serializers.ReadOnlyField(source='model.name')
@@ -32,19 +60,3 @@ class CarSerializer(serializers.ModelSerializer):
         fields = ('id', 'make', 'model', 'type', 'color', 'year', 'fuel', 'seats',
                   'price', 'description', 'rent', 'photo')
         model = Car
-
-
-class CarRentSerializer(CarSerializer):
-
-    def validate(self, attrs):
-        attrs = super(CarRentSerializer, self).validate(attrs)
-        attrs['rent'] = True
-        return attrs
-
-
-class CarSaleSerializer(CarSerializer):
-
-    def validate(self, attrs):
-        attrs = super(CarSaleSerializer, self).validate(attrs)
-        attrs['rent'] = False
-        return attrs

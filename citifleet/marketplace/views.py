@@ -4,7 +4,36 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from .models import Car, CarMake, CarModel
-from .serializers import CarSerializer, CarMakeSerializer, CarModelSerializer
+from .serializers import (CarSerializer, CarMakeSerializer, CarModelSerializer,
+                          RentCarPostingSerializer, SaleCarPostingSerializer)
+
+
+class PostCarRentViewSet(viewsets.ModelViewSet):
+    serializer_class = RentCarPostingSerializer
+    queryset = Car.objects.all()
+
+    def get_serializer_class(self):
+        if self.action in ['list', 'retrieve']:
+            return CarSerializer
+        else:
+            return RentCarPostingSerializer
+
+    def get_queryset(self):
+        return super(PostCarRentViewSet, self).get_queryset().filter(owner=self.request.user, rent=True)
+
+
+class PostCarSaleViewSet(viewsets.ModelViewSet):
+    serializer_class = SaleCarPostingSerializer
+    queryset = Car.objects.all()
+
+    def get_serializer_class(self):
+        if self.action in ['list', 'retrieve']:
+            return CarSerializer
+        else:
+            return SaleCarPostingSerializer
+
+    def get_queryset(self):
+        return super(PostCarSaleViewSet, self).get_queryset().filter(owner=self.request.user, rent=False)
 
 
 class CarRentModelViewSet(viewsets.ModelViewSet):
