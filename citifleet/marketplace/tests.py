@@ -10,7 +10,6 @@ from PIL import Image
 from citifleet.users.factories import UserFactory
 
 from .factories import CarMakeFactory, CarModelFactory
-from .models import CarPhoto
 
 
 class TestMarketPlaceViewSet(TestCase):

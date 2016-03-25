@@ -3,9 +3,10 @@ from rest_framework import filters
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from .models import Car, CarMake, CarModel
+from .models import Car, CarMake, CarModel, GeneralGood
 from .serializers import (CarSerializer, CarMakeSerializer, CarModelSerializer,
-                          RentCarPostingSerializer, SaleCarPostingSerializer)
+                          RentCarPostingSerializer, SaleCarPostingSerializer,
+                          GeneralGoodSerializer, PostingGeneralGoodsSerializer)
 
 
 class PostCarRentViewSet(viewsets.ModelViewSet):
@@ -88,3 +89,18 @@ class SeatsList(APIView):
         return Response([{'id': k, 'name': '{} Seats'.format(k)} for k in range(4, 9)])
 
 seats = SeatsList.as_view()
+
+
+class PostingGeneralGoodsViewSet(viewsets.ModelViewSet):
+    queryset = GeneralGood.objects.all()
+
+    def get_serializer_class(self):
+        if self.action in ['list', 'retrieve']:
+            return GeneralGoodSerializer
+        else:
+            return PostingGeneralGoodsSerializer
+
+
+class MarketGeneralGoodsViewSet(viewsets.ModelViewSet):
+    serializer_class = GeneralGoodSerializer
+    queryset = GeneralGood.objects.all()

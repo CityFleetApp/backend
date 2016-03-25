@@ -101,3 +101,33 @@ class CarPhoto(models.Model):
 
     def __unicode__(self):
         return get_full_path(self.file.url)
+
+
+class GeneralGood(models.Model):
+    GOOD = 1
+    MEDIUM = 2
+    BAD = 3
+
+    CONDITION_CHOICES = (
+        (GOOD, _('Good')),
+        (MEDIUM, _('Medium')),
+        (BAD, _('Bad')),
+    )
+
+    item = models.CharField(_('Item'), max_length=250)
+    price = models.DecimalField(_('Price'), max_digits=6, decimal_places=2)
+    condition = models.SmallIntegerField(_('Condition'), choices=CONDITION_CHOICES)
+    description = models.CharField(_('Description'), max_length=250)
+    owner = models.ForeignKey(User, verbose_name=_('User'))
+
+
+class GoodPhoto(models.Model):
+    goods = models.ForeignKey(GeneralGood, verbose_name=_('Good'), related_name='photos')
+    file = models.ImageField(_('Photo'), upload_to='goods/')
+
+    class Meta:
+        verbose_name = _('General Goods Photo')
+        verbose_name_plural = _('General Goods Photos')
+
+    def __unicode__(self):
+        return get_full_path(self.file.url)

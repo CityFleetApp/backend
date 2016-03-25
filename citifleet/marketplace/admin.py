@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import CarModel, CarMake, Car
+from .models import CarModel, CarMake, Car, GeneralGood
 
 
 class CarModelModelAdmin(admin.ModelAdmin):
@@ -16,3 +16,4 @@ class CarModelAdmin(admin.ModelAdmin):
 admin.site.register(CarModel, CarModelModelAdmin)
 admin.site.register(CarMake)
 admin.site.register(Car, CarModelAdmin)
+admin.site.register(GeneralGood)
