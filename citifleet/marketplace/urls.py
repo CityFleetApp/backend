@@ -14,14 +14,19 @@ router.register(r'rent', views.CarRentModelViewSet, base_name='rent')
 router.register(r'model', views.CarModelViewSet, base_name='model')
 router.register(r'make', views.CarMakeViewSet, base_name='make')
 
-
 goods_router = DefaultRouter()
 goods_router.register(r'/posting', views.PostingGeneralGoodsViewSet, base_name='postings-goods')
 goods_router.register(r'', views.MarketGeneralGoodsViewSet, base_name='marketplace-goods')
 
+offers_router = DefaultRouter()
+offers_router.register(r'/posting', views.PostingJobOfferViewSet, base_name='postings-offers')
+offers_router.register(r'', views.MarketJobOfferViewSet, base_name='marketplace-offers')
+
+
 urlpatterns = [
     url(r'^/cars/', include(router.urls)),
     url(r'^/goods', include(goods_router.urls)),
+    url(r'^/offers', include(offers_router.urls)),
     url(r'^/fuel/$', views.fuel_types, name='fuel'),
     url(r'^/types/$', views.car_types, name='types'),
     url(r'^/colors/$', views.colors, name='colors'),

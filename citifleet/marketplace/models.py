@@ -169,3 +169,7 @@ class JobOffer(models.Model):
     instructions = models.CharField(_('Instructions'), max_length=255)
     company = models.ForeignKey(User, related_name='offers', null=True, blank=True)
     owner = models.ForeignKey(User, related_name='job_postings')
+
+    class Meta:
+        verbose_name = _('Job Offer')
+        verbose_name_plural = _('Job Offers')

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Car, CarMake, CarModel, CarPhoto, GeneralGood, GoodPhoto
+from .models import Car, CarMake, CarModel, CarPhoto, GeneralGood, GoodPhoto, JobOffer
 
 
 class CarMakeSerializer(serializers.ModelSerializer):
@@ -103,3 +103,21 @@ class PostingGeneralGoodsSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         attrs['owner'] = self.context['request'].user
         return attrs
+
+
+class MarketplaceJobOfferSerializer(serializers.ModelSerializer):
+    job_type = serializers.ReadOnlyField(source='get_job_type_display')
+    vehicle_type = serializers.ReadOnlyField(source='get_vehicle_type_display')
+
+    class Meta:
+        model = JobOffer
+        fields = ('id', 'pickup_datetime', 'pickup_address', 'destination', 'fare',
+                  'gratuity', 'vehicle_type', 'suite', 'job_type', 'instructions')
+
+
+class PostingJobOfferSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = JobOffer
+        fields = ('id', 'pickup_datetime', 'pickup_address', 'destination', 'fare',
+                  'gratuity', 'vehicle_type', 'suite', 'job_type', 'instructions')

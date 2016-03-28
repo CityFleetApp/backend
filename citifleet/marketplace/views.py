@@ -3,10 +3,11 @@ from rest_framework import filters
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from .models import Car, CarMake, CarModel, GeneralGood
+from .models import Car, CarMake, CarModel, GeneralGood, JobOffer
 from .serializers import (CarSerializer, CarMakeSerializer, CarModelSerializer,
                           RentCarPostingSerializer, SaleCarPostingSerializer,
-                          GeneralGoodSerializer, PostingGeneralGoodsSerializer)
+                          GeneralGoodSerializer, PostingGeneralGoodsSerializer,
+                          MarketplaceJobOfferSerializer, PostingJobOfferSerializer)
 
 
 class PostCarRentViewSet(viewsets.ModelViewSet):
@@ -100,7 +101,28 @@ class PostingGeneralGoodsViewSet(viewsets.ModelViewSet):
         else:
             return PostingGeneralGoodsSerializer
 
+    def get_queryset(self):
+        return super(PostingGeneralGoodsViewSet, self).get_queryset().filter(owner=self.request.user)
+
 
 class MarketGeneralGoodsViewSet(viewsets.ModelViewSet):
     serializer_class = GeneralGoodSerializer
     queryset = GeneralGood.objects.all()
+
+
+class PostingJobOfferViewSet(viewsets.ModelViewSet):
+    queryset = JobOffer.objects.all()
+
+    def get_serializer_class(self):
+        if self.action in ['list', 'retrieve']:
+            return MarketplaceJobOfferSerializer
+        else:
+            return PostingJobOfferSerializer
+
+    def get_queryset(self):
+        return super(PostingJobOfferViewSet, self).get_queryset().filter(owner=self.request.user)
+
+
+class MarketJobOfferViewSet(viewsets.ModelViewSet):
+    serializer_class = MarketplaceJobOfferSerializer
+    queryset = JobOffer.objects.all()

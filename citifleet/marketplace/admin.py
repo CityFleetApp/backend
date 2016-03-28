@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import CarModel, CarMake, Car, GeneralGood, GoodPhoto, CarPhoto
+from .models import CarModel, CarMake, Car, GeneralGood, GoodPhoto, CarPhoto, JobOffer
 
 
 class CarPhotoInline(admin.TabularInline):
@@ -36,3 +36,4 @@ admin.site.register(CarModel, CarModelModelAdmin)
 admin.site.register(CarMake)
 admin.site.register(Car, CarModelAdmin)
 admin.site.register(GeneralGood, GeneralGoodsModelAdmin)
+admin.site.register(JobOffer)
