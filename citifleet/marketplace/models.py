@@ -158,6 +158,16 @@ class JobOffer(models.Model):
         (HOURLY, _('Hourly')),
     )
 
+    AVAILABLE = 1
+    COVERED = 2
+    COMPLETED = 3
+
+    STATUS_CHOICES = (
+        (AVAILABLE, _('Available')),
+        (COVERED, _('Covered')),
+        (COMPLETED, _('Completed')),
+    )
+
     pickup_datetime = models.DateTimeField(_('Pickup datetime'))
     pickup_address = models.CharField(_('Pickup address'), max_length=255)
     destination = models.CharField(_('Destination'), max_length=255)
@@ -167,8 +177,9 @@ class JobOffer(models.Model):
     suite = models.BooleanField(_('Suite/Tie'), default=False)
     job_type = models.PositiveSmallIntegerField(_('Job Type'), choices=JOB_CHOICES)
     instructions = models.CharField(_('Instructions'), max_length=255)
-    company = models.ForeignKey(User, related_name='offers', null=True, blank=True)
     owner = models.ForeignKey(User, related_name='job_postings')
+    status = models.PositiveSmallIntegerField(_('Status'), choices=STATUS_CHOICES)
+    driver = models.ForeignKey(User, related_name='offers')
 
     class Meta:
         verbose_name = _('Job Offer')
