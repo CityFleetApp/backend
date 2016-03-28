@@ -104,14 +104,16 @@ class CarPhoto(models.Model):
 
 
 class GeneralGood(models.Model):
-    GOOD = 1
-    MEDIUM = 2
-    BAD = 3
+    BRAND_NEW = 1
+    NEW = 2
+    USED_GOOD = 3
+    USED = 4
 
     CONDITION_CHOICES = (
-        (GOOD, _('Good')),
-        (MEDIUM, _('Medium')),
-        (BAD, _('Bad')),
+        (BRAND_NEW, _('Brand New (Never Used)')),
+        (NEW, _('New (Slightly Used)')),
+        (USED_GOOD, _('Used (Good Condition)')),
+        (USED, _('Used'))
     )
 
     item = models.CharField(_('Item'), max_length=250)
@@ -131,3 +133,39 @@ class GoodPhoto(models.Model):
 
     def __unicode__(self):
         return get_full_path(self.file.url)
+
+
+class JobOffer(models.Model):
+    REGULAR = 1
+    BLACK = 2
+    SUV = 3
+    LUX = 4
+
+    VEHICLE_CHOICES = (
+        (REGULAR, _('Regular')),
+        (BLACK, _('Black')),
+        (SUV, _('SUV')),
+        (LUX, _('LUX'))
+    )
+
+    DROP_OFF = 1
+    WAIT_AND_RETURN = 2
+    HOURLY = 3
+
+    JOB_CHOICES = (
+        (DROP_OFF, _('Drop off')),
+        (WAIT_AND_RETURN, _('Wait & Return')),
+        (HOURLY, _('Hourly')),
+    )
+
+    pickup_datetime = models.DateTimeField(_('Pickup datetime'))
+    pickup_address = models.CharField(_('Pickup address'), max_length=255)
+    destination = models.CharField(_('Destination'), max_length=255)
+    fare = models.DecimalField(_('Fare'), max_digits=5, decimal_places=2)
+    gratuity = models.DecimalField(_('Gratuity'), max_digits=5, decimal_places=2)
+    vehicle_type = models.PositiveSmallIntegerField(_('Vehicle Type'), choices=VEHICLE_CHOICES)
+    suite = models.BooleanField(_('Suite/Tie'), default=False)
+    job_type = models.PositiveSmallIntegerField(_('Job Type'), choices=JOB_CHOICES)
+    instructions = models.CharField(_('Instructions'), max_length=255)
+    company = models.ForeignKey(User, related_name='offers', null=True, blank=True)
+    owner = models.ForeignKey(User, related_name='job_postings')
