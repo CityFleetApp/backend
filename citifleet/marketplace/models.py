@@ -185,3 +185,6 @@ class JobOffer(models.Model):
     class Meta:
         verbose_name = _('Job Offer')
         verbose_name_plural = _('Job Offers')
+
+    def __unicode__(self):
+        return 'from {} to {}'.format(self.pickup_address, self.destination)

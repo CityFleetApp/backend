@@ -123,3 +123,7 @@ class PostingJobOfferSerializer(serializers.ModelSerializer):
         model = JobOffer
         fields = ('id', 'pickup_datetime', 'pickup_address', 'destination', 'fare',
                   'gratuity', 'vehicle_type', 'suite', 'job_type', 'instructions')
+
+    def validate(self, attrs):
+        attrs['owner'] = self.context['request'].user
+        return attrs
