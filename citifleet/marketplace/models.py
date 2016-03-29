@@ -178,8 +178,9 @@ class JobOffer(models.Model):
     job_type = models.PositiveSmallIntegerField(_('Job Type'), choices=JOB_CHOICES)
     instructions = models.CharField(_('Instructions'), max_length=255)
     owner = models.ForeignKey(User, related_name='job_postings')
-    status = models.PositiveSmallIntegerField(_('Status'), choices=STATUS_CHOICES)
-    driver = models.ForeignKey(User, related_name='offers')
+    status = models.PositiveSmallIntegerField(_('Status'), choices=STATUS_CHOICES, default=AVAILABLE)
+    driver = models.ForeignKey(User, related_name='offers', null=True)
+    driver_requests = models.ManyToManyField(User, related_name='offer_requests')
 
     class Meta:
         verbose_name = _('Job Offer')

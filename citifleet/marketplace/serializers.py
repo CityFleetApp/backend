@@ -108,11 +108,13 @@ class PostingGeneralGoodsSerializer(serializers.ModelSerializer):
 class MarketplaceJobOfferSerializer(serializers.ModelSerializer):
     job_type = serializers.ReadOnlyField(source='get_job_type_display')
     vehicle_type = serializers.ReadOnlyField(source='get_vehicle_type_display')
+    status = serializers.ReadOnlyField(source='get_status_display')
 
     class Meta:
         model = JobOffer
         fields = ('id', 'pickup_datetime', 'pickup_address', 'destination', 'fare',
-                  'gratuity', 'vehicle_type', 'suite', 'job_type', 'instructions')
+                  'gratuity', 'vehicle_type', 'suite', 'job_type', 'instructions',
+                  'status')
 
 
 class PostingJobOfferSerializer(serializers.ModelSerializer):

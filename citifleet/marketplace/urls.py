@@ -31,4 +31,6 @@ urlpatterns = [
     url(r'^/types/$', views.car_types, name='types'),
     url(r'^/colors/$', views.colors, name='colors'),
     url(r'^/seats/$', views.seats, name='seats'),
+    url(r'^/vehicles/$', views.vehicle_choices, name='vehicles'),
+    url(r'^/job_types/$', views.job_types, name='job_types'),
 ]

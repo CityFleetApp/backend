@@ -2,6 +2,8 @@ from rest_framework import viewsets
 from rest_framework import filters
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.decorators import detail_route
+from rest_framework import status
 
 from .models import Car, CarMake, CarModel, GeneralGood, JobOffer
 from .serializers import (CarSerializer, CarMakeSerializer, CarModelSerializer,
@@ -125,4 +127,33 @@ class PostingJobOfferViewSet(viewsets.ModelViewSet):
 
 class MarketJobOfferViewSet(viewsets.ModelViewSet):
     serializer_class = MarketplaceJobOfferSerializer
-    queryset = JobOffer.objects.all()
+    queryset = JobOffer.objects.filter(status__in=(JobOffer.AVAILABLE, JobOffer.COVERED))
+
+    @detail_route(methods=['post'])
+    def request_job(self, request, pk):
+        offer = self.get_object()
+        offer.driver_requests.add(request.user)
+        return Response(status=status.HTTP_200_OK)
+
+    @detail_route(methods=['post'])
+    def accept_job(self, request, pk):
+        offer = self.get_object()
+        # TODO: save rating
+        offer.status = JobOffer.COMPLETED
+        return Response(status=status.HTTP_200_OK)
+
+
+class JobTypes(APIView):
+
+    def get(self, request, *args, **kwargs):
+        return Response([{'id': k, 'name': v} for k, v in JobOffer.JOB_CHOICES])
+
+job_types = JobTypes.as_view()
+
+
+class VehicleChoices(APIView):
+
+    def get(self, request, *args, **kwargs):
+        return Response([{'id': k, 'name': v} for k, v in JobOffer.VEHICLE_CHOICES])
+
+vehicle_choices = VehicleChoices.as_view()
