@@ -225,3 +225,15 @@ class SettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('notifications_enabled', 'chat_privacy', 'visible')
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    '''
+    Serialize user personal info
+    '''
+    car_make_display = serializers.ReadOnlyField(source='car_make.name')
+    car_model_display = serializers.ReadOnlyField(source='car_model.name')
+
+    class Meta:
+        model = User
+        fields = ('car_make', 'car_model', 'bio', 'username', 'car_make_display', 'car_model_display', 'phone')

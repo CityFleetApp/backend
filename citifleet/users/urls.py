@@ -29,4 +29,5 @@ urlpatterns = [
     url(r'^settings/$', views.settings, name='settings'),
     url(r'^photos', include(router.urls)),
     url(r'^devices', include(device_router.urls)),
+    url(r'^profile/$', views.profile, name='profile'),
 ]

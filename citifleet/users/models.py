@@ -61,6 +61,9 @@ class User(AbstractUser):
     chat_privacy = models.BooleanField(_('chat privacy'), default=True)
     visible = models.BooleanField(_('visible'), default=True)
 
+    car_make = models.ForeignKey('marketplace.CarMake', null=True)
+    car_model = models.ForeignKey('marketplace.CarModel', null=True)
+
     objects = UserManager()
     with_notifications = AllowNotificationManager()
 
@@ -76,6 +79,13 @@ class User(AbstractUser):
         '''
         if self.avatar:
             return get_full_path(self.avatar.url)
+        else:
+            return ''
+
+    @property
+    def drives(self):
+        if self.car_make and self.car_model:
+            return '{}/{}'.format(self.car_make.name, self.car_model.name)
         else:
             return ''
 
