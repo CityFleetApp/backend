@@ -1,10 +1,20 @@
 from __future__ import unicode_literals
+from datetime import timedelta
 
 from django.db import models
+from django.db.models import Manager
 from django.utils.translation import ugettext_lazy as _
+from django.utils import timezone
 
 from citifleet.users.models import User
 from citifleet.common.utils import get_full_path
+
+
+class ExpiredManager(Manager):
+
+    def get_queryset(self):
+        expiry_date = timezone.now().date() - timedelta(days=30)
+        return super(ExpiredManager, self).get_queryset().filter(created__date__lt=expiry_date)
 
 
 class CarMake(models.Model):
@@ -82,6 +92,10 @@ class Car(models.Model):
     description = models.TextField(_('Description'))
     rent = models.BooleanField(_('For rent'), default=False)
     owner = models.ForeignKey(User, verbose_name=_('Owner'))
+    created = models.DateTimeField(_('Created'), auto_now_add=True)
+
+    objects = Manager()
+    expired = ExpiredManager()
 
     def __unicode__(self):
         return '{}{}'.format(self.make, self.model)
@@ -121,6 +135,10 @@ class GeneralGood(models.Model):
     condition = models.SmallIntegerField(_('Condition'), choices=CONDITION_CHOICES)
     description = models.CharField(_('Description'), max_length=250)
     owner = models.ForeignKey(User, verbose_name=_('User'))
+    created = models.DateTimeField(_('Created'), auto_now_add=True)
+
+    objects = Manager()
+    expired = ExpiredManager()
 
 
 class GoodPhoto(models.Model):
@@ -181,6 +199,10 @@ class JobOffer(models.Model):
     status = models.PositiveSmallIntegerField(_('Status'), choices=STATUS_CHOICES, default=AVAILABLE)
     driver = models.ForeignKey(User, related_name='offers', null=True)
     driver_requests = models.ManyToManyField(User, related_name='offer_requests')
+    created = models.DateTimeField(_('Created'), auto_now_add=True)
+
+    objects = Manager()
+    expired = ExpiredManager()
 
     class Meta:
         verbose_name = _('Job Offer')
