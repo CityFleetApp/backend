@@ -48,11 +48,17 @@ class NotificationTemplate(NotificationBase):
     DOCUMENT_EXPIRED = 2
     DOCUMENT_VERIFIED = 3
     REPORT_CREATED = 4
+    JOBOFFER_CREATED = 5
+    CAR_CREATED = 6
+    GENERAL_GOODS_CREATED = 7
 
     NOTIFICATION_CHOICES = (
         (NEW_BENEFIT, _('New Benefit')),
         (DOCUMENT_EXPIRED, _('Document Expired')),
         (DOCUMENT_VERIFIED, _('Document Verified')),
+        (JOBOFFER_CREATED, _('Job Offer Created')),
+        (CAR_CREATED, _('Car for Sale/Rent Created')),
+        (GENERAL_GOODS_CREATED, _('Genera Goods created')),
     )
 
     type = models.PositiveSmallIntegerField(_('type'), choices=NOTIFICATION_CHOICES)
