@@ -157,3 +157,27 @@ class VehicleChoices(APIView):
         return Response([{'id': k, 'name': v} for k, v in JobOffer.VEHICLE_CHOICES])
 
 vehicle_choices = VehicleChoices.as_view()
+
+
+class ManagePosts(APIView):
+
+    def get(self, request, *args, **kwargs):
+        offers = MarketplaceJobOfferSerializer(JobOffer.objects.filter(owner=request.user),
+                                               many=True).data
+        for offer in offers:
+            offer.update({'posting_type': 'offer'})
+
+        goods = GeneralGoodSerializer(GeneralGood.objects.filter(owner=request.user),
+                                      many=True).data
+        for good in goods:
+            good.update({'posting_type': 'goods'})
+
+        cars = CarSerializer(Car.objects.filter(owner=request.user),
+                             many=True).data
+        for car in cars:
+            car.update({'posting_type': 'car'})
+
+        postings = sorted(offers + goods + cars, key=lambda x: x['created'])
+        return Response(postings, status=status.HTTP_200_OK)
+
+manage_posts = ManagePosts.as_view()

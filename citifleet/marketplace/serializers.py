@@ -68,7 +68,7 @@ class CarSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = ('id', 'make', 'model', 'type', 'color', 'year', 'fuel', 'seats',
-                  'price', 'description', 'rent', 'photos', 'dimensions')
+                  'price', 'description', 'rent', 'photos', 'dimensions', 'created')
         model = Car
 
 
@@ -82,7 +82,7 @@ class GeneralGoodSerializer(serializers.ModelSerializer):
         return [photo.file.width, photo.file.height]
 
     class Meta:
-        fields = ('id', 'item', 'price', 'condition', 'description', 'photos', 'dimensions')
+        fields = ('id', 'item', 'price', 'condition', 'description', 'photos', 'dimensions', 'created')
         model = GeneralGood
 
 
@@ -114,7 +114,7 @@ class MarketplaceJobOfferSerializer(serializers.ModelSerializer):
         model = JobOffer
         fields = ('id', 'pickup_datetime', 'pickup_address', 'destination', 'fare',
                   'gratuity', 'vehicle_type', 'suite', 'job_type', 'instructions',
-                  'status')
+                  'status', 'created')
 
 
 class PostingJobOfferSerializer(serializers.ModelSerializer):
