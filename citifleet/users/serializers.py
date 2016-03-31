@@ -233,7 +233,10 @@ class ProfileSerializer(serializers.ModelSerializer):
     '''
     car_make_display = serializers.ReadOnlyField(source='car_make.name')
     car_model_display = serializers.ReadOnlyField(source='car_model.name')
+    car_color_display = serializers.ReadOnlyField(source='get_car_color_display')
+    car_type_display = serializers.ReadOnlyField(source='get_car_type_display')
 
     class Meta:
         model = User
-        fields = ('car_make', 'car_model', 'bio', 'username', 'car_make_display', 'car_model_display', 'phone')
+        fields = ('car_make', 'car_model', 'bio', 'username', 'car_year', 'car_type', 'phone',
+                  'car_color', 'car_make_display', 'car_model_display', 'car_color_display', 'car_type_display')

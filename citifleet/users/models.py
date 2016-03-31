@@ -13,6 +13,7 @@ from easy_thumbnails.files import get_thumbnailer
 
 from citifleet.documents.models import Document
 from citifleet.common.utils import get_full_path
+from citifleet.marketplace.models import Car
 
 
 class UserManager(BaseUserManager):
@@ -63,6 +64,9 @@ class User(AbstractUser):
 
     car_make = models.ForeignKey('marketplace.CarMake', null=True)
     car_model = models.ForeignKey('marketplace.CarModel', null=True)
+    car_year = models.PositiveIntegerField(_('Car year'), null=True)
+    car_type = models.PositiveIntegerField(_('Car type'), null=True, choices=Car.TYPES)
+    car_color = models.PositiveIntegerField(_('Car color'), null=True, choices=Car.COLORS)
 
     objects = UserManager()
     with_notifications = AllowNotificationManager()

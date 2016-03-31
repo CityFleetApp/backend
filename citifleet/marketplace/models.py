@@ -5,8 +5,8 @@ from django.db import models
 from django.db.models import Manager
 from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
+from django.conf import settings
 
-from citifleet.users.models import User
 from citifleet.common.utils import get_full_path
 
 
@@ -91,7 +91,7 @@ class Car(models.Model):
     price = models.DecimalField(_('Price'), max_digits=7, decimal_places=2)
     description = models.TextField(_('Description'))
     rent = models.BooleanField(_('For rent'), default=False)
-    owner = models.ForeignKey(User, verbose_name=_('Owner'))
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_('Owner'))
     created = models.DateTimeField(_('Created'), auto_now_add=True)
 
     objects = Manager()
@@ -134,7 +134,7 @@ class GeneralGood(models.Model):
     price = models.DecimalField(_('Price'), max_digits=6, decimal_places=2)
     condition = models.SmallIntegerField(_('Condition'), choices=CONDITION_CHOICES)
     description = models.CharField(_('Description'), max_length=250)
-    owner = models.ForeignKey(User, verbose_name=_('User'))
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_('User'))
     created = models.DateTimeField(_('Created'), auto_now_add=True)
 
     objects = Manager()
@@ -195,10 +195,10 @@ class JobOffer(models.Model):
     suite = models.BooleanField(_('Suite/Tie'), default=False)
     job_type = models.PositiveSmallIntegerField(_('Job Type'), choices=JOB_CHOICES)
     instructions = models.CharField(_('Instructions'), max_length=255)
-    owner = models.ForeignKey(User, related_name='job_postings')
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='job_postings')
     status = models.PositiveSmallIntegerField(_('Status'), choices=STATUS_CHOICES, default=AVAILABLE)
-    driver = models.ForeignKey(User, related_name='offers', null=True)
-    driver_requests = models.ManyToManyField(User, related_name='offer_requests')
+    driver = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='offers', null=True)
+    driver_requests = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='offer_requests')
     created = models.DateTimeField(_('Created'), auto_now_add=True)
 
     objects = Manager()
