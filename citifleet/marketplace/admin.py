@@ -74,7 +74,7 @@ class JobOfferModelAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         qs = super(JobOfferModelAdmin, self).get_queryset(request)
-        if request.user.is_superuser:
+        if not request.user.is_superuser:
             return qs.filter(owner=request.user)
         else:
             return qs.filter

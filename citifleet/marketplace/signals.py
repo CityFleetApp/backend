@@ -1,11 +1,6 @@
-from django.db.models.signals import post_save, pre_delete
+from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.contrib.gis.measure import D
-from django.conf import settings
 
-from push_notifications.models import APNSDevice, GCMDevice
-
-from citifleet.users.models import User
 from citifleet.notifications.models import NotificationTemplate
 
 from .models import JobOffer, GeneralGood, Car
@@ -17,14 +12,19 @@ def joboffer_created(sender, instance, created, **kwargs):
     Send push notification to the drivers when new marketplace item is created
     '''
     if created:
-        try:
-            notification = NotificationTemplate.objects.get(type=JOBOFFER_CREATED, enabled=True).to_dict()
-        except NotificationTemplate.DoesNotExist:
-            return
-        else:
-            Notification.objects.bulk_create(
-                [Notification(user=user, **template_dict)
-                 for user in User.with_notifications.all()])
+        extra = {'id': instance.id}
+        NotificationTemplate.send_notification(NotificationTemplate.JOBOFFER_CREATED, extra)
 
-            GCMDevice.objects.filter(user__in=drivers).send_message(push_message)
-            APNSDevice.objects.filter(user__in=drivers).send_message(push_message)
+
+@receiver(post_save, sender=GeneralGood)
+def goods_created(sender, instance, created, **kwargs):
+    if created:
+        extra = {'id': instance.id}
+        NotificationTemplate.send_notification(NotificationTemplate.GENERAL_GOODS_CREATED, extra)
+
+
+@receiver(post_save, sender=Car)
+def car_created(sender, instance, created, **kwargs):
+    if created:
+        extra = {'id': instance.id, 'rent': instance.rent}
+        NotificationTemplate.send_notification(NotificationTemplate.CAR_CREATED, extra)

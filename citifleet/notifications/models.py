@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
+from push_notifications.models import APNSDevice, GCMDevice
+
 from citifleet.users.models import User
 
 
@@ -61,11 +63,39 @@ class NotificationTemplate(NotificationBase):
         (GENERAL_GOODS_CREATED, _('Genera Goods created')),
     )
 
+    PUSH_TYPES = {
+        NEW_BENEFIT: 'benefit_created',
+        DOCUMENT_EXPIRED: 'document_expired',
+        DOCUMENT_VERIFIED: 'document_verified',
+        JOBOFFER_CREATED: 'offer_created',
+        CAR_CREATED: 'car_created',
+        GENERAL_GOODS_CREATED: 'goods_created',
+    }
+
     type = models.PositiveSmallIntegerField(_('type'), choices=NOTIFICATION_CHOICES)
     enabled = models.BooleanField(_('enabled'), default=True)
 
     def __unicode__(self):
         return self.get_type_display()
+
+    @staticmethod
+    def send_notification(type, **extra):
+        try:
+            template_dict = NotificationTemplate.objects.get(type=type, enabled=True).to_dict()
+        except NotificationTemplate.DoesNotExist:
+            return
+
+        drivers = User.with_notifications.all()
+        Notification.objects.bulk_create(
+                [Notification(user=user, **template_dict)
+                 for user in drivers])
+
+        push_message = {'type': NotificationTemplate.PUSH_TYPES[type],
+                        'title': template_dict['title']}
+        push_message.update(extra)
+
+        GCMDevice.objects.filter(user__in=drivers).send_message(push_message)
+        APNSDevice.objects.filter(user__in=drivers).send_message(push_message)
 
     class Meta:
         verbose_name = _('Notification Template')
