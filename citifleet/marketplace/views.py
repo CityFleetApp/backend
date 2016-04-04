@@ -5,16 +5,21 @@ from rest_framework.response import Response
 from rest_framework.decorators import detail_route
 from rest_framework import status
 
-from .models import Car, CarMake, CarModel, GeneralGood, JobOffer
+from .models import Car, CarMake, CarModel, GeneralGood, JobOffer, CarPhoto, GoodPhoto
 from .serializers import (CarSerializer, CarMakeSerializer, CarModelSerializer,
                           RentCarPostingSerializer, SaleCarPostingSerializer,
                           GeneralGoodSerializer, PostingGeneralGoodsSerializer,
-                          MarketplaceJobOfferSerializer, PostingJobOfferSerializer)
+                          MarketplaceJobOfferSerializer, PostingJobOfferSerializer,
+                          CarPhotoSerializer, GoodsPhotoSerializer)
 
 
 class PostCarRentViewSet(viewsets.ModelViewSet):
+    '''
+    ViewSet for posting cars rent
+    Use different serializers for retrieving and updating car info,
+    because of creating cars with relation to car photos
+    '''
     serializer_class = RentCarPostingSerializer
-    queryset = Car.objects.all()
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -23,12 +28,16 @@ class PostCarRentViewSet(viewsets.ModelViewSet):
             return RentCarPostingSerializer
 
     def get_queryset(self):
-        return super(PostCarRentViewSet, self).get_queryset().filter(owner=self.request.user, rent=True)
+        return Car.objects.filter(owner=self.request.user, rent=True)
 
 
 class PostCarSaleViewSet(viewsets.ModelViewSet):
+    '''
+    ViewSet for posting cars for sale
+    Use different serializers for retrieving and updating car info,
+    because of creating cars with relation to car photos
+    '''
     serializer_class = SaleCarPostingSerializer
-    queryset = Car.objects.all()
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
@@ -37,25 +46,40 @@ class PostCarSaleViewSet(viewsets.ModelViewSet):
             return SaleCarPostingSerializer
 
     def get_queryset(self):
-        return super(PostCarSaleViewSet, self).get_queryset().filter(owner=self.request.user, rent=False)
+        return Car.objects.filter(owner=self.request.user, rent=False)
 
 
 class CarRentModelViewSet(viewsets.ModelViewSet):
+    '''
+    ViewSet for retrieving cars for rent in marketplace section
+    '''
     serializer_class = CarSerializer
     queryset = Car.objects.filter(rent=True)
 
 
 class CarSaleModelViewSet(viewsets.ModelViewSet):
+    '''
+    ViewSet for retrieving cars for sale in marketplace section
+    '''
     serializer_class = CarSerializer
     queryset = Car.objects.filter(rent=False)
 
 
 class CarMakeViewSet(viewsets.ReadOnlyModelViewSet):
+    '''
+    ViewSet for retrieving available Car Make choices
+    Used in car create/edit form
+    '''
     serializer_class = CarMakeSerializer
     queryset = CarMake.objects.all()
 
 
 class CarModelViewSet(viewsets.ReadOnlyModelViewSet):
+    '''
+    ViewSet for retrieving available Car Model choices
+    Allows filtering by Car Make type
+    Used in car create/edit form
+    '''
     serializer_class = CarModelSerializer
     queryset = CarModel.objects.all()
     filter_backends = (filters.DjangoFilterBackend,)
@@ -160,6 +184,9 @@ vehicle_choices = VehicleChoices.as_view()
 
 
 class ManagePosts(APIView):
+    '''
+    ViewSet with all postings created by the user ordered by creation date
+    '''
 
     def get(self, request, *args, **kwargs):
         offers = MarketplaceJobOfferSerializer(JobOffer.objects.filter(owner=request.user),
@@ -181,3 +208,19 @@ class ManagePosts(APIView):
         return Response(postings, status=status.HTTP_200_OK)
 
 manage_posts = ManagePosts.as_view()
+
+
+class CarPhotoViewSet(viewsets.ModelViewSet):
+    '''
+    ViewSet for CRUD operations with photos of existing cars
+    '''
+    queryset = CarPhoto.objects.all()
+    serializer_class = CarPhotoSerializer
+
+
+class GoodsPhotoViewSet(viewsets.ModelViewSet):
+    '''
+    ViewSet for CRUD operations with photos of existing goods
+    '''
+    queryset = GoodPhoto.objects.all()
+    serializer_class = GoodsPhotoSerializer

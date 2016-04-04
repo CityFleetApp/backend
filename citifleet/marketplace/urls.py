@@ -22,11 +22,19 @@ offers_router = DefaultRouter()
 offers_router.register(r'/posting', views.PostingJobOfferViewSet, base_name='postings-offers')
 offers_router.register(r'', views.MarketJobOfferViewSet, base_name='marketplace-offers')
 
+car_photos_router = DefaultRouter()
+car_photos_router.register(r'', views.CarPhotoViewSet, base_name='carphotos')
+
+goods_photos_router = DefaultRouter()
+goods_photos_router.register(r'', views.GoodsPhotoViewSet, base_name='goodsphotos')
+
 
 urlpatterns = [
     url(r'^/cars/', include(router.urls)),
     url(r'^/goods', include(goods_router.urls)),
     url(r'^/offers', include(offers_router.urls)),
+    url(r'^/carphotos', include(car_photos_router.urls)),
+    url(r'^/goodsphotos', include(goods_photos_router.urls)),
     url(r'^/fuel/$', views.fuel_types, name='fuel'),
     url(r'^/types/$', views.car_types, name='types'),
     url(r'^/colors/$', views.colors, name='colors'),

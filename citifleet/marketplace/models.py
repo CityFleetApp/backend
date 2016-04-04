@@ -113,8 +113,12 @@ class CarPhoto(models.Model):
         verbose_name = _('Photo')
         verbose_name_plural = _('Photos')
 
-    def __unicode__(self):
+    @property
+    def url(self):
         return get_full_path(self.file.url)
+
+    def __unicode__(self):
+        return self.url
 
 
 class GeneralGood(models.Model):
@@ -149,11 +153,19 @@ class GoodPhoto(models.Model):
         verbose_name = _('General Goods Photo')
         verbose_name_plural = _('General Goods Photos')
 
-    def __unicode__(self):
+    @property
+    def url(self):
         return get_full_path(self.file.url)
+
+    def __unicode__(self):
+        return self.url
 
 
 class JobOffer(models.Model):
+    '''
+    Store job offer's details
+    Save requests for the job from drivers
+    '''
     REGULAR = 1
     BLACK = 2
     SUV = 3

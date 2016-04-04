@@ -7,10 +7,10 @@ from rest_framework.routers import DefaultRouter
 from . import views
 
 router = DefaultRouter()
-router.register(r'nearby/', views.NearbyReportViewSet, base_name='nearby')
-router.register(r'map/', views.MapReportViewSet, base_name='map')
+router.register(r'nearby', views.NearbyReportViewSet, base_name='nearby')
+router.register(r'map', views.MapReportViewSet, base_name='map')
 
 
 urlpatterns = [
-    url(r'^reports/', include(router.urls))
+    url(r'^', include(router.urls))
 ]
