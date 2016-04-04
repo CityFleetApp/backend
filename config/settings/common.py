@@ -45,6 +45,7 @@ THIRD_PARTY_APPS = (
     'easy_thumbnails',
     'image_cropping',
     'push_notifications',
+    'channels',
 )
 
 # Apps specific for this project go here.
@@ -55,6 +56,7 @@ LOCAL_APPS = (
     'citifleet.benefits',
     'citifleet.notifications.apps.NotificationsConfig',
     'citifleet.marketplace',
+    'citifleet.chat',
 )
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -276,4 +278,15 @@ THUMBNAIL_PROCESSORS = (
 PUSH_NOTIFICATIONS_SETTINGS = {
         "GCM_API_KEY": env('GCM_API_KEY', default=None),
         "APNS_CERTIFICATE": env('APNS_CERTIFICATE_PATH', default=None),
+}
+
+# Channels Layer config
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "asgi_redis.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [env('REDIS_URL', default='redis://localhost:6379')],
+        },
+        "ROUTING": "citifleet.chat.routing.channel_routing",
+    },
 }
