@@ -23,6 +23,7 @@ class Message(models.Model):
     text = models.TextField(_('Message'))
     room = models.ForeignKey(Room, verbose_name=_('Room'), related_name='messages')
     author = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='author', related_name='messages')
+    created = models.DateTimeField(_('Created'), auto_now_add=True)
 
     def __unicode__(self):
         return self.message[:20]

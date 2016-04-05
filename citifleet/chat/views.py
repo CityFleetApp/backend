@@ -1,10 +1,12 @@
 from django.shortcuts import render
 from django.db import transaction
-from django.shortcuts import redirect
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 
+from rest_framework import viewsets
+
 from .models import Room
+from .serializers import RoomSerializer
 
 
 def chat_room(request, label):
@@ -39,3 +41,10 @@ def new_room(request):
                 continue
             new_room = Room.objects.create(label=label)
     return HttpResponseRedirect(reverse('chat:chat_room', kwargs={'label': label}))
+
+
+class RoomViewSet(viewsets.ModelViewSet):
+    serializer_class = RoomSerializer
+
+    def get_queryset(self):
+        return Room.objects.filter(participants__in=[self.request.user])
