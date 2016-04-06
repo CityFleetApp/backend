@@ -1,5 +1,6 @@
 from django.utils.crypto import get_random_string
 from rest_framework import serializers
+from channels import Group
 
 from .models import Message, Room
 
@@ -8,15 +9,23 @@ class MessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Message
-        fields = ('text', 'room', 'author')
+        fields = ('text', 'room', 'author', 'created')
+
+    def create(self, validated_data):
+        message = super(MessageSerializer, self).create(validated_data)
+        Group('chat-' + message.author.id).send({'text': message})
 
 
 class RoomSerializer(serializers.ModelSerializer):
+    last_message = serializers.SerializerMethodField()
 
     class Meta:
         model = Room
-        fields = ('name', 'label', 'participants')
+        fields = ('name', 'label', 'participants', 'last_message')
         read_only_fields = ('label',)
+
+    def get_last_message(self, obj):
+        return obj.messages.order_by('created').last()
 
     def create(self, validated_data):
         participants = validated_data.pop('participants')

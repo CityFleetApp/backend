@@ -9,23 +9,23 @@ from .serializers import MessageSerializer
 
 @channel_session_user_from_http
 def ws_connect(message):
-    prefix, label = message['path'].strip('/').split('/')
-    room = Room.objects.get(label=label)
-    Group('chat-' + label).add(message.reply_channel)
-    message.channel_session['room'] = room.label
+    Group('chat-' + message.user.id).add(message.reply_channel)
 
 
 @channel_session_user
 def ws_receive(message):
-    label = message.channel_session['room']
-    room = Room.objects.get(label=label)
     data = json.loads(message['text'])
-    message = room.messages.create(text=data['message'], author=message.user)
-    serializer = MessageSerializer(message)
-    Group('chat-'+label).send({'text': json.dumps(serializer.data)})
+
+    try:
+        room = Room.objects.get(label=data['room'], participants__in=[message.user])
+    except Room.DoesNotExist:
+        pass
+    else:
+        chat_message = room.messages.create(text=data['message'], author=message.user)
+        serializer = MessageSerializer(chat_message)
+        Group('chat-' + message.user.id).send({'text': json.dumps(serializer.data)})
 
 
 @channel_session_user
 def ws_disconnect(message):
-    label = message.channel_session['room']
-    Group('chat-'+label).discard(message.reply_channel)
+    Group('chat-' + message.user.id).discard(message.reply_channel)

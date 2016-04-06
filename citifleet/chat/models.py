@@ -12,7 +12,7 @@ class Room(models.Model):
                                           related_name='participants')
 
     def __unicode__(self):
-        return ','.join([p.full_name for p in self.participants])
+        return ','.join([p.full_name for p in self.participants.all()])
 
     class Meta:
         verbose_name = _('Room')
@@ -26,7 +26,7 @@ class Message(models.Model):
     created = models.DateTimeField(_('Created'), auto_now_add=True)
 
     def __unicode__(self):
-        return self.message[:20]
+        return self.text[:20]
 
     class Meta:
         verbose_name = _('Message')
