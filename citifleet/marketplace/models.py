@@ -212,6 +212,8 @@ class JobOffer(models.Model):
     driver = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='offers', null=True)
     driver_requests = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='offer_requests')
     created = models.DateTimeField(_('Created'), auto_now_add=True)
+    driver_rating = models.FloatField(_('Driver Rating'), default=5.0)
+    owner_rating = models.FloatField(_('Owner Rating'), default=5.0)
 
     objects = Manager()
     expired = ExpiredManager()
@@ -222,3 +224,10 @@ class JobOffer(models.Model):
 
     def __unicode__(self):
         return 'from {} to {}'.format(self.pickup_address, self.destination)
+
+    def award(self, driver):
+        self.driver = driver
+        self.driver_requests.clear()
+        self.driver = driver
+        self.status = JobOffer.COVERED
+        self.save()

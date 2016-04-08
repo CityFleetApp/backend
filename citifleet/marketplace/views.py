@@ -1,3 +1,8 @@
+from django.views.generic import View
+from django.contrib.auth import get_user_model
+from django.http import HttpResponseRedirect
+from django.core.urlresolvers import reverse
+
 from rest_framework import viewsets
 from rest_framework import filters
 from rest_framework.views import APIView
@@ -224,3 +229,14 @@ class GoodsPhotoViewSet(viewsets.ModelViewSet):
     '''
     queryset = GoodPhoto.objects.all()
     serializer_class = GoodsPhotoSerializer
+
+
+class AwardJobView(View):
+
+    def get(self, request, *args, **kwargs):
+        job_offer = JobOffer.objects.get(id=kwargs['job_id'])
+        driver = get_user_model().objects.get(id=kwargs['driver_id'])
+        job_offer.award(driver)
+        return HttpResponseRedirect(reverse('admin:marketplace_joboffer_change', args=[job_offer.id]))
+
+award_job = AwardJobView.as_view()
