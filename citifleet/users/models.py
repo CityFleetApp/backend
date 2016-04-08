@@ -13,6 +13,7 @@ from easy_thumbnails.files import get_thumbnailer
 
 from citifleet.documents.models import Document
 from citifleet.common.utils import get_full_path
+from citifleet.marketplace.models import Car
 
 
 class UserManager(BaseUserManager):
@@ -61,6 +62,12 @@ class User(AbstractUser):
     chat_privacy = models.BooleanField(_('chat privacy'), default=True)
     visible = models.BooleanField(_('visible'), default=True)
 
+    car_make = models.ForeignKey('marketplace.CarMake', null=True)
+    car_model = models.ForeignKey('marketplace.CarModel', null=True)
+    car_year = models.PositiveIntegerField(_('Car year'), null=True)
+    car_type = models.PositiveIntegerField(_('Car type'), null=True, choices=Car.TYPES)
+    car_color = models.PositiveIntegerField(_('Car color'), null=True, choices=Car.COLORS)
+
     objects = UserManager()
     with_notifications = AllowNotificationManager()
 
@@ -76,6 +83,13 @@ class User(AbstractUser):
         '''
         if self.avatar:
             return get_full_path(self.avatar.url)
+        else:
+            return ''
+
+    @property
+    def drives(self):
+        if self.car_make and self.car_model:
+            return '{}/{}'.format(self.car_make.name, self.car_model.name)
         else:
             return ''
 

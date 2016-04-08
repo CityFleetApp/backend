@@ -13,7 +13,8 @@ from push_notifications.models import GCMDevice, APNSDevice
 
 from .serializers import (SignupSerializer, ResetPasswordSerializer, ChangePasswordSerializer,
                           UserDetailSerializer, ContactsSerializer, FacebookSerializer, TwitterSerializer,
-                          InstagramSerializer, PhotoSerializer, AvatarSerializer, SettingsSerializer)
+                          InstagramSerializer, PhotoSerializer, AvatarSerializer, SettingsSerializer,
+                          ProfileSerializer)
 from .models import Photo
 
 
@@ -195,9 +196,24 @@ class PhotoModelViewSet(ModelViewSet):
 
 
 class SettingsView(RetrieveUpdateAPIView):
+    '''
+    APIView for editing user's settings
+    '''
     serializer_class = SettingsSerializer
 
     def get_object(self):
         return self.request.user
 
 settings = SettingsView.as_view()
+
+
+class ProfileView(RetrieveUpdateAPIView):
+    '''
+    APIView for editing profile's info
+    '''
+    serializer_class = ProfileSerializer
+
+    def get_object(self):
+        return self.request.user
+
+profile = ProfileView.as_view()

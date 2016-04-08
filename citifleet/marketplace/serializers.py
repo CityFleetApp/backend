@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Car, CarMake, CarModel, CarPhoto, GeneralGood, GoodPhoto
+from .models import Car, CarMake, CarModel, CarPhoto, GeneralGood, GoodPhoto, JobOffer
 
 
 class CarMakeSerializer(serializers.ModelSerializer):
@@ -53,6 +53,13 @@ class SaleCarPostingSerializer(CarPostingSerializer):
         return attrs
 
 
+class CarIdPhotoSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CarPhoto
+        fields = ('id', 'url')
+
+
 class CarSerializer(serializers.ModelSerializer):
     make = serializers.ReadOnlyField(source='make.name')
     model = serializers.ReadOnlyField(source='model.name')
@@ -60,29 +67,42 @@ class CarSerializer(serializers.ModelSerializer):
     fuel = serializers.ReadOnlyField(source='get_fuel_display')
     color = serializers.ReadOnlyField(source='get_color_display')
     dimensions = serializers.SerializerMethodField()
-    photos = serializers.StringRelatedField(many=True)
+    photos = CarIdPhotoSerializer(many=True)
 
     def get_dimensions(self, obj):
         photo = obj.photos.first()
-        return [photo.file.width, photo.file.height]
+        if photo:
+            return [photo.file.width, photo.file.height]
+        else:
+            return None
 
     class Meta:
         fields = ('id', 'make', 'model', 'type', 'color', 'year', 'fuel', 'seats',
-                  'price', 'description', 'rent', 'photos', 'dimensions')
+                  'price', 'description', 'rent', 'photos', 'dimensions', 'created')
         model = Car
+
+
+class GoodsIdPhotoSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = GoodPhoto
+        fields = ('id', 'url')
 
 
 class GeneralGoodSerializer(serializers.ModelSerializer):
     condition = serializers.ReadOnlyField(source='get_condition_display')
-    photos = serializers.StringRelatedField(many=True)
+    photos = GoodsIdPhotoSerializer(many=True)
     dimensions = serializers.SerializerMethodField()
 
     def get_dimensions(self, obj):
         photo = obj.photos.first()
-        return [photo.file.width, photo.file.height]
+        if photo:
+            return [photo.file.width, photo.file.height]
+        else:
+            return None
 
     class Meta:
-        fields = ('id', 'item', 'price', 'condition', 'description', 'photos', 'dimensions')
+        fields = ('id', 'item', 'price', 'condition', 'description', 'photos', 'dimensions', 'created')
         model = GeneralGood
 
 
@@ -103,3 +123,41 @@ class PostingGeneralGoodsSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         attrs['owner'] = self.context['request'].user
         return attrs
+
+
+class MarketplaceJobOfferSerializer(serializers.ModelSerializer):
+    job_type = serializers.ReadOnlyField(source='get_job_type_display')
+    vehicle_type = serializers.ReadOnlyField(source='get_vehicle_type_display')
+    status = serializers.ReadOnlyField(source='get_status_display')
+
+    class Meta:
+        model = JobOffer
+        fields = ('id', 'pickup_datetime', 'pickup_address', 'destination', 'fare',
+                  'gratuity', 'vehicle_type', 'suite', 'job_type', 'instructions',
+                  'status', 'created')
+
+
+class PostingJobOfferSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = JobOffer
+        fields = ('id', 'pickup_datetime', 'pickup_address', 'destination', 'fare',
+                  'gratuity', 'vehicle_type', 'suite', 'job_type', 'instructions')
+
+    def validate(self, attrs):
+        attrs['owner'] = self.context['request'].user
+        return attrs
+
+
+class CarPhotoSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        fields = ('id', 'file', 'car')
+        model = CarPhoto
+
+
+class GoodsPhotoSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        fields = ('id', 'file', 'goods')
+        model = GoodPhoto
