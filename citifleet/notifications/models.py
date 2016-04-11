@@ -81,7 +81,7 @@ class NotificationTemplate(NotificationBase):
     @staticmethod
     def send_notification(type, **extra):
         try:
-            template_dict = NotificationTemplate.objects.get(type=type, enabled=True).to_dict()
+            template_dict = NotificationTemplate.objects.get(type=type, enabled=True).to_dict
         except NotificationTemplate.DoesNotExist:
             return
 

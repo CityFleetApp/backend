@@ -13,18 +13,18 @@ def joboffer_created(sender, instance, created, **kwargs):
     '''
     if created:
         extra = {'id': instance.id}
-        NotificationTemplate.send_notification(NotificationTemplate.JOBOFFER_CREATED, extra)
+        NotificationTemplate.send_notification(NotificationTemplate.JOBOFFER_CREATED, **extra)
 
 
 @receiver(post_save, sender=GeneralGood)
 def goods_created(sender, instance, created, **kwargs):
     if created:
         extra = {'id': instance.id}
-        NotificationTemplate.send_notification(NotificationTemplate.GENERAL_GOODS_CREATED, extra)
+        NotificationTemplate.send_notification(NotificationTemplate.GENERAL_GOODS_CREATED, **extra)
 
 
 @receiver(post_save, sender=Car)
 def car_created(sender, instance, created, **kwargs):
     if created:
         extra = {'id': instance.id, 'rent': instance.rent}
-        NotificationTemplate.send_notification(NotificationTemplate.CAR_CREATED, extra)
+        NotificationTemplate.send_notification(NotificationTemplate.CAR_CREATED, **extra)

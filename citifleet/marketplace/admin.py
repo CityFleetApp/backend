@@ -84,7 +84,7 @@ class JobOfferModelAdmin(admin.ModelAdmin):
         if not request.user.is_superuser:
             return qs.filter(owner=request.user)
         else:
-            return qs.filter
+            return qs
 
 
 admin.site.register(CarModel, CarModelModelAdmin)

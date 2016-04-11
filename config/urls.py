@@ -9,7 +9,7 @@ from django.contrib import admin
 urlpatterns = [
     # Django Admin, use {% url 'admin:index' %}
     url(settings.ADMIN_URL, include(admin.site.urls)),
-    url(r'^chat', include('citifleet.chat.urls', namespace='chat')),
+    url(r'^api/chat', include('citifleet.chat.urls', namespace='chat')),
     url(r'^api/users/', include('citifleet.users.urls', namespace='users')),
     url(r'^api/reports/', include('citifleet.reports.urls', namespace='reports')),
     url(r'^api/legalaid/', include('citifleet.legalaid.urls', namespace='legalaid')),
