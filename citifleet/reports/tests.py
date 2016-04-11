@@ -60,20 +60,43 @@ class TestNearbyReportViewSet(TestCase):
         self.assertEqual(report.location.y, 51.0)
 
     # Authorized user deletes report by it's id
-    def test_delete_report(self):
+    def test_deny_report(self):
         report = ReportFactory(location=self.point)
+        timestamp = report.updated
         self.client.force_authenticate(user=self.user)
-        resp = self.client.delete(reverse('reports:nearby-detail', args=[report.id]))
-        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Report.objects.count(), 0)
+
+        resp = self.client.post(reverse('reports:nearby-deny-report', args=[report.id]))
+        report.refresh_from_db()
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(report.updated, timestamp)
+        self.assertTrue(report.not_here)
+        self.assertEqual(report.declined, self.user)
+
+        resp = self.client.post(reverse('reports:nearby-deny-report', args=[report.id]))
+        report.refresh_from_db()
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(report.updated, timestamp)
+        self.assertTrue(report.not_here)
+        self.assertEqual(report.declined, self.user)
+
+        user2 = UserFactory(email='test2@example.com')
+        self.client.force_authenticate(user=user2)
+        resp = self.client.post(reverse('reports:nearby-deny-report', args=[report.id]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(Report.objects.filter(id=report.id).exists())
 
     # Authorized user confirms report and it's updated value is changed
     def test_confirm_report(self):
         report = ReportFactory(location=self.point)
+        timestamp = report.updated
         self.client.force_authenticate(user=self.user)
         resp = self.client.post(reverse('reports:nearby-confirm-report', args=[report.id]))
+
+        report.refresh_from_db()
         self.assertEqual(resp.status_code, 200)
-        self.assertNotEqual(report.updated, Report.objects.get().updated)
+        self.assertNotEqual(report.updated, timestamp)
+        self.assertFalse(report.not_here)
+        self.assertEqual(report.declined, None)
 
     # Outdated task is deleted
     @override_settings(AUTOCLOSE_INTERVAL=0)
@@ -120,13 +143,13 @@ class TestPushNotificationSent(TestCase):
         report = ReportFactory(location=self.point)
         self.assertEqual(apns_mock.call_count, 1)
         apns_mock.assert_called_with(
-            alert={'action': 'added', 'id': report.id, 'location': report.location,
-                   'type': report.report_type},
+            alert={'action': 'added', 'id': report.id, 'lat': self.report.location.x,
+                   'lng': self.report.location.y, 'type': report.report_type},
             registration_ids=[''])
         self.assertEqual(gcm_mock.call_count, 1)
         gcm_mock.assert_called_with(
-            data={'message': {'action': 'added', 'id': report.id, 'location': report.location,
-                              'type': report.report_type}},
+            data={'message': {'action': 'added', 'id': report.id, 'lat': self.report.location.x,
+                  'lng': self.report.location.y, 'type': report.report_type}},
             registration_ids=[''])
 
     # Push notification sent on report delete
@@ -136,11 +159,11 @@ class TestPushNotificationSent(TestCase):
         report_id = self.report.id
         self.report.delete()
         apns_mock.assert_called_with(
-            alert={'action': 'removed', 'id': report_id, 'location': self.report.location,
-                   'type': self.report.report_type}, registration_ids=[''])
+            alert={'action': 'removed', 'id': report_id, 'lat': self.report.location.x,
+                   'lng': self.report.location.y, 'type': self.report.report_type}, registration_ids=[''])
         gcm_mock.assert_called_with(
-            data={'message': {'action': 'removed', 'id': report_id, 'location': self.report.location,
-                  'type': self.report.report_type}}, registration_ids=[''])
+            data={'message': {'action': 'removed', 'id': report_id, 'lat': self.report.location.x,
+                  'lng': self.report.location.y, 'type': self.report.report_type}}, registration_ids=[''])
 
     # Push notification not sent for not nearby drivers
     @patch('push_notifications.apns.apns_send_bulk_message')
