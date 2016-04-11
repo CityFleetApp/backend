@@ -6,6 +6,8 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
 
+from citifleet.users.serializers import FriendSerializer
+
 from .models import Report
 from .serializers import ReportSerializer, LocationSerializer
 
@@ -61,3 +63,12 @@ class NearbyReportViewSet(BaseReportViewSet):
 
 class MapReportViewSet(BaseReportViewSet):
     pass
+
+
+class FriendViewSet(BaseReportViewSet):
+    serializer_class = FriendSerializer
+
+    def get_queryset(self):
+        return self.request.user.friends.filter(
+            location__distance_lte=(self.location, D(m=settings.VISIBLE_REPORTS_RADIUS)),
+            visible=True)

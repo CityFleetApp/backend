@@ -240,3 +240,12 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ('car_make', 'car_model', 'bio', 'username', 'car_year', 'car_type', 'phone',
                   'car_color', 'car_make_display', 'car_model_display', 'car_color_display', 'car_type_display')
+
+
+class FriendSerializer(serializers.ModelSerializer):
+    lat = serializers.FloatField(source='location.x')
+    lng = serializers.FloatField(source='location.y')
+
+    class Meta:
+        model = User
+        fields = ('id', 'avatar_url', 'full_name', 'email', 'username', 'phone', 'lat', 'lng')

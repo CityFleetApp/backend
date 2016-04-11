@@ -9,6 +9,7 @@ from . import views
 router = DefaultRouter()
 router.register(r'nearby', views.NearbyReportViewSet, base_name='nearby')
 router.register(r'map', views.MapReportViewSet, base_name='map')
+router.register(r'friends', views.FriendViewSet, base_name='friends')
 
 
 urlpatterns = [
