@@ -1,4 +1,5 @@
 from django.utils.crypto import get_random_string
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from channels import Group
 
@@ -43,3 +44,10 @@ class RoomSerializer(serializers.ModelSerializer):
         room.participants.add(self.context['request'].user)
         room.participants.add(*participants)
         return room
+
+
+class ChatFriendSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = get_user_model()
+        fields = ('id', 'full_name', 'phone', 'avatar_url')

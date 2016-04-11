@@ -7,7 +7,8 @@ from rest_framework.routers import DefaultRouter
 from . import views
 
 router = DefaultRouter()
-router.register(r'', views.RoomViewSet, base_name='api')
+router.register(r'rooms', views.RoomViewSet, base_name='rooms')
+router.register(r'friends', views.FriendsViewSet, base_name='friends')
 
 urlpatterns = [
     url(r'^new/$', views.new_room, name='new_room'),

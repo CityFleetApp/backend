@@ -6,7 +6,7 @@ from django.http import HttpResponseRedirect
 from rest_framework import viewsets
 
 from .models import Room
-from .serializers import RoomSerializer, MessageSerializer
+from .serializers import RoomSerializer, MessageSerializer, ChatFriendSerializer
 
 
 def chat_room(request, label):
@@ -52,3 +52,10 @@ class RoomViewSet(viewsets.ModelViewSet):
 
 class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
+
+
+class FriendsViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = ChatFriendSerializer
+
+    def get_queryset(self):
+        return self.request.user.friends.all()
