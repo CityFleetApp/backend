@@ -27,18 +27,19 @@ class ChatFriendSerializer(serializers.ModelSerializer):
 class RoomSerializer(serializers.ModelSerializer):
     last_message = serializers.SerializerMethodField()
     last_message_timestamp = serializers.SerializerMethodField()
-    participants = ChatFriendSerializer(many=True)
+    participants_info = ChatFriendSerializer(many=True, source='participants', read_only=True)
 
     class Meta:
         model = Room
-        fields = ('name', 'label', 'participants', 'last_message', 'last_message_timestamp')
+        fields = ('name', 'label', 'participants', 'participants_info', 'last_message', 'last_message_timestamp')
         read_only_fields = ('label',)
 
     def get_last_message(self, obj):
         return obj.messages.order_by('created').last()
 
     def get_last_message_timestamp(self, obj):
-        return obj.messages.order_by('created').last().created
+        last_message = obj.messages.order_by('created').last()
+        return last_message.created if last_message else None
 
     def create(self, validated_data):
         participants = validated_data.pop('participants')
@@ -53,8 +54,6 @@ class RoomSerializer(serializers.ModelSerializer):
             room.label = label
             room.save()
 
-        room.participants.add(self.context['request'].user)
+        room.participants.add(self.context['user'])
         room.participants.add(*participants)
         return room
-
-

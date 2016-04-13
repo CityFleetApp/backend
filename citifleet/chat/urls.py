@@ -11,7 +11,5 @@ router.register(r'rooms', views.RoomViewSet, base_name='rooms')
 router.register(r'friends', views.FriendsViewSet, base_name='friends')
 
 urlpatterns = [
-    url(r'^new/$', views.new_room, name='new_room'),
-    url(r'^(?P<label>[\d]+)/$', views.chat_room, name='chat_room'),
     url(r'^', include(router.urls)),
 ]
