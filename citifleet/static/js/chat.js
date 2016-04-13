@@ -9,7 +9,7 @@ $(function() {
         var ele = $('<tr></tr>')
 
         ele.append(
-            $("<td></td>").text(data.author)
+            $("<td></td>").text(data.author_info.full_name)
         )
         ele.append(
             $("<td></td>").text(data.text)
@@ -20,8 +20,9 @@ $(function() {
 
     $("#chatform").on("submit", function(event) {
         var message = {
-            handle: $('#handle').val(),
-            message: $('#message').val(),
+            method: 'post_message',
+            room: 5,
+            text: $('#message').val()
         }
         chatsock.send(JSON.stringify(message));
         $("#message").val('').focus();
