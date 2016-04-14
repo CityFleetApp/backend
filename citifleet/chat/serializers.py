@@ -1,20 +1,8 @@
 from django.utils.crypto import get_random_string
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from channels import Group
 
 from .models import Message, Room
-
-
-class MessageSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Message
-        fields = ('text', 'room', 'author', 'created')
-
-    def create(self, validated_data):
-        message = super(MessageSerializer, self).create(validated_data)
-        Group('chat-' + message.author.id).send({'text': message})
 
 
 class ChatFriendSerializer(serializers.ModelSerializer):
@@ -22,6 +10,14 @@ class ChatFriendSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = ('id', 'full_name', 'phone', 'avatar_url')
+
+
+class MessageSerializer(serializers.ModelSerializer):
+    author_info = ChatFriendSerializer(source='author', read_only=True)
+
+    class Meta:
+        model = Message
+        fields = ('text', 'room', 'author', 'created', 'author_info')
 
 
 class RoomSerializer(serializers.ModelSerializer):

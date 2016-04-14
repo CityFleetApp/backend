@@ -14,16 +14,18 @@ class MessageHandler(object):
         '''
         response = {'type': 'receive_message'}
 
-        self.msg['author'] = self.user
+        self.msg['author'] = self.user.id
         serializer = MessageSerializer(data=self.msg)
 
         if serializer.is_valid():
             message = serializer.save()
-            response['data'] = MessageSerializer(message).data
+            response.update(MessageSerializer(message).data)
+            json_response = json.dumps(response)
 
-            participants = message.room.participants.exclude(id=self.user.id)
-            for participant in participants:
-                Group('chat-%s' % participant.id).send(response)
+            for participant in message.room.participants.all():
+                print(participant.id)
+                print(self.user.id)
+                Group('chat-%s' % participant.id).send({'text': json_response})
 
     def _create_room(self):
         '''
@@ -69,16 +71,16 @@ class MessageHandler(object):
         Message routing
         '''
         self.user = msg.user
-        self.msg = json.loads(msg)
+        self.msg = json.loads(msg.content['text'])
 
-        if msg.get('method') == 'create_room':
+        if self.msg.get('method') == 'create_room':
             self._create_room()
 
-        if msg.get('method') == 'post_message':
+        if self.msg.get('method') == 'post_message':
             self._post_message()
 
-        if msg.get('method') == 'fetch_rooms':
+        if self.msg.get('method') == 'fetch_rooms':
             self._fetch_rooms()
 
-        if msg.get('method') == 'fetch_messages':
+        if self.msg.get('method') == 'fetch_messages':
             self._fetch_messages()

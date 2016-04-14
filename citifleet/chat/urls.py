@@ -14,4 +14,5 @@ router.register(r'friends', views.FriendsViewSet, base_name='friends')
 urlpatterns = [
     url(r'^', include(router.urls)),
     url(r'^websocket_docs/$', TemplateView.as_view(template_name='chat.html')),
+    url(r'^websocket_test/$', TemplateView.as_view(template_name='chat_test.html')),
 ]
