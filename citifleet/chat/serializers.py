@@ -31,7 +31,7 @@ class RoomSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Room
-        fields = ('name', 'label', 'participants', 'participants_info', 'last_message', 'last_message_timestamp')
+        fields = ('id', 'name', 'label', 'participants', 'participants_info', 'last_message', 'last_message_timestamp')
         read_only_fields = ('label',)
 
     def get_last_message(self, obj):

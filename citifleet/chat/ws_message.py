@@ -2,6 +2,7 @@ import json
 
 from channels import Group
 
+from .models import Room
 from .serializers import MessageSerializer, RoomSerializer
 
 
@@ -11,7 +12,7 @@ class MessageHandler(object):
         '''
         Create message and send to other group participants
         '''
-        response = {'type': 'message_posted'}
+        response = {'type': 'receive_message'}
 
         self.msg['author'] = self.user
         serializer = MessageSerializer(data=self.msg)
@@ -22,13 +23,13 @@ class MessageHandler(object):
 
             participants = message.room.participants.exclude(id=self.user.id)
             for participant in participants:
-                Group('chat-' + participant.id).send(response)
+                Group('chat-%s' % participant.id).send(response)
 
     def _create_room(self):
         '''
         Create room and send notification to invited participants
         '''
-        response = {'type': 'room_created'}
+        response = {'type': 'room_invitation'}
 
         serializer = RoomSerializer(self.msg, context={'user': self.user})
         if serializer.is_valid():
@@ -37,7 +38,31 @@ class MessageHandler(object):
 
             participants = room.participants.exclude(id=self.user.id)
             for participant in participants:
-                Group('chat-' + participant.id).send(response)
+                Group('chat-%s' % participant.id).send(response)
+
+    def _fetch_rooms(self):
+        '''
+        Fetch user's chat rooms
+        '''
+        response = {'type': 'rooms_list'}
+
+        rooms = Room.objects.filter(participants__in=[self.user])
+        response['data'] = RoomSerializer(rooms, many=True).data
+        Group('chat-%s' % self.user.id).send(response)
+
+    def _fetch_messages(self):
+        '''
+        Fetch room's message by room id
+        '''
+        response = {'type': 'messages'}
+
+        try:
+            messages = Room.objects.get(participants__in=[self.user], label=self.msg['label'])
+        except Room.DoesNotExist:
+            pass
+        else:
+            response['data'] = MessageSerializer(messages, many=True)
+            Group('chat-%s' % self.user.id).send(response)
 
     def on_message(self, msg):
         '''
