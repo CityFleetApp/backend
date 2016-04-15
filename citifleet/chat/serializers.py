@@ -31,7 +31,8 @@ class RoomSerializer(serializers.ModelSerializer):
         read_only_fields = ('label',)
 
     def get_last_message(self, obj):
-        return obj.messages.order_by('created').last()
+        last_message = obj.messages.order_by('created').last()
+        return last_message.text if last_message else None
 
     def get_last_message_timestamp(self, obj):
         last_message = obj.messages.order_by('created').last()

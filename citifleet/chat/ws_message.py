@@ -23,8 +23,6 @@ class MessageHandler(object):
             json_response = json.dumps(response)
 
             for participant in message.room.participants.all():
-                print(participant.id)
-                print(self.user.id)
                 Group('chat-%s' % participant.id).send({'text': json_response})
 
     def _create_room(self):
@@ -81,6 +79,3 @@ class MessageHandler(object):
 
         if self.msg.get('method') == 'fetch_rooms':
             self._fetch_rooms()
-
-        if self.msg.get('method') == 'fetch_messages':
-            self._fetch_messages()

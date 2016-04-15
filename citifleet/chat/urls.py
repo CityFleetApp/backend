@@ -10,6 +10,7 @@ from . import views
 router = DefaultRouter()
 router.register(r'rooms', views.RoomViewSet, base_name='rooms')
 router.register(r'friends', views.FriendsViewSet, base_name='friends')
+router.register(r'rooms/(?P<room>\d+)/messages', views.MessageViewSet, base_name='messages')
 
 urlpatterns = [
     url(r'^', include(router.urls)),
