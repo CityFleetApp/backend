@@ -113,7 +113,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
         model = User
         fields = ('email', 'full_name', 'phone', 'hack_license', 'username',
                   'bio', 'drives', 'avatar_url', 'documents_up_to_date', 'jobs_completed',
-                  'rating')
+                  'rating', 'id')
 
 
 class ContactsSerializer(serializers.Serializer):

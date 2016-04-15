@@ -1,4 +1,5 @@
 from rest_framework import viewsets
+from rest_framework.pagination import PageNumberPagination
 
 from .models import Room
 from .serializers import RoomSerializer, MessageSerializer, ChatFriendSerializer
@@ -6,6 +7,8 @@ from .serializers import RoomSerializer, MessageSerializer, ChatFriendSerializer
 
 class RoomViewSet(viewsets.ModelViewSet):
     serializer_class = RoomSerializer
+    pagination_class = PageNumberPagination
+    page_size = 10
 
     def get_queryset(self):
         return Room.objects.filter(participants__in=[self.request.user])
