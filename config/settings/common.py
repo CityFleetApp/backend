@@ -56,7 +56,7 @@ LOCAL_APPS = (
     'citifleet.benefits',
     'citifleet.notifications.apps.NotificationsConfig',
     'citifleet.marketplace',
-    'citifleet.chat',
+    'citifleet.chat.apps.ChatConfig',
 )
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps

@@ -5,7 +5,6 @@ from .models import Room, Message
 
 
 class RoomFactory(DjangoModelFactory):
-    label = factory.Sequence(lambda n: 'label %s' % n)
 
     class Meta:
         model = Room

@@ -7,9 +7,9 @@ from django.conf import settings
 
 class Room(models.Model):
     name = models.CharField(_('Name'), max_length=255)
-    label = models.SlugField(_('Label'), unique=True)
     participants = models.ManyToManyField(settings.AUTH_USER_MODEL, verbose_name='participants',
-                                          related_name='participants')
+                                          related_name='participants', through='UserRoom')
+    created = models.DateTimeField(_('Created'), auto_now_add=True)
 
     def __unicode__(self):
         return ','.join([p.full_name for p in self.participants.all()])
@@ -31,3 +31,9 @@ class Message(models.Model):
     class Meta:
         verbose_name = _('Message')
         verbose_name_plural = _('Messages')
+
+
+class UserRoom(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL)
+    room = models.ForeignKey(Room)
+    unseen = models.PositiveIntegerField(_('Number of unseen messages'), default=0)

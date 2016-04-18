@@ -1,6 +1,11 @@
-from django.utils.crypto import get_random_string
+import json
+from itertools import chain
+
 from django.contrib.auth import get_user_model
+from django.db.models import Count
+
 from rest_framework import serializers
+from channels import Group
 
 from .models import Message, Room
 
@@ -27,8 +32,7 @@ class RoomSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Room
-        fields = ('id', 'name', 'label', 'participants', 'participants_info', 'last_message', 'last_message_timestamp')
-        read_only_fields = ('label',)
+        fields = ('id', 'name', 'participants', 'participants_info', 'last_message', 'last_message_timestamp')
 
     def get_last_message(self, obj):
         last_message = obj.messages.order_by('created').last()
@@ -41,16 +45,27 @@ class RoomSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         participants = validated_data.pop('participants')
 
-        room = None
-        while not room:
-            label = get_random_string(length=32)
-            if Room.objects.filter(label=label).exists():
-                continue
+        if len(participants) == 1:
+            try:
+                room = Room.objects.annotate(number=Count('participants'))\
+                                   .filter(participants=self.context['request'].user)\
+                                   .filter(participants=participants[0])\
+                                   .get(number=2)
+                return room
+            except Room.DoesNotExist:
+                pass
 
-            room = Room(**validated_data)
-            room.label = label
-            room.save()
+        room = Room(**validated_data)
+        room.save()
 
-        room.participants.add(self.context['user'])
+        room.participants.add(self.context['request'].user)
         room.participants.add(*participants)
+
+        message = {'type': 'room_invitation'}
+        message.update(RoomSerializer(room).data)
+        json_message = json.dumps(message)
+
+        for participant in chain(participants, [self.context['request'].user]):
+            Group('chat-%s' % participant.id).send({'text': json_message})
+
         return room
