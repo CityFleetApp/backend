@@ -29,7 +29,7 @@ class SignUpView(APIView):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         token = serializer.save()
-        return Response({'token': token.key}, status=status.HTTP_200_OK)
+        return Response({'token': token.key, 'id': token.user.id}, status=status.HTTP_200_OK)
 
 
 signup = SignUpView.as_view()

@@ -1,5 +1,6 @@
 from django.utils.crypto import get_random_string
 from django.contrib.auth import get_user_model
+from django.db.models import Count
 from rest_framework import serializers
 
 from .models import Message, Room
@@ -41,6 +42,16 @@ class RoomSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         participants = validated_data.pop('participants')
 
+        if len(participants) == 1:
+            try:
+                room = Room.objects.annotate(number=Count('participants'))\
+                                   .filter(participants=self.context['request'].user)\
+                                   .filter(participants=participants[0])\
+                                   .get(number=2)
+                return room
+            except Room.DoesNotExist:
+                pass
+
         room = None
         while not room:
             label = get_random_string(length=32)
@@ -51,6 +62,6 @@ class RoomSerializer(serializers.ModelSerializer):
             room.label = label
             room.save()
 
-        room.participants.add(self.context['user'])
+        room.participants.add(self.context['request'].user)
         room.participants.add(*participants)
         return room

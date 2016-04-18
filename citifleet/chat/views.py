@@ -18,7 +18,7 @@ class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
 
     def get_queryset(self):
-        return Message.objects.filter(room=self.kwargs['room'])
+        return Message.objects.filter(room=self.kwargs['room'], room__participants__in=[self.request.user])
 
 
 class FriendsViewSet(viewsets.ReadOnlyModelViewSet):
