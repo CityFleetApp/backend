@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-  socket url - ws://{{ request.get_host }}/
+  socket url - ws://{{ request.get_host }}/?token=AUTH_TOKEN
 
   <h1>Send message</h1>
   <p>Message format = {'method': 'post_message', 'text': "message text", 'room': room_id}</p>
