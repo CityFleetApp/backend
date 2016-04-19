@@ -1,4 +1,3 @@
-from django.utils.crypto import get_random_string
 from django.contrib.auth import get_user_model
 from django.db.models import Count
 from rest_framework import serializers
@@ -28,8 +27,7 @@ class RoomSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Room
-        fields = ('id', 'name', 'label', 'participants', 'participants_info', 'last_message', 'last_message_timestamp')
-        read_only_fields = ('label',)
+        fields = ('id', 'name', 'participants', 'participants_info', 'last_message', 'last_message_timestamp')
 
     def get_last_message(self, obj):
         last_message = obj.messages.order_by('created').last()
@@ -52,15 +50,8 @@ class RoomSerializer(serializers.ModelSerializer):
             except Room.DoesNotExist:
                 pass
 
-        room = None
-        while not room:
-            label = get_random_string(length=32)
-            if Room.objects.filter(label=label).exists():
-                continue
-
-            room = Room(**validated_data)
-            room.label = label
-            room.save()
+        room = Room(**validated_data)
+        room.save()
 
         room.participants.add(self.context['request'].user)
         room.participants.add(*participants)

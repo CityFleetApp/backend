@@ -1,5 +1,5 @@
 from django.core.urlresolvers import reverse
-from django.db.models import Count
+
 from test_plus.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -7,7 +7,7 @@ from rest_framework import status
 from citifleet.users.factories import UserFactory
 
 from .models import Room
-from .factories import RoomFactory
+from .factories import RoomFactory, MessageFactory
 
 
 class RoomTestCase(TestCase):
@@ -38,3 +38,21 @@ class RoomTestCase(TestCase):
         resp = self.client.post(reverse('chat:rooms-list'), data={'participants': [self.friend.id], 'name': 'Room'})
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(resp.data['id'], Room.objects.get().id)
+
+    def test_room_ordering(self):
+        room1, room2 = RoomFactory.create_batch(2, participants=[self.user])
+        self.client.force_authenticate(user=self.user)
+
+        resp = self.client.get(reverse('chat:rooms-list'))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data[0]['id'], room2.id)
+
+        MessageFactory(room=room1, author=self.user, text='text')
+        resp = self.client.get(reverse('chat:rooms-list'))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data[0]['id'], room1.id)
+
+        MessageFactory(room=room2, author=self.user, text='text')
+        resp = self.client.get(reverse('chat:rooms-list'))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data[0]['id'], room2.id)

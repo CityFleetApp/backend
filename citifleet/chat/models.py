@@ -7,9 +7,9 @@ from django.conf import settings
 
 class Room(models.Model):
     name = models.CharField(_('Name'), max_length=255)
-    label = models.SlugField(_('Label'), unique=True)
     participants = models.ManyToManyField(settings.AUTH_USER_MODEL, verbose_name='participants',
                                           related_name='participants')
+    created = models.DateTimeField(_('Created'), auto_now_add=True)
 
     def __unicode__(self):
         return ','.join([p.full_name for p in self.participants.all()])
