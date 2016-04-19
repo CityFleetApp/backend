@@ -1,4 +1,5 @@
 import json
+from itertools import chain
 
 from django.contrib.auth import get_user_model
 from django.db.models import Count
@@ -64,7 +65,7 @@ class RoomSerializer(serializers.ModelSerializer):
         message.update(RoomSerializer(room).data)
         json_message = json.dumps(message)
 
-        for participant in participants:
+        for participant in chain(participants, [self.context['request'].user]):
             Group('chat-%s' % participant.id).send({'text': json_message})
 
         return room

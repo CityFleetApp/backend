@@ -10,7 +10,7 @@ from .serializers import MessageSerializer, RoomSerializer
 @receiver(post_save, sender=Message)
 def message_created(sender, instance, created, **kwargs):
     '''
-    Send push notification to the drivers when new marketplace item is created
+    Send push notification to room participants
     '''
     if created:
         push_message = {'type': 'receive_message'}
@@ -23,7 +23,7 @@ def message_created(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Room)
 def room_invitation(sender, instance, created, **kwargs):
     '''
-    Send push notification to the drivers when new marketplace item is created
+    Send push notification to new room participants
     '''
     if created:
         push_message = {'type': 'room_invitation'}
