@@ -1,6 +1,10 @@
+import json
+
 from django.contrib.auth import get_user_model
 from django.db.models import Count
+
 from rest_framework import serializers
+from channels import Group
 
 from .models import Message, Room
 
@@ -55,4 +59,12 @@ class RoomSerializer(serializers.ModelSerializer):
 
         room.participants.add(self.context['request'].user)
         room.participants.add(*participants)
+
+        message = {'type': 'room_invitation'}
+        message.update(RoomSerializer(room).data)
+        json_message = json.dumps(message)
+
+        for participant in participants:
+            Group('chat-%s' % participant.id).send({'text': json_message})
+
         return room

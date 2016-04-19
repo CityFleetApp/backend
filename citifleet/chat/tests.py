@@ -45,14 +45,36 @@ class RoomTestCase(TestCase):
 
         resp = self.client.get(reverse('chat:rooms-list'))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 2)
         self.assertEqual(resp.data[0]['id'], room2.id)
 
         MessageFactory(room=room1, author=self.user, text='text')
         resp = self.client.get(reverse('chat:rooms-list'))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 2)
         self.assertEqual(resp.data[0]['id'], room1.id)
 
         MessageFactory(room=room2, author=self.user, text='text')
         resp = self.client.get(reverse('chat:rooms-list'))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 2)
         self.assertEqual(resp.data[0]['id'], room2.id)
+
+        MessageFactory(room=room2, author=self.user, text='text')
+        MessageFactory(room=room2, author=self.user, text='text')
+        MessageFactory(room=room2, author=self.user, text='text')
+
+        resp = self.client.get(reverse('chat:rooms-list'))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 2)
+
+    def test_invite_users(self):
+        room = RoomFactory(participants=[self.user])
+        self.client.force_authenticate(user=self.user)
+
+        resp = self.client.patch(reverse('chat:rooms-detail', args=[room.id]),
+                                 data={'participants': [self.friend.id, self.user.id]})
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertTrue(self.friend in room.participants.all())
+        self.assertTrue(self.user in room.participants.all())
+        self.assertEqual(room.participants.count(), 2)

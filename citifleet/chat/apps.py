@@ -4,4 +4,7 @@ from django.apps import AppConfig
 
 
 class ChatConfig(AppConfig):
-    name = 'chat'
+    name = 'citifleet.chat'
+
+    def ready(self):
+        from . import signals
