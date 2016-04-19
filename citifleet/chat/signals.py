@@ -1,9 +1,10 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.db.models import F
 
 from push_notifications.models import APNSDevice, GCMDevice
 
-from .models import Message, Room
+from .models import Message, Room, UserRoom
 from .serializers import MessageSerializer, RoomSerializer
 
 
@@ -18,6 +19,9 @@ def message_created(sender, instance, created, **kwargs):
 
         GCMDevice.objects.filter(user__in=instance.room.participants.all()).send_message(push_message)
         APNSDevice.objects.filter(user__in=instance.room.participants.all()).send_message(push_message)
+
+        participants = instance.room.participants.exclude(id=instance.author.id)
+        UserRoom.filter(room=instance.room, user__in=participants).update(unseen=F('unseen') + 1)
 
 
 @receiver(post_save, sender=Room)
