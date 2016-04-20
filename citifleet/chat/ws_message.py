@@ -2,7 +2,7 @@ import json
 
 from channels import Group
 
-from .models import Room
+from .models import UserRoom
 from .serializers import MessageSerializer
 
 
@@ -25,19 +25,11 @@ class MessageHandler(object):
             for participant in message.room.participants.all():
                 Group('chat-%s' % participant.id).send({'text': json_response})
 
-    def _fetch_messages(self):
+    def _read_room(self):
         '''
-        Fetch room's message by room id
+        User reads new channel messages
         '''
-        response = {'type': 'messages'}
-
-        try:
-            messages = Room.objects.get(participants__in=[self.user], label=self.msg['label'])
-        except Room.DoesNotExist:
-            pass
-        else:
-            response['data'] = MessageSerializer(messages, many=True)
-            Group('chat-%s' % self.user.id).send(response)
+        UserRoom.objects.filter(user=self.user, room_id=self.msg['room']).update(unseen=0)
 
     def on_message(self, msg):
         '''
@@ -48,3 +40,6 @@ class MessageHandler(object):
 
         if self.msg.get('method') == 'post_message':
             self._post_message()
+
+        if self.msg.get('method') == 'read_room':
+            self._read_room()

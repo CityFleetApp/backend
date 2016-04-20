@@ -29,7 +29,9 @@ class UserRoomSerializer(serializers.ModelSerializer):
     last_message = serializers.SerializerMethodField()
     last_message_timestamp = serializers.SerializerMethodField()
     participants_info = ChatFriendSerializer(many=True, source='room.participants', read_only=True)
-    participants = serializers.ListField(write_only=True, child=serializers.IntegerField())
+    participants = serializers.PrimaryKeyRelatedField(source='room.participants',
+                                                      queryset=get_user_model().objects.all(),
+                                                      write_only=True, many=True)
     name = serializers.CharField(source='room.name')
 
     class Meta:
@@ -46,7 +48,7 @@ class UserRoomSerializer(serializers.ModelSerializer):
         return last_message.created if last_message else None
 
     def create(self, validated_data):
-        participants = validated_data.pop('participants')
+        participants = validated_data['room'].pop('participants')
 
         if len(participants) == 1:
             try:
@@ -62,21 +64,21 @@ class UserRoomSerializer(serializers.ModelSerializer):
 
         user_room = UserRoom.objects.create(room=room, user=self.context['request'].user)
         for participant in participants:
-            UserRoom.objects.create(room=room, user_id=participant)
+            UserRoom.objects.create(room=room, user=participant)
 
         message = {'type': 'room_invitation'}
         message.update(UserRoomSerializer(user_room).data)
         json_message = json.dumps(message)
 
-        for participant in chain(participants, [self.context['request'].user.id]):
-            Group('chat-%s' % participant).send({'text': json_message})
+        for participant in chain(participants, [self.context['request'].user]):
+            Group('chat-%s' % participant.id).send({'text': json_message})
 
         return user_room
 
     def update(self, obj, validated_data):
-        participants = validated_data.pop('participants')
+        participants = validated_data['room'].pop('participants')
 
         for participant in participants:
-            UserRoom.objects.get_or_create(room=obj.room, user_id=participant)
+            UserRoom.objects.get_or_create(room=obj.room, user=participant)
 
         return obj
