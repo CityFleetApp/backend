@@ -2,8 +2,8 @@ import json
 
 from channels import Group
 
-from .models import Room
-from .serializers import MessageSerializer, RoomSerializer
+from .models import UserRoom
+from .serializers import MessageSerializer
 
 
 class MessageHandler(object):
@@ -25,44 +25,11 @@ class MessageHandler(object):
             for participant in message.room.participants.all():
                 Group('chat-%s' % participant.id).send({'text': json_response})
 
-    def _create_room(self):
+    def _read_room(self):
         '''
-        Create room and send notification to invited participants
+        User reads new channel messages
         '''
-        response = {'type': 'room_invitation'}
-
-        serializer = RoomSerializer(self.msg, context={'user': self.user})
-        if serializer.is_valid():
-            room = serializer.save()
-            response['data'] = RoomSerializer(room).data
-
-            participants = room.participants.exclude(id=self.user.id)
-            for participant in participants:
-                Group('chat-%s' % participant.id).send(response)
-
-    def _fetch_rooms(self):
-        '''
-        Fetch user's chat rooms
-        '''
-        response = {'type': 'rooms_list'}
-
-        rooms = Room.objects.filter(participants__in=[self.user])
-        response['data'] = RoomSerializer(rooms, many=True).data
-        Group('chat-%s' % self.user.id).send(response)
-
-    def _fetch_messages(self):
-        '''
-        Fetch room's message by room id
-        '''
-        response = {'type': 'messages'}
-
-        try:
-            messages = Room.objects.get(participants__in=[self.user], label=self.msg['label'])
-        except Room.DoesNotExist:
-            pass
-        else:
-            response['data'] = MessageSerializer(messages, many=True)
-            Group('chat-%s' % self.user.id).send(response)
+        UserRoom.objects.filter(user=self.user, room_id=self.msg['room']).update(unseen=0)
 
     def on_message(self, msg):
         '''
@@ -71,11 +38,8 @@ class MessageHandler(object):
         self.user = msg.user
         self.msg = json.loads(msg.content['text'])
 
-        if self.msg.get('method') == 'create_room':
-            self._create_room()
-
         if self.msg.get('method') == 'post_message':
             self._post_message()
 
-        if self.msg.get('method') == 'fetch_rooms':
-            self._fetch_rooms()
+        if self.msg.get('method') == 'read_room':
+            self._read_room()

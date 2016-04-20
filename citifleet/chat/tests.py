@@ -10,7 +10,7 @@ from .models import Room
 from .factories import RoomFactory, MessageFactory
 
 
-class RoomTestCase(TestCase):
+class ChatTestCase(TestCase):
 
     def setUp(self):
         self.client = APIClient()
@@ -78,3 +78,22 @@ class RoomTestCase(TestCase):
         self.assertTrue(self.friend in room.participants.all())
         self.assertTrue(self.user in room.participants.all())
         self.assertEqual(room.participants.count(), 2)
+
+    def test_unseen_messages(self):
+        room = RoomFactory(participants=[self.user, self.friend])
+        self.client.force_authenticate(user=self.user)
+
+        resp = self.client.get(reverse('chat:rooms-list'))
+        self.assertEqual(resp.data[0]['unseen'], 0)
+
+        MessageFactory.create_batch(5, room=room, author=self.user, text='text')
+        resp = self.client.get(reverse('chat:rooms-list'))
+        self.assertEqual(resp.data[0]['unseen'], 0)
+
+        self.client.force_authenticate(user=self.friend)
+        resp = self.client.get(reverse('chat:rooms-list'))
+        self.assertEqual(resp.data[0]['unseen'], 5)
+
+        resp = self.client.get(reverse('chat:messages-list', kwargs={'room': room.id}))
+        resp = self.client.get(reverse('chat:rooms-list'))
+        self.assertEqual(resp.data[0]['unseen'], 0)

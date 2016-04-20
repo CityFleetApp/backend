@@ -6,6 +6,9 @@
   <h1>Send message</h1>
   <p>Message format = {'method': 'post_message', 'text': "message text", 'room': room_id}</p>
 
+  <h1>Mark chat room as read</h1>
+  <p>Message format = {'method': 'read_room', 'room': room_id}</p>
+
   <h1>New message received</h1>
   <p>Message format = {'method': 'receive_message', 'text': "message text", 'room': room_id,
                        'created': created_timestamp, 'author_info': {'full_name': , 'phone' , 'id' , 'avatar_url': }}</p>
