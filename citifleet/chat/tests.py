@@ -6,11 +6,11 @@ from rest_framework import status
 
 from citifleet.users.factories import UserFactory
 
-from .models import Room
+from .models import Room, UserRoom
 from .factories import RoomFactory, MessageFactory
 
 
-class RoomTestCase(TestCase):
+class ChatTestCase(TestCase):
 
     def setUp(self):
         self.client = APIClient()
@@ -46,19 +46,19 @@ class RoomTestCase(TestCase):
         resp = self.client.get(reverse('chat:rooms-list'))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(len(resp.data), 2)
-        self.assertEqual(resp.data[0]['id'], room2.id)
+        self.assertEqual(resp.data[0]['id'], UserRoom.objects.get(room=room2.id).id)
 
         MessageFactory(room=room1, author=self.user, text='text')
         resp = self.client.get(reverse('chat:rooms-list'))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(len(resp.data), 2)
-        self.assertEqual(resp.data[0]['id'], room1.id)
+        self.assertEqual(resp.data[0]['id'], UserRoom.objects.get(room=room1.id).id)
 
         MessageFactory(room=room2, author=self.user, text='text')
         resp = self.client.get(reverse('chat:rooms-list'))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(len(resp.data), 2)
-        self.assertEqual(resp.data[0]['id'], room2.id)
+        self.assertEqual(resp.data[0]['id'], UserRoom.objects.get(room=room2.id).id)
 
         MessageFactory(room=room2, author=self.user, text='text')
         MessageFactory(room=room2, author=self.user, text='text')
@@ -72,9 +72,29 @@ class RoomTestCase(TestCase):
         room = RoomFactory(participants=[self.user])
         self.client.force_authenticate(user=self.user)
 
-        resp = self.client.patch(reverse('chat:rooms-detail', args=[room.id]),
+        resp = self.client.patch(reverse('chat:rooms-detail', args=[room.userroom_set.get(user=self.user).id]),
                                  data={'participants': [self.friend.id, self.user.id]})
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertTrue(self.friend in room.participants.all())
         self.assertTrue(self.user in room.participants.all())
         self.assertEqual(room.participants.count(), 2)
+
+    def test_unseen_messages(self):
+        room = RoomFactory(participants=[self.user, self.friend])
+        self.client.force_authenticate(user=self.user)
+
+        resp = self.client.get(reverse('chat:rooms-list'))
+        self.assertEqual(resp.data[0]['unseen'], 0)
+
+        MessageFactory.create_batch(5, room=room, author=self.user, text='text')
+        resp = self.client.get(reverse('chat:rooms-list'))
+        self.assertEqual(resp.data[0]['unseen'], 0)
+
+        self.client.force_authenticate(user=self.friend)
+        resp = self.client.get(reverse('chat:rooms-list'))
+        self.assertEqual(resp.data[0]['unseen'], 5)
+        id = resp.data[0]['id']
+
+        resp = self.client.get(reverse('chat:messages-list', kwargs={'room': id}))
+        resp = self.client.get(reverse('chat:rooms-list'))
+        self.assertEqual(resp.data[0]['unseen'], 0)

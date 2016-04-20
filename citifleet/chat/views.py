@@ -1,32 +1,30 @@
 from django.db.models import Max, Case, When, DateTimeField, F, Count
 
 from rest_framework import viewsets
-from rest_framework.pagination import PageNumberPagination
 
-from .models import Room, Message
-from .serializers import RoomSerializer, MessageSerializer, ChatFriendSerializer
+from .models import UserRoom
+from .serializers import MessageSerializer, ChatFriendSerializer, UserRoomSerializer
 
 
-class RoomViewSet(viewsets.ModelViewSet):
-    serializer_class = RoomSerializer
-    pagination_class = PageNumberPagination
-    page_size = 10
+class UserRoomViewSet(viewsets.ModelViewSet):
+    serializer_class = UserRoomSerializer
 
     def get_queryset(self):
-        return Room.objects.filter(participants=self.request.user)\
-            .annotate(number=Count('messages'))\
-            .annotate(updated=Case(
-                When(number=0, then=F('created')),
-                default=Max('messages__created'),
-                output_field=DateTimeField(),
-            )).order_by('-updated')
+        return UserRoom.objects.filter(user=self.request.user)\
+                       .annotate(number=Count('room__messages'))\
+                       .annotate(updated=Case(
+                            When(number=0, then=F('room__created')),
+                            default=Max('room__messages__created'),
+                            output_field=DateTimeField(),
+                       )).order_by('-updated')
 
 
 class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
 
     def get_queryset(self):
-        return Message.objects.filter(room=self.kwargs['room'], room__participants=self.request.user)
+        UserRoom.objects.filter(user=self.request.user, id=self.kwargs['room']).update(unseen=0)
+        return UserRoom.objects.get(id=self.kwargs['room'], user=self.request.user).room.messages.all()
 
 
 class FriendsViewSet(viewsets.ReadOnlyModelViewSet):

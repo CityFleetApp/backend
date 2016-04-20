@@ -1,7 +1,7 @@
 import factory
 from factory import DjangoModelFactory
 
-from .models import Room, Message
+from .models import Room, Message, UserRoom
 
 
 class RoomFactory(DjangoModelFactory):
@@ -18,7 +18,7 @@ class RoomFactory(DjangoModelFactory):
         if extracted:
             # A list of groups were passed in, use them
             for participant in extracted:
-                self.participants.add(participant)
+                UserRoom.objects.create(room=self, user=participant)
 
 
 class MessageFactory(DjangoModelFactory):
