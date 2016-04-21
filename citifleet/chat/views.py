@@ -1,7 +1,7 @@
 from django.db.models import Max, Case, When, DateTimeField, F, Count
 
 from rest_framework import viewsets
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework import filters
 
 from .models import UserRoom, Room
@@ -10,7 +10,7 @@ from .serializers import MessageSerializer, ChatFriendSerializer, UserRoomSerial
 
 class UserRoomViewSet(viewsets.ModelViewSet):
     serializer_class = UserRoomSerializer
-    pagination_class = PageNumberPagination
+    pagination_class = LimitOffsetPagination
     page_size = 20
     filter_backends = (filters.SearchFilter,)
     search_fields = ('room__participants__full_name',)
@@ -30,7 +30,7 @@ class UserRoomViewSet(viewsets.ModelViewSet):
 
 class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
-    pagination_class = PageNumberPagination
+    pagination_class = LimitOffsetPagination
     page_size = 20
 
     def get_queryset(self):
