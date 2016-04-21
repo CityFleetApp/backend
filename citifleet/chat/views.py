@@ -18,6 +18,9 @@ class UserRoomViewSet(viewsets.ModelViewSet):
                             output_field=DateTimeField(),
                        )).order_by('-updated')
 
+    def get_object(self):
+        return UserRoom.objects.get(user=self.request.user, room_id=self.kwargs['pk'])
+
 
 class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
