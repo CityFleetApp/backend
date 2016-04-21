@@ -6,7 +6,7 @@ from rest_framework import status
 
 from citifleet.users.factories import UserFactory
 
-from .models import Room, UserRoom
+from .models import Room
 from .factories import RoomFactory, MessageFactory
 
 
@@ -46,19 +46,19 @@ class ChatTestCase(TestCase):
         resp = self.client.get(reverse('chat:rooms-list'))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(len(resp.data), 2)
-        self.assertEqual(resp.data[0]['id'], UserRoom.objects.get(room=room2.id).id)
+        self.assertEqual(resp.data[0]['id'], room2.id)
 
         MessageFactory(room=room1, author=self.user, text='text')
         resp = self.client.get(reverse('chat:rooms-list'))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(len(resp.data), 2)
-        self.assertEqual(resp.data[0]['id'], UserRoom.objects.get(room=room1.id).id)
+        self.assertEqual(resp.data[0]['id'], room1.id)
 
         MessageFactory(room=room2, author=self.user, text='text')
         resp = self.client.get(reverse('chat:rooms-list'))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(len(resp.data), 2)
-        self.assertEqual(resp.data[0]['id'], UserRoom.objects.get(room=room2.id).id)
+        self.assertEqual(resp.data[0]['id'], room2.id)
 
         MessageFactory(room=room2, author=self.user, text='text')
         MessageFactory(room=room2, author=self.user, text='text')
@@ -72,7 +72,7 @@ class ChatTestCase(TestCase):
         room = RoomFactory(participants=[self.user])
         self.client.force_authenticate(user=self.user)
 
-        resp = self.client.patch(reverse('chat:rooms-detail', args=[room.userroom_set.get(user=self.user).id]),
+        resp = self.client.patch(reverse('chat:rooms-detail', args=[room.id]),
                                  data={'participants': [self.friend.id, self.user.id]})
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertTrue(self.friend in room.participants.all())
@@ -93,8 +93,7 @@ class ChatTestCase(TestCase):
         self.client.force_authenticate(user=self.friend)
         resp = self.client.get(reverse('chat:rooms-list'))
         self.assertEqual(resp.data[0]['unseen'], 5)
-        id = resp.data[0]['id']
 
-        resp = self.client.get(reverse('chat:messages-list', kwargs={'room': id}))
+        resp = self.client.get(reverse('chat:messages-list', kwargs={'room': room.id}))
         resp = self.client.get(reverse('chat:rooms-list'))
         self.assertEqual(resp.data[0]['unseen'], 0)

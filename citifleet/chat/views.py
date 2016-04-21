@@ -2,7 +2,7 @@ from django.db.models import Max, Case, When, DateTimeField, F, Count
 
 from rest_framework import viewsets
 
-from .models import UserRoom
+from .models import UserRoom, Room
 from .serializers import MessageSerializer, ChatFriendSerializer, UserRoomSerializer
 
 
@@ -23,8 +23,8 @@ class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
 
     def get_queryset(self):
-        UserRoom.objects.filter(user=self.request.user, id=self.kwargs['room']).update(unseen=0)
-        return UserRoom.objects.get(id=self.kwargs['room'], user=self.request.user).room.messages.all()
+        UserRoom.objects.filter(user=self.request.user, room=self.kwargs['room']).update(unseen=0)
+        return Room.objects.get(id=self.kwargs['room'], participants=self.request.user).messages.all()
 
 
 class FriendsViewSet(viewsets.ReadOnlyModelViewSet):

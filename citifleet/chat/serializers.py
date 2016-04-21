@@ -33,6 +33,7 @@ class UserRoomSerializer(serializers.ModelSerializer):
                                                       queryset=get_user_model().objects.all(),
                                                       write_only=True, many=True)
     name = serializers.CharField(source='room.name')
+    id = serializers.ReadOnlyField(source='room.id')
 
     class Meta:
         model = UserRoom
