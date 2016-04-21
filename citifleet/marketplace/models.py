@@ -103,6 +103,7 @@ class Car(models.Model):
     class Meta:
         verbose_name = _('Car')
         verbose_name_plural = _('Cars')
+        ordering = ['-created']
 
 
 class CarPhoto(models.Model):
@@ -143,6 +144,9 @@ class GeneralGood(models.Model):
 
     objects = Manager()
     expired = ExpiredManager()
+
+    class Meta:
+        ordering = ['-created']
 
 
 class GoodPhoto(models.Model):
@@ -221,6 +225,7 @@ class JobOffer(models.Model):
     class Meta:
         verbose_name = _('Job Offer')
         verbose_name_plural = _('Job Offers')
+        ordering = ['-created']
 
     def __unicode__(self):
         return 'from {} to {}'.format(self.pickup_address, self.destination)

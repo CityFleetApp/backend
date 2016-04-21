@@ -19,10 +19,11 @@ class ChatFriendSerializer(serializers.ModelSerializer):
 
 class MessageSerializer(serializers.ModelSerializer):
     author_info = ChatFriendSerializer(source='author', read_only=True)
+    participants = ChatFriendSerializer(source='room.participants', read_only=True, many=True)
 
     class Meta:
         model = Message
-        fields = ('text', 'room', 'author', 'created', 'author_info')
+        fields = ('text', 'room', 'author', 'created', 'author_info', 'participants')
 
 
 class UserRoomSerializer(serializers.ModelSerializer):
