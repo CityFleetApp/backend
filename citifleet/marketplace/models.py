@@ -7,6 +7,8 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
 from django.conf import settings
 
+from push_notifications.models import APNSDevice, GCMDevice
+
 from citifleet.common.utils import get_full_path
 
 
@@ -236,3 +238,7 @@ class JobOffer(models.Model):
         self.driver = driver
         self.status = JobOffer.COVERED
         self.save()
+
+        push_message = {'type': 'offer_covered', 'id': self.id, 'title': 'Your job offer accepted'}
+        GCMDevice.objects.filter(user=self.driver).send_message(push_message)
+        APNSDevice.objects.filter(user=self.driver).send_message(push_message)
