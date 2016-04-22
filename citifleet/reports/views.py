@@ -1,10 +1,13 @@
 from django.conf import settings
 from django.contrib.gis.measure import D
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
 from rest_framework import viewsets, status
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
+
+from citifleet.users.serializers import FriendSerializer
 
 from .models import Report
 from .serializers import ReportSerializer, LocationSerializer
@@ -35,7 +38,7 @@ class BaseReportViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return super(BaseReportViewSet, self).get_queryset().filter(
-            location__distance_lte=(self.location, D(settings.VISIBLE_REPORTS_RADIUS)))
+            location__distance_lte=(self.location, D(m=settings.VISIBLE_REPORTS_RADIUS)))
 
     @detail_route(methods=['post'])
     def confirm_report(self, request, pk=None):
@@ -43,7 +46,20 @@ class BaseReportViewSet(viewsets.ModelViewSet):
         Updates report's last updated date so that it still appears on the map
         '''
         report = self.get_object()
+        report.not_here = False
+        report.updated = timezone.now()
         report.save()
+        return Response(status.HTTP_200_OK)
+
+    @detail_route(methods=['post'])
+    def deny_report(self, request, pk=None):
+        report = self.get_object()
+        if report.not_here and report.declined != request.user:
+            report.delete()
+        elif not report.not_here:
+            report.not_here = True
+            report.declined = request.user
+            report.save()
         return Response(status.HTTP_200_OK)
 
 
@@ -61,3 +77,12 @@ class NearbyReportViewSet(BaseReportViewSet):
 
 class MapReportViewSet(BaseReportViewSet):
     pass
+
+
+class FriendViewSet(BaseReportViewSet):
+    serializer_class = FriendSerializer
+
+    def get_queryset(self):
+        return self.request.user.friends.filter(
+            location__distance_lte=(self.location, D(m=settings.VISIBLE_REPORTS_RADIUS)),
+            visible=True)

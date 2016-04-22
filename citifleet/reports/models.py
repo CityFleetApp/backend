@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 from django.contrib.gis.db import models
 from django.utils.translation import ugettext_lazy as _
+from django.conf import settings
 
 
 class Report(models.Model):
@@ -27,3 +28,6 @@ class Report(models.Model):
     location = models.PointField(_('location'))
     report_type = models.PositiveSmallIntegerField(_('type'), choices=REPORT_CHOICES)
     updated = models.DateTimeField(_('updated'), auto_now=True)
+    updated = models.DateTimeField(_('updated'), auto_now_add=True)
+    not_here = models.BooleanField(_('not here'), default=False)
+    declined = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_('declined'), null=True, blank=True)

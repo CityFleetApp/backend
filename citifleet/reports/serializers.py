@@ -23,7 +23,7 @@ class ReportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Report
-        fields = ('report_type', 'lat', 'lng')
+        fields = ('report_type', 'lat', 'lng', 'id')
 
     def validate(self, attrs):
         attrs['location'] = Point(attrs['location']['x'], attrs['location']['y'])
