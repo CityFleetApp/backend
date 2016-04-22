@@ -161,3 +161,8 @@ class GoodsPhotoSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('id', 'file', 'goods')
         model = GoodPhoto
+
+
+class CompleteJobSerializer(serializers.Serializer):
+    rating = serializers.IntegerField()
+    paid_on_time = serializers.BooleanField()

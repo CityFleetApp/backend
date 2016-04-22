@@ -55,7 +55,7 @@ class DriverInline(admin.TabularInline):
 
     def accept_driver(self, instance):
         return '<a href="%s">Award Driver</a>' % reverse(
-            'marketplace:award_job', kwargs={'job_id': instance.id, 'driver_id': instance.user.id})
+            'marketplace:award_job', kwargs={'job_id': instance.joboffer.id, 'driver_id': instance.user.id})
     accept_driver.allow_tags = True
 
     def jobs_completed(self, instance):

@@ -144,12 +144,12 @@ class TestPushNotificationSent(TestCase):
         self.assertEqual(apns_mock.call_count, 1)
         apns_mock.assert_called_with(
             alert={'action': 'added', 'id': report.id, 'lat': self.report.location.x,
-                   'lng': self.report.location.y, 'type': report.report_type},
+                   'lng': self.report.location.y, 'report_type': report.report_type},
             registration_ids=[''])
         self.assertEqual(gcm_mock.call_count, 1)
         gcm_mock.assert_called_with(
             data={'message': {'action': 'added', 'id': report.id, 'lat': self.report.location.x,
-                  'lng': self.report.location.y, 'type': report.report_type}},
+                  'lng': self.report.location.y, 'report_type': report.report_type}},
             registration_ids=[''])
 
     # Push notification sent on report delete
@@ -160,10 +160,10 @@ class TestPushNotificationSent(TestCase):
         self.report.delete()
         apns_mock.assert_called_with(
             alert={'action': 'removed', 'id': report_id, 'lat': self.report.location.x,
-                   'lng': self.report.location.y, 'type': self.report.report_type}, registration_ids=[''])
+                   'lng': self.report.location.y, 'report_type': self.report.report_type}, registration_ids=[''])
         gcm_mock.assert_called_with(
             data={'message': {'action': 'removed', 'id': report_id, 'lat': self.report.location.x,
-                  'lng': self.report.location.y, 'type': self.report.report_type}}, registration_ids=[''])
+                  'lng': self.report.location.y, 'report_type': self.report.report_type}}, registration_ids=[''])
 
     # Push notification not sent for not nearby drivers
     @patch('push_notifications.apns.apns_send_bulk_message')

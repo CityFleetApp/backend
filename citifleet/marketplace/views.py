@@ -15,7 +15,7 @@ from .serializers import (CarSerializer, CarMakeSerializer, CarModelSerializer,
                           RentCarPostingSerializer, SaleCarPostingSerializer,
                           GeneralGoodSerializer, PostingGeneralGoodsSerializer,
                           MarketplaceJobOfferSerializer, PostingJobOfferSerializer,
-                          CarPhotoSerializer, GoodsPhotoSerializer)
+                          CarPhotoSerializer, GoodsPhotoSerializer, CompleteJobSerializer)
 
 
 class PostCarRentViewSet(viewsets.ModelViewSet):
@@ -165,10 +165,15 @@ class MarketJobOfferViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_200_OK)
 
     @detail_route(methods=['post'])
-    def accept_job(self, request, pk):
+    def complete_job(self, request, pk):
+        serializer = CompleteJobSerializer(data=request.POST)
+        serializer.is_valid(raise_exception=True)
+
         offer = self.get_object()
-        # TODO: save rating
+        offer.owner_rating = serializer.validated_data['rating']
+        offer.paid_on_time = serializer.validated_data['paid_on_time']
         offer.status = JobOffer.COMPLETED
+        offer.save()
         return Response(status=status.HTTP_200_OK)
 
 

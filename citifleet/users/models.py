@@ -7,13 +7,14 @@ from django.contrib.gis.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
+from django.db.models import Avg
 
 from phonenumber_field.modelfields import PhoneNumberField
 from easy_thumbnails.files import get_thumbnailer
 
 from citifleet.documents.models import Document
 from citifleet.common.utils import get_full_path
-from citifleet.marketplace.models import Car
+from citifleet.marketplace.models import Car, JobOffer
 
 
 class UserManager(BaseUserManager):
@@ -100,13 +101,12 @@ class User(AbstractUser):
 
     @property
     def jobs_completed(self):
-        # Returns dummy result till jobs section is done
-        return 12
+        return JobOffer.objects.filter(status=JobOffer.COMPLETED, driver=self).count()
 
     @property
     def rating(self):
-        # Returns dummy result till jobs section is done
-        return 4
+        return JobOffer.objects.filter(status=JobOffer.COMPLETED, driver=self).aggregate(
+            rating=Avg('driver_rating'))['rating'] or 5.0
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []

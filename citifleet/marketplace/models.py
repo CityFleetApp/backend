@@ -7,6 +7,8 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
 from django.conf import settings
 
+from push_notifications.models import APNSDevice, GCMDevice
+
 from citifleet.common.utils import get_full_path
 
 
@@ -218,6 +220,7 @@ class JobOffer(models.Model):
     created = models.DateTimeField(_('Created'), auto_now_add=True)
     driver_rating = models.FloatField(_('Driver Rating'), default=5.0)
     owner_rating = models.FloatField(_('Owner Rating'), default=5.0)
+    paid_on_time = models.BooleanField(_('Paid on time'), default=False)
 
     objects = Manager()
     expired = ExpiredManager()
@@ -236,3 +239,7 @@ class JobOffer(models.Model):
         self.driver = driver
         self.status = JobOffer.COVERED
         self.save()
+
+        push_message = {'type': 'offer_covered', 'id': self.id, 'title': 'Your job offer accepted'}
+        GCMDevice.objects.filter(user=self.driver).send_message(push_message)
+        APNSDevice.objects.filter(user=self.driver).send_message(push_message)
