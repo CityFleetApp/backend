@@ -220,6 +220,7 @@ class JobOffer(models.Model):
     created = models.DateTimeField(_('Created'), auto_now_add=True)
     driver_rating = models.FloatField(_('Driver Rating'), default=5.0)
     owner_rating = models.FloatField(_('Owner Rating'), default=5.0)
+    paid_on_time = models.BooleanField(_('Paid on time'), default=False)
 
     objects = Manager()
     expired = ExpiredManager()

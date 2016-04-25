@@ -75,3 +75,16 @@ class TestJobOfferProcess(TestCase):
         apns_mock.assert_called_with(
             alert={'id': offer.id, 'type': 'offer_covered', 'title': 'Your job offer accepted'},
             registration_ids=[''])
+
+    def test_job_complete(self):
+        self.client.force_authenticate(user=self.user)
+        self.job_owner = UserFactory()
+
+        offer = JobOfferFactory(driver=self.user, status=JobOffer.COVERED, owner=self.job_owner)
+        resp = self.client.post(reverse('marketplace:marketplace-offers-complete-job', args=[offer.id]),
+                                data={'rating': 4, 'paid_on_time': True})
+        offer.refresh_from_db()
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(offer.status, JobOffer.COMPLETED)
+        self.assertEqual(offer.paid_on_time, True)
+        self.assertEqual(offer.owner_rating, 4)
