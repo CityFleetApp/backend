@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from django.views.generic import View
 from django.contrib.auth import get_user_model
 from django.http import HttpResponseRedirect
@@ -17,6 +19,18 @@ from .serializers import (CarSerializer, CarMakeSerializer, CarModelSerializer,
                           GeneralGoodSerializer, PostingGeneralGoodsSerializer,
                           MarketplaceJobOfferSerializer, PostingJobOfferSerializer,
                           CarPhotoSerializer, GoodsPhotoSerializer, CompleteJobSerializer)
+
+
+class MarketPageNumberPagination(PageNumberPagination):
+
+    def get_paginated_response(self, data):
+        return Response(OrderedDict([
+            ('available', JobOffer.objects.filter(status=JobOffer.AVAILABLE).count()),
+            ('count', self.page.paginator.count),
+            ('next', self.get_next_link()),
+            ('previous', self.get_previous_link()),
+            ('results', data)
+        ]))
 
 
 class PostCarRentViewSet(viewsets.ModelViewSet):
@@ -164,8 +178,10 @@ class PostingJobOfferViewSet(viewsets.ModelViewSet):
 class MarketJobOfferViewSet(viewsets.ModelViewSet):
     serializer_class = MarketplaceJobOfferSerializer
     queryset = JobOffer.objects.filter(status__in=(JobOffer.AVAILABLE, JobOffer.COVERED))
-    pagination_class = PageNumberPagination
+    pagination_class = MarketPageNumberPagination
     page_size = 20
+    filter_backends = (filters.DjangoFilterBackend,)
+    filter_fields = ('status',)
 
     @detail_route(methods=['post'])
     def request_job(self, request, pk):

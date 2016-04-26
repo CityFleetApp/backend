@@ -22,7 +22,7 @@ def message_created(sender, instance, created, **kwargs):
         alert_message = '{} {}'.format(instance.author.full_name, instance.text)
         APNSDevice.objects.filter(user__in=instance.room.participants.all(), active=True).send_message(
             alert_message, sound='defauld', extra={
-                'receive_message': {'room_id': instance.room.id, 'avatar': instance.author.avatar_url}})
+                'receive_message': {'room_id': instance.room.id, 'avatar': instance.author.avatar_url()}})
 
         participants = instance.room.participants.exclude(id=instance.author.id)
         UserRoom.objects.filter(room=instance.room, user__in=participants).update(unseen=F('unseen') + 1)
