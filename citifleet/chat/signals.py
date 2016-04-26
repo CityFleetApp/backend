@@ -18,7 +18,10 @@ def message_created(sender, instance, created, **kwargs):
         push_message.update(MessageSerializer(instance).data)
 
         GCMDevice.objects.filter(user__in=instance.room.participants.all(), active=True).send_message(push_message)
-        APNSDevice.objects.filter(user__in=instance.room.participants.all(), active=True).send_message(push_message)
+
+        alert_message = '{} {}'.format(instance.author.full_name, instance.text)
+        APNSDevice.objects.filter(user__in=instance.room.participants.all(), active=True).send_message(
+            alert_message, sound='defauld', extra={'receive_message': {'id': instance.id}})
 
         participants = instance.room.participants.exclude(id=instance.author.id)
         UserRoom.objects.filter(room=instance.room, user__in=participants).update(unseen=F('unseen') + 1)
@@ -34,4 +37,7 @@ def room_invitation(sender, instance, created, **kwargs):
         push_message.update({'id': instance.id})
 
         GCMDevice.objects.filter(user__in=instance.participants.all(), active=True).send_message(push_message)
-        APNSDevice.objects.filter(user__in=instance.participants.all(), active=True).send_message(push_message)
+
+        alert_message = '{} {}'.format(instance.author.full_name, instance.text)
+        APNSDevice.objects.filter(user__in=instance.participants.all(), active=True).send_message(
+            alert_message, sound='defauld', extra={'room_invitation': {'id': instance.id}})
