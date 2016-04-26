@@ -4,4 +4,7 @@ from django.apps import AppConfig
 
 
 class MarketplaceConfig(AppConfig):
-    name = 'marketplace'
+    name = 'citifleet.marketplace'
+
+    def ready(self):
+        from . import signals

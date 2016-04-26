@@ -55,7 +55,7 @@ LOCAL_APPS = (
     'citifleet.documents',
     'citifleet.benefits',
     'citifleet.notifications.apps.NotificationsConfig',
-    'citifleet.marketplace',
+    'citifleet.marketplace.apps.MarketplaceConfig',
     'citifleet.chat.apps.ChatConfig',
 )
 

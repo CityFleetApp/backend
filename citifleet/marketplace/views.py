@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import detail_route
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
 
 from .models import Car, CarMake, CarModel, GeneralGood, JobOffer, CarPhoto, GoodPhoto
 from .serializers import (CarSerializer, CarMakeSerializer, CarModelSerializer,
@@ -60,6 +61,8 @@ class CarRentModelViewSet(viewsets.ModelViewSet):
     '''
     serializer_class = CarSerializer
     queryset = Car.objects.filter(rent=True)
+    pagination_class = PageNumberPagination
+    page_size = 20
 
 
 class CarSaleModelViewSet(viewsets.ModelViewSet):
@@ -68,6 +71,8 @@ class CarSaleModelViewSet(viewsets.ModelViewSet):
     '''
     serializer_class = CarSerializer
     queryset = Car.objects.filter(rent=False)
+    pagination_class = PageNumberPagination
+    page_size = 20
 
 
 class CarMakeViewSet(viewsets.ReadOnlyModelViewSet):
@@ -139,6 +144,8 @@ class PostingGeneralGoodsViewSet(viewsets.ModelViewSet):
 class MarketGeneralGoodsViewSet(viewsets.ModelViewSet):
     serializer_class = GeneralGoodSerializer
     queryset = GeneralGood.objects.all()
+    pagination_class = PageNumberPagination
+    page_size = 20
 
 
 class PostingJobOfferViewSet(viewsets.ModelViewSet):
@@ -157,6 +164,8 @@ class PostingJobOfferViewSet(viewsets.ModelViewSet):
 class MarketJobOfferViewSet(viewsets.ModelViewSet):
     serializer_class = MarketplaceJobOfferSerializer
     queryset = JobOffer.objects.filter(status__in=(JobOffer.AVAILABLE, JobOffer.COVERED))
+    pagination_class = PageNumberPagination
+    page_size = 20
 
     @detail_route(methods=['post'])
     def request_job(self, request, pk):
