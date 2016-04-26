@@ -55,7 +55,7 @@ LOCAL_APPS = (
     'citifleet.documents',
     'citifleet.benefits',
     'citifleet.notifications.apps.NotificationsConfig',
-    'citifleet.marketplace',
+    'citifleet.marketplace.apps.MarketplaceConfig',
     'citifleet.chat.apps.ChatConfig',
 )
 
@@ -255,7 +255,9 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
     ),
-    'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S'
+    'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S',
+    'PAGE_SIZE': 20,
+    'DEFAULT_PAGINATION_CLASS': None
 }
 
 VISIBLE_REPORTS_RADIUS = 1000

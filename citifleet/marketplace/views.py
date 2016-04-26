@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from django.views.generic import View
 from django.contrib.auth import get_user_model
 from django.http import HttpResponseRedirect
@@ -9,6 +11,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import detail_route
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
 
 from .models import Car, CarMake, CarModel, GeneralGood, JobOffer, CarPhoto, GoodPhoto
 from .serializers import (CarSerializer, CarMakeSerializer, CarModelSerializer,
@@ -16,6 +19,18 @@ from .serializers import (CarSerializer, CarMakeSerializer, CarModelSerializer,
                           GeneralGoodSerializer, PostingGeneralGoodsSerializer,
                           MarketplaceJobOfferSerializer, PostingJobOfferSerializer,
                           CarPhotoSerializer, GoodsPhotoSerializer, CompleteJobSerializer)
+
+
+class MarketPageNumberPagination(PageNumberPagination):
+
+    def get_paginated_response(self, data):
+        return Response(OrderedDict([
+            ('available', JobOffer.objects.filter(status=JobOffer.AVAILABLE).count()),
+            ('count', self.page.paginator.count),
+            ('next', self.get_next_link()),
+            ('previous', self.get_previous_link()),
+            ('results', data)
+        ]))
 
 
 class PostCarRentViewSet(viewsets.ModelViewSet):
@@ -60,6 +75,8 @@ class CarRentModelViewSet(viewsets.ModelViewSet):
     '''
     serializer_class = CarSerializer
     queryset = Car.objects.filter(rent=True)
+    pagination_class = PageNumberPagination
+    page_size = 20
 
 
 class CarSaleModelViewSet(viewsets.ModelViewSet):
@@ -68,6 +85,8 @@ class CarSaleModelViewSet(viewsets.ModelViewSet):
     '''
     serializer_class = CarSerializer
     queryset = Car.objects.filter(rent=False)
+    pagination_class = PageNumberPagination
+    page_size = 20
 
 
 class CarMakeViewSet(viewsets.ReadOnlyModelViewSet):
@@ -139,6 +158,8 @@ class PostingGeneralGoodsViewSet(viewsets.ModelViewSet):
 class MarketGeneralGoodsViewSet(viewsets.ModelViewSet):
     serializer_class = GeneralGoodSerializer
     queryset = GeneralGood.objects.all()
+    pagination_class = PageNumberPagination
+    page_size = 20
 
 
 class PostingJobOfferViewSet(viewsets.ModelViewSet):
@@ -157,6 +178,10 @@ class PostingJobOfferViewSet(viewsets.ModelViewSet):
 class MarketJobOfferViewSet(viewsets.ModelViewSet):
     serializer_class = MarketplaceJobOfferSerializer
     queryset = JobOffer.objects.filter(status__in=(JobOffer.AVAILABLE, JobOffer.COVERED))
+    pagination_class = MarketPageNumberPagination
+    page_size = 20
+    filter_backends = (filters.DjangoFilterBackend,)
+    filter_fields = ('status',)
 
     @detail_route(methods=['post'])
     def request_job(self, request, pk):

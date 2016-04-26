@@ -88,3 +88,12 @@ class TestJobOfferProcess(TestCase):
         self.assertEqual(offer.status, JobOffer.COMPLETED)
         self.assertEqual(offer.paid_on_time, True)
         self.assertEqual(offer.owner_rating, 4)
+
+    def test_job_offer_list(self):
+        self.client.force_authenticate(user=self.user)
+        JobOfferFactory.create_batch(30, status=JobOffer.COVERED, owner=self.user)
+        JobOfferFactory.create_batch(40, status=JobOffer.AVAILABLE, owner=self.user)
+
+        resp = self.client.get(reverse('marketplace:marketplace-offers-list'))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['available'], 40)
