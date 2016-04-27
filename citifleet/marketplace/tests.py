@@ -1,6 +1,7 @@
 from io import BytesIO
 
 from django.core.urlresolvers import reverse
+from django.utils import timezone
 
 from mock import patch
 from test_plus.test import TestCase
@@ -10,6 +11,7 @@ from PIL import Image
 from push_notifications.models import APNSDevice, GCMDevice
 
 from citifleet.users.factories import UserFactory
+from citifleet.notifications.models import NotificationTemplate
 
 from .models import JobOffer
 from .factories import CarMakeFactory, CarModelFactory, JobOfferFactory, CarColorFactory
@@ -63,6 +65,43 @@ class TestJobOfferProcess(TestCase):
 
     @patch('push_notifications.apns.apns_send_bulk_message')
     @patch('push_notifications.gcm.gcm_send_bulk_message')
+    def test_push_send_on_offer_created_in_admin(self, gcm_mock, apns_mock):
+        self.client.force_authenticate(user=self.user)
+        NotificationTemplate.objects.create(type=NotificationTemplate.JOBOFFER_CREATED, title='New offer created',
+                                            message='Check new job offer')
+        offer = JobOfferFactory(status=JobOffer.AVAILABLE, owner=self.user)
+
+        gcm_mock.assert_called_with(
+            data={'message': {'id': offer.id, 'type': 'offer_created', 'title': 'New offer created'}},
+            registration_ids=[''])
+        apns_mock.assert_called_with(
+            alert={'id': offer.id, 'type': 'offer_created', 'title': 'New offer created'},
+            registration_ids=[''])
+
+    @patch('push_notifications.apns.apns_send_bulk_message')
+    @patch('push_notifications.gcm.gcm_send_bulk_message')
+    def test_push_send_on_offer_created_via_device(self, gcm_mock, apns_mock):
+        self.client.force_authenticate(user=self.user)
+        NotificationTemplate.objects.create(type=NotificationTemplate.JOBOFFER_CREATED, title='New offer created',
+                                            message='Check new job offer')
+        resp = self.client.post(reverse('marketplace:postings-offers-list'),
+                                data={'status': JobOffer.AVAILABLE, 'pickup_datetime': timezone.now(), 'fare': 50,
+                                      'gratuity': 5.0, 'vehicle_type': JobOffer.BLACK, 'job_type': JobOffer.DROP_OFF,
+                                      'destination': 'there', 'pickup_address': 'address',
+                                      'instructions': 'instructions'})
+
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        offer_id = resp.data['id']
+
+        gcm_mock.assert_called_with(
+            data={'message': {'id': offer_id, 'type': 'offer_created', 'title': 'New offer created'}},
+            registration_ids=[''])
+        apns_mock.assert_called_with(
+            alert={'id': offer_id, 'type': 'offer_created', 'title': 'New offer created'},
+            registration_ids=[''])
+
+    @patch('push_notifications.apns.apns_send_bulk_message')
+    @patch('push_notifications.gcm.gcm_send_bulk_message')
     def test_push_sent_on_job_award(self, gcm_mock, apns_mock):
         self.client.force_authenticate(user=self.user)
         self.job_owner = UserFactory()
@@ -102,3 +141,18 @@ class TestJobOfferProcess(TestCase):
         resp = self.client.get(reverse('marketplace:marketplace-offers-list'))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(resp.data['available'], 40)
+
+
+class TestManagePosts(TestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = UserFactory()
+        self.apns = APNSDevice.objects.create(user=self.user)
+        self.gcm = GCMDevice.objects.create(user=self.user)
+
+    def test_manage_posts_list(self):
+        self.client.force_authenticate(user=self.user)
+        JobOfferFactory.create_batch(30, status=JobOffer.COVERED, owner=self.user)
+        resp = self.client.get(reverse('marketplace:manage_posts'))
+        self.assertEqual(len(resp.data), 30)

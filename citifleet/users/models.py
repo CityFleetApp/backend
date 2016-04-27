@@ -69,6 +69,8 @@ class User(AbstractUser):
     car_type = models.PositiveIntegerField(_('Car type'), null=True, choices=Car.TYPES)
     car_color = models.PositiveIntegerField(_('Car color'), null=True, choices=Car.COLORS)
 
+    balance = models.DecimalField(_('Balance'), max_digits=5, decimal_places=2, default=0)
+
     objects = UserManager()
     with_notifications = AllowNotificationManager()
 

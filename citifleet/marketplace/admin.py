@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.core.urlresolvers import reverse
 
+from citifleet.payments.admin import BalanceMixin
 from .models import CarModel, CarMake, Car, GeneralGood, GoodPhoto, CarPhoto, JobOffer, CarColor
 from .forms import AvailableJobOfferAdminForm
 
@@ -68,7 +69,7 @@ class DriverInline(admin.TabularInline):
         return False
 
 
-class JobOfferModelAdmin(admin.ModelAdmin):
+class JobOfferModelAdmin(BalanceMixin, admin.ModelAdmin):
     list_filter = ['status', 'job_type', 'vehicle_type']
     list_display = ['id', 'pickup_address', 'destination', 'pickup_datetime', 'status']
     form = AvailableJobOfferAdminForm
@@ -93,4 +94,3 @@ admin.site.register(Car, CarModelAdmin)
 admin.site.register(GeneralGood, GeneralGoodsModelAdmin)
 admin.site.register(JobOffer, JobOfferModelAdmin)
 admin.site.register(CarColor)
-
