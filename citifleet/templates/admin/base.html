@@ -4,7 +4,7 @@
 
 {% block userlinks %}
 {% if not user.is_superuser %}
-<a href="#">Edit payment info</a> /
+<a href="{% url 'payments:register_card' %}">Edit payment info</a> /
 <a href="{% url 'admin:password_change' %}">{% trans 'Change password' %}</a> /
 <a href="{% url 'admin:logout' %}">{% trans 'Log out' %}</a>
 {% else %}
