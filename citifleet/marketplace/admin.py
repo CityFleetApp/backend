@@ -1,9 +1,11 @@
 from django.contrib import admin
 from django.core.urlresolvers import reverse
+from django.contrib import messages
+from django.http import HttpResponseRedirect
 
-from citifleet.payments.admin import BalanceMixin
+from citifleet.payments.models import PaymentSetting, Transaction
 from .models import CarModel, CarMake, Car, GeneralGood, GoodPhoto, CarPhoto, JobOffer, CarColor
-from .forms import AvailableJobOfferAdminForm
+from .forms import AvailableJobOfferAdminForm, GeneralGoodAdminForm
 
 
 class CarPhotoInline(admin.TabularInline):
@@ -23,6 +25,25 @@ class CarModelAdmin(admin.ModelAdmin):
     list_filter = ['make', 'model', 'type', 'fuel', 'seats']
     inlines = [CarPhotoInline]
 
+    def save_model(self, request, obj, form, change):
+        if not change and not request.user.is_superuser:
+            result = PaymentSetting.charge_user(request.user, PaymentSetting.CARS, obj.price)
+            if result.get('state', None) == 'approved':
+                Transaction.objects.create(user=request.user, amount=obj.price)
+            else:
+                messages.add_message(request, messages.ERROR, 'Per-posting charge failed')
+                return HttpResponseRedirect(reverse('admin:index'))
+
+        obj.owner = request.user
+        obj.save()
+
+    def get_queryset(self, request):
+        qs = super(CarModelAdmin, self).get_queryset(request)
+        if not request.user.is_superuser:
+            return qs.filter(owner=request.user)
+        else:
+            return qs
+
 
 class GoodPhotoInline(admin.TabularInline):
     model = GoodPhoto
@@ -33,6 +54,26 @@ class GoodPhotoInline(admin.TabularInline):
 
 class GeneralGoodsModelAdmin(admin.ModelAdmin):
     inlines = [GoodPhotoInline]
+    form = GeneralGoodAdminForm
+
+    def save_model(self, request, obj, form, change):
+        if not change and not request.user.is_superuser:
+            result = PaymentSetting.charge_user(request.user, PaymentSetting.GOODS, obj.price)
+            if result.get('state', None) == 'approved':
+                Transaction.objects.create(user=request.user, amount=obj.price)
+            else:
+                messages.add_message(request, messages.ERROR, 'Per-posting charge failed')
+                return HttpResponseRedirect(reverse('admin:index'))
+
+        obj.owner = request.user
+        obj.save()
+
+    def get_queryset(self, request):
+        qs = super(GeneralGoodsModelAdmin, self).get_queryset(request)
+        if not request.user.is_superuser:
+            return qs.filter(owner=request.user)
+        else:
+            return qs
 
 
 class DriverInline(admin.TabularInline):
@@ -69,7 +110,7 @@ class DriverInline(admin.TabularInline):
         return False
 
 
-class JobOfferModelAdmin(BalanceMixin, admin.ModelAdmin):
+class JobOfferModelAdmin(admin.ModelAdmin):
     list_filter = ['status', 'job_type', 'vehicle_type']
     list_display = ['id', 'pickup_address', 'destination', 'pickup_datetime', 'status']
     form = AvailableJobOfferAdminForm
@@ -77,6 +118,14 @@ class JobOfferModelAdmin(BalanceMixin, admin.ModelAdmin):
     readonly_fields = ['driver', 'owner_rating']
 
     def save_model(self, request, obj, form, change):
+        if not change and not request.user.is_superuser:
+            result = PaymentSetting.charge_user(request.user, PaymentSetting.OFFERS, obj.fare)
+            if result.get('state', None) == 'approved':
+                Transaction.objects.create(user=request.user, amount=obj.fare)
+            else:
+                messages.add_message(request, messages.ERROR, 'Per-posting charge failed')
+                return HttpResponseRedirect(reverse('admin:index'))
+
         obj.owner = request.user
         obj.save()
 

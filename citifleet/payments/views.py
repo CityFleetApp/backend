@@ -15,6 +15,7 @@ class RegisterCardView(FormView):
     def form_valid(self, form):
         credit_card = CreditCard(form.cleaned_data)
         if credit_card.create() and credit_card['state'] == 'ok':
+            print(credit_card)
             self.request.user.card_id = credit_card['id']
             self.request.user.save()
             messages.add_message(self.request, messages.SUCCESS, 'Card registered')
