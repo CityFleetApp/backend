@@ -78,9 +78,5 @@ class PaymentSetting(models.Model):
             }]
         })
 
-        if payment.create():
-            print('True')
-            return payment.to_dict()
-        else:
-            print('False')
-            return payment.to_dict()
+        payment.create()
+        return payment.to_dict()

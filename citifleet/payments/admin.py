@@ -33,7 +33,7 @@ class TransactionModelAdmin(admin.ModelAdmin):
 
     def get_list_display(self, request):
         if request.user.is_superuser:
-            return ['user__full_name', 'amount', 'created']
+            return ['user', 'amount', 'created']
         else:
             return ['amount', 'created']
 

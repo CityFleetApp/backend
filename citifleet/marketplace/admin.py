@@ -29,7 +29,7 @@ class CarModelAdmin(admin.ModelAdmin):
         if not change and not request.user.is_superuser:
             result = PaymentSetting.charge_user(request.user, PaymentSetting.CARS, obj.price)
             if result.get('state', None) == 'approved':
-                Transaction.objects.create(user=request.user, amount=obj.price)
+                Transaction.objects.create(user=request.user, amount=result['transactions'][0]['amount']['total'])
             else:
                 messages.add_message(request, messages.ERROR, 'Per-posting charge failed')
                 return HttpResponseRedirect(reverse('admin:index'))
@@ -60,7 +60,7 @@ class GeneralGoodsModelAdmin(admin.ModelAdmin):
         if not change and not request.user.is_superuser:
             result = PaymentSetting.charge_user(request.user, PaymentSetting.GOODS, obj.price)
             if result.get('state', None) == 'approved':
-                Transaction.objects.create(user=request.user, amount=obj.price)
+                Transaction.objects.create(user=request.user, amount=result['transactions'][0]['amount']['total'])
             else:
                 messages.add_message(request, messages.ERROR, 'Per-posting charge failed')
                 return HttpResponseRedirect(reverse('admin:index'))
@@ -121,7 +121,7 @@ class JobOfferModelAdmin(admin.ModelAdmin):
         if not change and not request.user.is_superuser:
             result = PaymentSetting.charge_user(request.user, PaymentSetting.OFFERS, obj.fare)
             if result.get('state', None) == 'approved':
-                Transaction.objects.create(user=request.user, amount=obj.fare)
+                Transaction.objects.create(user=request.user, amount=result['transactions'][0]['amount']['total'])
             else:
                 messages.add_message(request, messages.ERROR, 'Per-posting charge failed')
                 return HttpResponseRedirect(reverse('admin:index'))

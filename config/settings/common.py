@@ -57,6 +57,7 @@ LOCAL_APPS = (
     'citifleet.notifications.apps.NotificationsConfig',
     'citifleet.marketplace.apps.MarketplaceConfig',
     'citifleet.chat.apps.ChatConfig',
+    'citifleet.payments',
 )
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -293,3 +294,13 @@ CHANNEL_LAYERS = {
         "ROUTING": "citifleet.chat.routing.channel_routing",
     },
 }
+
+PAYPAL_CLIENT_ID = env('PAYPAL_CLIENT_ID')
+PAYPAL_CLIENT_SECRET = env('PAYPAL_CLIENT_SECRET')
+
+
+import paypalrestsdk
+paypalrestsdk.configure({
+    "mode": "sandbox",
+    "client_id": PAYPAL_CLIENT_ID,
+    "client_secret": PAYPAL_CLIENT_SECRET})
