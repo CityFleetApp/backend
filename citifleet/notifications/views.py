@@ -15,7 +15,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
     filter_fields = ('unseen',)
 
     def get_queryset(self):
-        return super(NotificationViewSet, self).get_queryset().filter(user=self.request.user)
+        return super(NotificationViewSet, self).get_queryset().filter(user=self.request.user).order_by('-created')
 
     @detail_route(methods=['post'], url_path='mark-seen')
     def mark_seen(self, request, pk=None):

@@ -1,16 +1,37 @@
+from collections import OrderedDict
+
+from django.views.generic import View
+from django.contrib.auth import get_user_model
+from django.http import HttpResponseRedirect
+from django.core.urlresolvers import reverse
+
 from rest_framework import viewsets
 from rest_framework import filters
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import detail_route
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
+from push_notifications.models import APNSDevice, GCMDevice
 
 from .models import Car, CarMake, CarModel, GeneralGood, JobOffer, CarPhoto, GoodPhoto
 from .serializers import (CarSerializer, CarMakeSerializer, CarModelSerializer,
                           RentCarPostingSerializer, SaleCarPostingSerializer,
                           GeneralGoodSerializer, PostingGeneralGoodsSerializer,
                           MarketplaceJobOfferSerializer, PostingJobOfferSerializer,
-                          CarPhotoSerializer, GoodsPhotoSerializer)
+                          CarPhotoSerializer, GoodsPhotoSerializer, CompleteJobSerializer)
+
+
+class MarketPageNumberPagination(PageNumberPagination):
+
+    def get_paginated_response(self, data):
+        return Response(OrderedDict([
+            ('available', JobOffer.objects.filter(status=JobOffer.AVAILABLE).count()),
+            ('count', self.page.paginator.count),
+            ('next', self.get_next_link()),
+            ('previous', self.get_previous_link()),
+            ('results', data)
+        ]))
 
 
 class PostCarRentViewSet(viewsets.ModelViewSet):
@@ -55,6 +76,8 @@ class CarRentModelViewSet(viewsets.ModelViewSet):
     '''
     serializer_class = CarSerializer
     queryset = Car.objects.filter(rent=True)
+    pagination_class = PageNumberPagination
+    page_size = 20
 
 
 class CarSaleModelViewSet(viewsets.ModelViewSet):
@@ -63,6 +86,8 @@ class CarSaleModelViewSet(viewsets.ModelViewSet):
     '''
     serializer_class = CarSerializer
     queryset = Car.objects.filter(rent=False)
+    pagination_class = PageNumberPagination
+    page_size = 20
 
 
 class CarMakeViewSet(viewsets.ReadOnlyModelViewSet):
@@ -134,6 +159,8 @@ class PostingGeneralGoodsViewSet(viewsets.ModelViewSet):
 class MarketGeneralGoodsViewSet(viewsets.ModelViewSet):
     serializer_class = GeneralGoodSerializer
     queryset = GeneralGood.objects.all()
+    pagination_class = PageNumberPagination
+    page_size = 20
 
 
 class PostingJobOfferViewSet(viewsets.ModelViewSet):
@@ -152,6 +179,10 @@ class PostingJobOfferViewSet(viewsets.ModelViewSet):
 class MarketJobOfferViewSet(viewsets.ModelViewSet):
     serializer_class = MarketplaceJobOfferSerializer
     queryset = JobOffer.objects.filter(status__in=(JobOffer.AVAILABLE, JobOffer.COVERED))
+    pagination_class = MarketPageNumberPagination
+    page_size = 20
+    filter_backends = (filters.DjangoFilterBackend,)
+    filter_fields = ('status',)
 
     @detail_route(methods=['post'])
     def request_job(self, request, pk):
@@ -160,10 +191,27 @@ class MarketJobOfferViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_200_OK)
 
     @detail_route(methods=['post'])
-    def accept_job(self, request, pk):
+    def complete_job(self, request, pk):
+        serializer = CompleteJobSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
         offer = self.get_object()
-        # TODO: save rating
+        offer.owner_rating = serializer.validated_data['rating']
+        offer.paid_on_time = serializer.validated_data['paid_on_time']
         offer.status = JobOffer.COMPLETED
+        offer.save()
+        
+        push_message = {'type': 'rate_driver', 'id': offer.id, 'title': 'Job offer {} completed'.format(offer.title), 'offer_title': offer.title, 'driver_name': request.user.full_name}
+        GCMDevice.objects.filter(user=offer.owner).send_message(push_message)
+        APNSDevice.objects.filter(user=offer.owner).send_message(push_message)
+
+        return Response(status=status.HTTP_200_OK)
+
+    @detail_route(methods=['post'])
+    def rate_driver(self, request, pk):
+        offer = JobOffer.objects.get(id=pk, owner=request.user, status=JobOffer.COMPLETED)
+        offer.driver_rating = request.POST['rating']
+        offer.save()
         return Response(status=status.HTTP_200_OK)
 
 
@@ -189,22 +237,23 @@ class ManagePosts(APIView):
     '''
 
     def get(self, request, *args, **kwargs):
+        ctx = {'request': request}
         offers = MarketplaceJobOfferSerializer(JobOffer.objects.filter(owner=request.user),
-                                               many=True).data
+                                               many=True, context=ctx).data
         for offer in offers:
             offer.update({'posting_type': 'offer'})
 
         goods = GeneralGoodSerializer(GeneralGood.objects.filter(owner=request.user),
-                                      many=True).data
+                                      many=True, context=ctx).data
         for good in goods:
             good.update({'posting_type': 'goods'})
 
         cars = CarSerializer(Car.objects.filter(owner=request.user),
-                             many=True).data
+                             many=True, context=ctx).data
         for car in cars:
             car.update({'posting_type': 'car'})
 
-        postings = sorted(offers + goods + cars, key=lambda x: x['created'])
+        postings = sorted(offers + goods + cars, key=lambda x: x['created'], reverse=True)
         return Response(postings, status=status.HTTP_200_OK)
 
 manage_posts = ManagePosts.as_view()
@@ -224,3 +273,14 @@ class GoodsPhotoViewSet(viewsets.ModelViewSet):
     '''
     queryset = GoodPhoto.objects.all()
     serializer_class = GoodsPhotoSerializer
+
+
+class AwardJobView(View):
+
+    def get(self, request, *args, **kwargs):
+        job_offer = JobOffer.objects.get(id=kwargs['job_id'])
+        driver = get_user_model().objects.get(id=kwargs['driver_id'])
+        job_offer.award(driver)
+        return HttpResponseRedirect(reverse('admin:marketplace_joboffer_change', args=[job_offer.id]))
+
+award_job = AwardJobView.as_view()

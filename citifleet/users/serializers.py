@@ -113,7 +113,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
         model = User
         fields = ('email', 'full_name', 'phone', 'hack_license', 'username',
                   'bio', 'drives', 'avatar_url', 'documents_up_to_date', 'jobs_completed',
-                  'rating')
+                  'rating', 'id')
 
 
 class ContactsSerializer(serializers.Serializer):
@@ -187,7 +187,7 @@ class InstagramSerializer(serializers.Serializer):
             more_follows, next_ = api.user_follows(with_next_url=next_)
             follows.extend(more_follows)
 
-        attrs['users'] = User.objects.filter(insagram_id__in=[f['id'] for f in follows])
+        attrs['users'] = User.objects.filter(instagram_id__in=[f['id'] for f in follows])
 
         user = self.context['user']
         if not user.instagram_id:

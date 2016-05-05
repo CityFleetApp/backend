@@ -129,19 +129,23 @@ class MarketplaceJobOfferSerializer(serializers.ModelSerializer):
     job_type = serializers.ReadOnlyField(source='get_job_type_display')
     vehicle_type = serializers.ReadOnlyField(source='get_vehicle_type_display')
     status = serializers.ReadOnlyField(source='get_status_display')
+    awarded = serializers.SerializerMethodField()
+
+    def get_awarded(self, obj):
+        return obj.driver == self.context['request'].user
 
     class Meta:
         model = JobOffer
-        fields = ('id', 'pickup_datetime', 'pickup_address', 'destination', 'fare',
+        fields = ('id', 'title', 'pickup_datetime', 'pickup_address', 'destination', 'fare',
                   'gratuity', 'vehicle_type', 'suite', 'job_type', 'instructions',
-                  'status', 'created')
+                  'status', 'created', 'awarded')
 
 
 class PostingJobOfferSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = JobOffer
-        fields = ('id', 'pickup_datetime', 'pickup_address', 'destination', 'fare',
+        fields = ('id', 'title', 'pickup_datetime', 'pickup_address', 'destination', 'fare',
                   'gratuity', 'vehicle_type', 'suite', 'job_type', 'instructions')
 
     def validate(self, attrs):
@@ -161,3 +165,8 @@ class GoodsPhotoSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('id', 'file', 'goods')
         model = GoodPhoto
+
+
+class CompleteJobSerializer(serializers.Serializer):
+    rating = serializers.IntegerField()
+    paid_on_time = serializers.BooleanField()

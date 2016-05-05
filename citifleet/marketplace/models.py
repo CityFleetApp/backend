@@ -7,6 +7,8 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
 from django.conf import settings
 
+from push_notifications.models import APNSDevice, GCMDevice
+
 from citifleet.common.utils import get_full_path
 
 
@@ -103,6 +105,7 @@ class Car(models.Model):
     class Meta:
         verbose_name = _('Car')
         verbose_name_plural = _('Cars')
+        ordering = ['-created']
 
 
 class CarPhoto(models.Model):
@@ -143,6 +146,9 @@ class GeneralGood(models.Model):
 
     objects = Manager()
     expired = ExpiredManager()
+
+    class Meta:
+        ordering = ['-created']
 
 
 class GoodPhoto(models.Model):
@@ -198,6 +204,7 @@ class JobOffer(models.Model):
         (COMPLETED, _('Completed')),
     )
 
+    title = models.CharField(_('Title'), max_length=255)
     pickup_datetime = models.DateTimeField(_('Pickup datetime'))
     pickup_address = models.CharField(_('Pickup address'), max_length=255)
     destination = models.CharField(_('Destination'), max_length=255)
@@ -212,6 +219,9 @@ class JobOffer(models.Model):
     driver = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='offers', null=True)
     driver_requests = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='offer_requests')
     created = models.DateTimeField(_('Created'), auto_now_add=True)
+    driver_rating = models.FloatField(_('Driver Rating'), default=5.0)
+    owner_rating = models.FloatField(_('Owner Rating'), default=5.0)
+    paid_on_time = models.BooleanField(_('Paid on time'), default=False)
 
     objects = Manager()
     expired = ExpiredManager()
@@ -219,6 +229,18 @@ class JobOffer(models.Model):
     class Meta:
         verbose_name = _('Job Offer')
         verbose_name_plural = _('Job Offers')
+        ordering = ['-created']
 
     def __unicode__(self):
         return 'from {} to {}'.format(self.pickup_address, self.destination)
+
+    def award(self, driver):
+        self.driver = driver
+        self.driver_requests.clear()
+        self.driver = driver
+        self.status = JobOffer.COVERED
+        self.save()
+
+        push_message = {'type': 'offer_covered', 'id': self.id, 'title': 'Your job offer accepted'}
+        GCMDevice.objects.filter(user=self.driver).send_message(push_message)
+        APNSDevice.objects.filter(user=self.driver).send_message(push_message)

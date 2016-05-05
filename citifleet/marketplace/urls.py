@@ -41,5 +41,6 @@ urlpatterns = [
     url(r'^/seats/$', views.seats, name='seats'),
     url(r'^/vehicles/$', views.vehicle_choices, name='vehicles'),
     url(r'^/job_types/$', views.job_types, name='job_types'),
-    url(r'^/manage-posts/$', views.manage_posts, name='manage_posts')
+    url(r'^/manage-posts/$', views.manage_posts, name='manage_posts'),
+    url(r'^/award-job/(?P<job_id>\d+)/(?P<driver_id>\d+)/$', views.award_job, name='award_job'),
 ]

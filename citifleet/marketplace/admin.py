@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.core.urlresolvers import reverse
 
 from .models import CarModel, CarMake, Car, GeneralGood, GoodPhoto, CarPhoto, JobOffer
 from .forms import AvailableJobOfferAdminForm
@@ -37,7 +38,7 @@ class DriverInline(admin.TabularInline):
     model = JobOffer.driver_requests.through
     verbose_name = 'Driver Request'
     verbose_name_plural = 'Driver Requests'
-    readonly_fields = ['email', 'documents_up_to_date', 'jobs_completed', 'rating']
+    readonly_fields = ['email', 'documents_up_to_date', 'jobs_completed', 'rating', 'accept_driver']
 
     def get_fields(self, request, obj=None):
         return self.readonly_fields
@@ -51,6 +52,11 @@ class DriverInline(admin.TabularInline):
     def documents_up_to_date(self, instance):
         return instance.user.documents_up_to_date
     documents_up_to_date.boolean = True
+
+    def accept_driver(self, instance):
+        return '<a href="%s">Award Driver</a>' % reverse(
+            'marketplace:award_job', kwargs={'job_id': instance.joboffer.id, 'driver_id': instance.user.id})
+    accept_driver.allow_tags = True
 
     def jobs_completed(self, instance):
         return instance.user.jobs_completed
@@ -67,6 +73,7 @@ class JobOfferModelAdmin(admin.ModelAdmin):
     list_display = ['id', 'pickup_address', 'destination', 'pickup_datetime', 'status']
     form = AvailableJobOfferAdminForm
     inlines = [DriverInline]
+    readonly_fields = ['driver', 'owner_rating']
 
     def save_model(self, request, obj, form, change):
         obj.owner = request.user
@@ -77,7 +84,7 @@ class JobOfferModelAdmin(admin.ModelAdmin):
         if not request.user.is_superuser:
             return qs.filter(owner=request.user)
         else:
-            return qs.filter
+            return qs
 
 
 admin.site.register(CarModel, CarModelModelAdmin)

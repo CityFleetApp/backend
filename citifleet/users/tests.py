@@ -11,6 +11,9 @@ from rest_framework.authtoken.models import Token
 from mock import patch
 from PIL import Image
 
+from citifleet.marketplace.factories import JobOfferFactory
+from citifleet.marketplace.models import JobOffer
+
 from .models import User, Photo
 from .factories import UserFactory, PhotoFactory
 
@@ -266,6 +269,26 @@ class TestUserInfo(TestCase):
         self.assertTrue('rating' in resp.data)
         self.assertTrue('jobs_completed' in resp.data)
 
+    # Test rating calculation and rating
+    def test_user_rating_and_job_count(self):
+        self.client.force_authenticate(user=self.user)
+        self.job_owner = UserFactory()
+
+        resp = self.client.get(reverse('users:info'))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['rating'], 5.0)
+        self.assertEqual(resp.data['jobs_completed'], 0)
+
+        JobOfferFactory(driver=self.user, status=JobOffer.COMPLETED, driver_rating=4.0, owner=self.job_owner)
+        JobOfferFactory(driver=self.user, status=JobOffer.COMPLETED, driver_rating=3.0, owner=self.job_owner)
+        JobOfferFactory(driver=self.job_owner, status=JobOffer.COMPLETED, driver_rating=3.0, owner=self.job_owner)
+        JobOfferFactory(driver=self.user, status=JobOffer.COVERED, owner=self.job_owner)
+
+        resp = self.client.get(reverse('users:info'))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data['rating'], 3.5)
+        self.assertEqual(resp.data['jobs_completed'], 2)
+
 
 class TestPhotoUpload(TestCase):
     def setUp(self):
@@ -327,3 +350,4 @@ class TestUserSettings(TestCase):
         resp = self.client.put(reverse('users:settings'), data=data)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(resp.data, {'visible': False, 'chat_privacy': False, 'notifications_enabled': False})
+
