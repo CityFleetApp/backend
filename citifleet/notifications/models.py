@@ -79,13 +79,15 @@ class NotificationTemplate(NotificationBase):
         return self.get_type_display()
 
     @staticmethod
-    def send_notification(type, **extra):
+    def send_notification(type, drivers=None, **extra):
         try:
             template_dict = NotificationTemplate.objects.get(type=type, enabled=True).to_dict
         except NotificationTemplate.DoesNotExist:
             return
 
-        drivers = User.with_notifications.all()
+        if drivers is None:
+            drivers = User.with_notifications.all()
+
         Notification.objects.bulk_create(
                 [Notification(user=user, **template_dict)
                  for user in drivers])
@@ -95,7 +97,10 @@ class NotificationTemplate(NotificationBase):
         push_message.update(extra)
 
         GCMDevice.objects.filter(user__in=drivers).send_message(push_message)
-        APNSDevice.objects.filter(user__in=drivers).send_message(push_message)
+
+        alert_message = template_dict['title']
+        APNSDevice.objects.filter(user__in=drivers).send_message(
+            alert_message, sound='defauld', extra={push_message['type']: extra})
 
     class Meta:
         verbose_name = _('Notification Template')

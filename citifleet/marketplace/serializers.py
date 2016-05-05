@@ -136,7 +136,7 @@ class MarketplaceJobOfferSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = JobOffer
-        fields = ('id', 'pickup_datetime', 'pickup_address', 'destination', 'fare',
+        fields = ('id', 'title', 'pickup_datetime', 'pickup_address', 'destination', 'fare',
                   'gratuity', 'vehicle_type', 'suite', 'job_type', 'instructions',
                   'status', 'created', 'awarded')
 
@@ -145,7 +145,7 @@ class PostingJobOfferSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = JobOffer
-        fields = ('id', 'pickup_datetime', 'pickup_address', 'destination', 'fare',
+        fields = ('id', 'title', 'pickup_datetime', 'pickup_address', 'destination', 'fare',
                   'gratuity', 'vehicle_type', 'suite', 'job_type', 'instructions')
 
     def validate(self, attrs):

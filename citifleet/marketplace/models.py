@@ -204,6 +204,7 @@ class JobOffer(models.Model):
         (COMPLETED, _('Completed')),
     )
 
+    title = models.CharField(_('Title'), max_length=255)
     pickup_datetime = models.DateTimeField(_('Pickup datetime'))
     pickup_address = models.CharField(_('Pickup address'), max_length=255)
     destination = models.CharField(_('Destination'), max_length=255)
