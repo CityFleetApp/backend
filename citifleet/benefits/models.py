@@ -16,8 +16,9 @@ class Benefit(models.Model):
     '''
     image = models.ImageField(_('Card'), upload_to='benefits/')
     name = models.CharField(_('Name'), max_length=255)
-    barcode = models.CharField(_('Barcode'), max_length=200)
+    barcode = models.CharField(_('Barcode'), max_length=200, blank=True)
     cropping = ImageRatioField('image', '1400x900', size_warning=True)
+    promo_code = models.CharField(_('Promo Code'), max_length=255, blank=True)
 
     def __unicode__(self):
         return self.name

@@ -85,4 +85,4 @@ class FriendViewSet(BaseReportViewSet):
     def get_queryset(self):
         return self.request.user.friends.filter(
             location__distance_lte=(self.location, D(m=settings.VISIBLE_REPORTS_RADIUS)),
-            visible=True)
+            visible=True).exclude(id=self.request.user.id)

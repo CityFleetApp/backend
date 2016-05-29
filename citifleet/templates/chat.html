@@ -4,7 +4,7 @@
   socket url - ws://{{ request.get_host }}/?token=AUTH_TOKEN
 
   <h1>Send message</h1>
-  <p>Message format = {'method': 'post_message', 'text': "message text", 'room': room_id}</p>
+  <p>Message format = {'method': 'post_message', 'text': "message text", 'room': room_id, 'image': Base64EncodedImage}</p>
 
   <h1>Mark chat room as read</h1>
   <p>Message format = {'method': 'read_room', 'room': room_id}</p>

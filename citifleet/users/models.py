@@ -46,7 +46,7 @@ class User(AbstractUser):
     hack_license is verified via SODA API
     phone format - international (+41524204242)
     '''
-    phone = PhoneNumberField(_('phone'))
+    phone = models.CharField(_('phone'), max_length=12)
     hack_license = models.CharField(_('hack license'), max_length=150)
     full_name = models.CharField(_('full name'), max_length=200)
     location = models.PointField(_('location'), null=True, blank=True)

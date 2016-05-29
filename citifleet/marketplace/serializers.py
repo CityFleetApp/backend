@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Car, CarMake, CarModel, CarPhoto, GeneralGood, GoodPhoto, JobOffer
+from .models import Car, CarMake, CarModel, CarPhoto, GeneralGood, GoodPhoto, JobOffer, CarColor
 
 
 class CarMakeSerializer(serializers.ModelSerializer):
@@ -15,6 +15,13 @@ class CarModelSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('id', 'name', 'make')
         model = CarModel
+
+
+class CarColorSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        fields = ('id', 'name')
+        model = CarColor
 
 
 class CarPostingSerializer(serializers.ModelSerializer):
@@ -65,9 +72,10 @@ class CarSerializer(serializers.ModelSerializer):
     model = serializers.ReadOnlyField(source='model.name')
     type = serializers.ReadOnlyField(source='get_type_display')
     fuel = serializers.ReadOnlyField(source='get_fuel_display')
-    color = serializers.ReadOnlyField(source='get_color_display')
+    color = serializers.ReadOnlyField(source='color.name')
     dimensions = serializers.SerializerMethodField()
     photos = CarIdPhotoSerializer(many=True)
+    owner_name = serializers.ReadOnlyField(source='owner.full_name')
 
     def get_dimensions(self, obj):
         photo = obj.photos.first()
@@ -78,7 +86,7 @@ class CarSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = ('id', 'make', 'model', 'type', 'color', 'year', 'fuel', 'seats',
-                  'price', 'description', 'rent', 'photos', 'dimensions', 'created')
+                  'price', 'description', 'rent', 'photos', 'dimensions', 'created', 'owner', 'owner_name')
         model = Car
 
 
@@ -93,6 +101,7 @@ class GeneralGoodSerializer(serializers.ModelSerializer):
     condition = serializers.ReadOnlyField(source='get_condition_display')
     photos = GoodsIdPhotoSerializer(many=True)
     dimensions = serializers.SerializerMethodField()
+    owner_name = serializers.ReadOnlyField(source='owner.full_name')
 
     def get_dimensions(self, obj):
         photo = obj.photos.first()
@@ -102,7 +111,7 @@ class GeneralGoodSerializer(serializers.ModelSerializer):
             return None
 
     class Meta:
-        fields = ('id', 'item', 'price', 'condition', 'description', 'photos', 'dimensions', 'created')
+        fields = ('id', 'item', 'price', 'condition', 'description', 'photos', 'dimensions', 'created', 'owner', 'owner_name')
         model = GeneralGood
 
 
@@ -130,15 +139,22 @@ class MarketplaceJobOfferSerializer(serializers.ModelSerializer):
     vehicle_type = serializers.ReadOnlyField(source='get_vehicle_type_display')
     status = serializers.ReadOnlyField(source='get_status_display')
     awarded = serializers.SerializerMethodField()
+    requested = serializers.SerializerMethodField()
+    personal = serializers.ReadOnlyField(source='get_personal_display')
+    owner_name = serializers.ReadOnlyField(source='owner.full_name')
 
     def get_awarded(self, obj):
         return obj.driver == self.context['request'].user
+    
+    def get_requested(self, obj):
+        return obj.driver_requests.filter(id=self.context['request'].user.id).exists()
 
     class Meta:
         model = JobOffer
         fields = ('id', 'title', 'pickup_datetime', 'pickup_address', 'destination', 'fare',
                   'gratuity', 'vehicle_type', 'suite', 'job_type', 'instructions',
-                  'status', 'created', 'awarded')
+                  'status', 'created', 'awarded', 'requested', 'tolls', 'personal',
+                  'owner', 'owner_name')
 
 
 class PostingJobOfferSerializer(serializers.ModelSerializer):
@@ -146,7 +162,7 @@ class PostingJobOfferSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobOffer
         fields = ('id', 'title', 'pickup_datetime', 'pickup_address', 'destination', 'fare',
-                  'gratuity', 'vehicle_type', 'suite', 'job_type', 'instructions')
+                  'gratuity', 'vehicle_type', 'suite', 'job_type', 'instructions', 'tolls', 'personal')
 
     def validate(self, attrs):
         attrs['owner'] = self.context['request'].user

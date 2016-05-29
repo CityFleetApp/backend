@@ -42,6 +42,17 @@ class CarModel(models.Model):
         verbose_name_plural = _('Car Models')
 
 
+class CarColor(models.Model):
+    name = models.CharField(_('Color'), max_length=150)
+
+    def __unicode__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _('Car Color')
+        verbose_name_plural = _('Car Colors')
+
+
 class Car(models.Model):
     E85 = 1
     REGULAR_87 = 2
@@ -86,7 +97,7 @@ class Car(models.Model):
     make = models.ForeignKey(CarMake, verbose_name=_('Make'))
     model = models.ForeignKey(CarModel, verbose_name=_('Model'))
     type = models.PositiveSmallIntegerField(_('Type'), choices=TYPES)
-    color = models.PositiveSmallIntegerField(_('Color'), choices=COLORS)
+    color = models.ForeignKey(CarColor, verbose_name=_('Color'))
     year = models.IntegerField(_('Year'))
     fuel = models.PositiveSmallIntegerField(_('Fuel'), choices=FUEL_TYPES)
     seats = models.PositiveSmallIntegerField(_('Seats'), choices=[(i, i) for i in range(4, 9)])
@@ -204,6 +215,14 @@ class JobOffer(models.Model):
         (COMPLETED, _('Completed')),
     )
 
+    PERSONAL = 1
+    COMPANY = 2
+    
+    PERSONAL_CHOICES = (
+        (PERSONAL, _('Personal')),
+        (COMPANY, _('Company')),
+    )
+
     title = models.CharField(_('Title'), max_length=255)
     pickup_datetime = models.DateTimeField(_('Pickup datetime'))
     pickup_address = models.CharField(_('Pickup address'), max_length=255)
@@ -222,6 +241,8 @@ class JobOffer(models.Model):
     driver_rating = models.FloatField(_('Driver Rating'), default=5.0)
     owner_rating = models.FloatField(_('Owner Rating'), default=5.0)
     paid_on_time = models.BooleanField(_('Paid on time'), default=False)
+    tolls = models.DecimalField(_('Tolls'), max_digits=5, decimal_places=2, null=True, blank=True)
+    personal = models.PositiveSmallIntegerField(_('Personal/Company'), choices=PERSONAL_CHOICES, default=PERSONAL)
 
     objects = Manager()
     expired = ExpiredManager()

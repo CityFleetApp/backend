@@ -15,7 +15,7 @@ from .serializers import (SignupSerializer, ResetPasswordSerializer, ChangePassw
                           UserDetailSerializer, ContactsSerializer, FacebookSerializer, TwitterSerializer,
                           InstagramSerializer, PhotoSerializer, AvatarSerializer, SettingsSerializer,
                           ProfileSerializer)
-from .models import Photo
+from .models import Photo, User
 
 
 class SignUpView(APIView):
@@ -217,3 +217,23 @@ class ProfileView(RetrieveUpdateAPIView):
         return self.request.user
 
 profile = ProfileView.as_view()
+
+
+class FriendView(RetrieveAPIView):
+    serializer_class = UserDetailSerializer
+    
+    def get_object(self):
+        return User.objects.get(id=self.kwargs['id'])
+
+friend = FriendView.as_view()
+
+
+class FriendPhotoModelViewSet(ModelViewSet):
+    '''
+    Model viewset for create/delete photos
+    '''
+    serializer_class = PhotoSerializer
+    queryset = Photo.objects.all()
+
+    def get_queryset(self):
+        return super(FriendPhotoModelViewSet, self).get_queryset().filter(user=self.kwargs['id'])

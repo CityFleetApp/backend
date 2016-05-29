@@ -19,6 +19,9 @@ $(function() {
             ele.append(
                 $("<td></td>").text(data.text)
             )
+            ele.append(
+                $("<td><img src='" + data.image + "' /></td>")
+            )
 
             chat.append(ele)
         };
@@ -26,13 +29,37 @@ $(function() {
     });
 
     $("#chatform").on("submit", function(event) {
-        var message = {
-            method: 'post_message',
-            room: $('#room').val(),
-            text: $('#message').val()
+        var file    = document.querySelector('input[type=file]').files[0];
+        var reader  = new FileReader();
+
+        if (file) {
+            reader.readAsDataURL(file);
+        } else {
+            var message = {
+                method: 'post_message',
+                room: $('#room').val(),
+                text: $('#message').val(),
+                image: reader.result
+            }
+
+            chatsock.send(JSON.stringify(message));
+            $("#message").val('').focus();
+            return false;
         }
-        chatsock.send(JSON.stringify(message));
-        $("#message").val('').focus();
+
+        reader.addEventListener("load", function () {
+            var message = {
+                method: 'post_message',
+                room: $('#room').val(),
+                text: $('#message').val(),
+                image: reader.result
+            }
+            chatsock.send(JSON.stringify(message));
+            $("#message").val('').focus();
+            return false;
+        }, false);
+
         return false;
     });
 });
+
