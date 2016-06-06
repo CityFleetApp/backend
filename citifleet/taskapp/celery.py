@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 import os
 from celery import Celery
-from django.apps import AppConfig
+from django.apps import AppConfig, apps
 from django.conf import settings
 
 
@@ -22,7 +22,7 @@ class CeleryConfig(AppConfig):
         # Using a string here means the worker will not have to
         # pickle the object when using Windows.
         app.config_from_object('django.conf:settings')
-        app.autodiscover_tasks(lambda: settings.INSTALLED_APPS, force=True)
+        app.autodiscover_tasks(lambda: [n.name for n in apps.get_app_configs()], force=True)
 
 @app.task(bind=True)
 def debug_task(self):

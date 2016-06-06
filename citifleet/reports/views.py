@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.gis.measure import D
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.db.models import Q
 
 from rest_framework import viewsets, status
 from rest_framework.decorators import detail_route
@@ -38,7 +39,7 @@ class BaseReportViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return super(BaseReportViewSet, self).get_queryset().filter(
-            location__distance_lte=(self.location, D(m=settings.VISIBLE_REPORTS_RADIUS)))
+            Q(report_type=Report.TLC) | (Q(location__distance_lte=(self.location, D(m=settings.VISIBLE_REPORTS_RADIUS))) & ~Q(report_type=Report.TLC)))
 
     @detail_route(methods=['post'])
     def confirm_report(self, request, pk=None):
