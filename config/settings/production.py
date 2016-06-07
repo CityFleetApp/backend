@@ -3,11 +3,6 @@ from __future__ import absolute_import, unicode_literals
 
 from .common import *  # noqa
 
-import environ
-
-root = environ.Path(__file__)
-env = environ.Env(DEBUG=(bool, False),)
-environ.Env.read_env()
 
 DEBUG = env.bool('DJANGO_DEBUG')
 
