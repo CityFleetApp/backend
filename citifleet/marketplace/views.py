@@ -14,11 +14,11 @@ from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
 from push_notifications.models import APNSDevice, GCMDevice
 
-from .models import Car, CarMake, CarModel, GeneralGood, JobOffer, CarPhoto, GoodPhoto
+from .models import Car, CarMake, CarModel, GeneralGood, JobOffer, CarPhoto, GoodPhoto, CarColor
 from .serializers import (CarSerializer, CarMakeSerializer, CarModelSerializer,
                           RentCarPostingSerializer, SaleCarPostingSerializer,
                           GeneralGoodSerializer, PostingGeneralGoodsSerializer,
-                          MarketplaceJobOfferSerializer, PostingJobOfferSerializer,
+                          MarketplaceJobOfferSerializer, PostingJobOfferSerializer, CarColorSerializer,
                           CarPhotoSerializer, GoodsPhotoSerializer, CompleteJobSerializer)
 
 
@@ -78,6 +78,9 @@ class CarRentModelViewSet(viewsets.ModelViewSet):
     queryset = Car.objects.filter(rent=True)
     pagination_class = PageNumberPagination
     page_size = 20
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('make__name', 'model__name', 'year', 'color__name')
+
 
 
 class CarSaleModelViewSet(viewsets.ModelViewSet):
@@ -88,6 +91,8 @@ class CarSaleModelViewSet(viewsets.ModelViewSet):
     queryset = Car.objects.filter(rent=False)
     pagination_class = PageNumberPagination
     page_size = 20
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('make__name', 'model__name', 'year', 'color__name')
 
 
 class CarMakeViewSet(viewsets.ReadOnlyModelViewSet):
@@ -109,6 +114,11 @@ class CarModelViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = CarModel.objects.all()
     filter_backends = (filters.DjangoFilterBackend,)
     filter_fields = ('make',)
+
+
+class CarColorViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = CarColorSerializer
+    queryset = CarColor.objects.all()
 
 
 class FuelList(APIView):
@@ -161,6 +171,9 @@ class MarketGeneralGoodsViewSet(viewsets.ModelViewSet):
     queryset = GeneralGood.objects.all()
     pagination_class = PageNumberPagination
     page_size = 20
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('item',)
+
 
 
 class PostingJobOfferViewSet(viewsets.ModelViewSet):
@@ -200,8 +213,9 @@ class MarketJobOfferViewSet(viewsets.ModelViewSet):
         offer.paid_on_time = serializer.validated_data['paid_on_time']
         offer.status = JobOffer.COMPLETED
         offer.save()
-        
-        push_message = {'type': 'rate_driver', 'id': offer.id, 'title': 'Job offer {} completed'.format(offer.title), 'offer_title': offer.title, 'driver_name': request.user.full_name}
+
+        push_message = {'type': 'rate_driver', 'id': offer.id, 'title': 'Job offer {} completed'.format(offer.title),
+                        'offer_title': offer.title, 'driver_name': request.user.full_name}
         GCMDevice.objects.filter(user=offer.owner).send_message(push_message)
         APNSDevice.objects.filter(user=offer.owner).send_message(push_message)
 

@@ -1,3 +1,5 @@
+import re
+
 from django.core.mail import send_mail
 from django.conf import settings
 
@@ -22,6 +24,17 @@ class SignupSerializer(serializers.ModelSerializer):
         model = User
         fields = ('email', 'full_name', 'phone', 'hack_license', 'username',
                   'password', 'password_confirm')
+
+    def validate_phone(self, value):
+        try:
+            int(value)
+        except ValueError:
+            raise serializers.ValidationError('The phone number entered is not valid.')
+        else:
+            if len(value) != 10:
+                raise serializers.ValidationError('The phone number entered is not valid.')
+            else:
+                return value
 
     def validate(self, attrs):
         '''
@@ -123,7 +136,8 @@ class ContactsSerializer(serializers.Serializer):
     contacts = serializers.ListField(child=serializers.CharField())
 
     def validate(self, attrs):
-        attrs['users'] = User.objects.filter(phone__in=attrs['contacts'])
+        contacts = [re.sub(r'\+\d', '', c) for c in attrs['contacts']]
+        attrs['users'] = User.objects.filter(phone__in=contacts)
         return attrs
 
 

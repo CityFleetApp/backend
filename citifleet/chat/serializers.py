@@ -4,6 +4,7 @@ from itertools import chain
 from django.contrib.auth import get_user_model
 from django.db.models import Count
 
+from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from channels import Group
 
@@ -19,10 +20,18 @@ class ChatFriendSerializer(serializers.ModelSerializer):
 
 class MessageSerializer(serializers.ModelSerializer):
     participants = ChatFriendSerializer(source='room.participants', read_only=True, many=True)
+    image = Base64ImageField(allow_null=True, allow_empty_file=True)
+    image_size = serializers.SerializerMethodField()
+
+    def get_image_size(self, obj):
+        if obj.image:
+            return [obj.image.width, obj.image.height]
+        else:
+            return None
 
     class Meta:
         model = Message
-        fields = ('text', 'room', 'author', 'created', 'participants')
+        fields = ('text', 'room', 'author', 'created', 'participants', 'image', 'image_size')
 
 
 class UserRoomSerializer(serializers.ModelSerializer):
@@ -79,7 +88,15 @@ class UserRoomSerializer(serializers.ModelSerializer):
     def update(self, obj, validated_data):
         participants = validated_data['room'].pop('participants')
 
+        message = {'type': 'room_invitation'}
+        message.update(UserRoomSerializer(obj).data)
+        if message.get('last_message_timestamp'):
+            message['last_message_timestamp'] = message['last_message_timestamp'].isoformat()
+        json_message = json.dumps(message)
+
         for participant in participants:
-            UserRoom.objects.get_or_create(room=obj.room, user=participant)
+            _, created = UserRoom.objects.get_or_create(room=obj.room, user=participant)
+            if created:
+                Group('chat-%s' % participant.id).send({'text': json_message})
 
         return obj

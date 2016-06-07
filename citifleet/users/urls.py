@@ -15,6 +15,9 @@ device_router = DefaultRouter()
 device_router.register(r'device/apns', APNSDeviceAuthorizedViewSet)
 device_router.register(r'device/gcm', GCMDeviceAuthorizedViewSet)
 
+friends_photos = DefaultRouter()
+friends_photos.register(r'', views.FriendPhotoModelViewSet, base_name='friends_photos')
+
 urlpatterns = [
     url(r'^signup/$', views.signup, name='signup'),
     url(r'^login/$', views.login, name='login'),
@@ -30,4 +33,6 @@ urlpatterns = [
     url(r'^photos', include(router.urls)),
     url(r'^devices', include(device_router.urls)),
     url(r'^profile/$', views.profile, name='profile'),
+    url(r'^person/(?P<id>\d+)/photos', include(friends_photos.urls)),
+    url(r'^person/(?P<id>\d+)/', views.friend, name='friend'),
 ]

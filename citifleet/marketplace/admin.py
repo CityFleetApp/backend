@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.core.urlresolvers import reverse
 
-from .models import CarModel, CarMake, Car, GeneralGood, GoodPhoto, CarPhoto, JobOffer
+from .models import CarModel, CarMake, Car, GeneralGood, GoodPhoto, CarPhoto, JobOffer, CarColor
 from .forms import AvailableJobOfferAdminForm
 
 
@@ -92,3 +92,5 @@ admin.site.register(CarMake)
 admin.site.register(Car, CarModelAdmin)
 admin.site.register(GeneralGood, GeneralGoodsModelAdmin)
 admin.site.register(JobOffer, JobOfferModelAdmin)
+admin.site.register(CarColor)
+

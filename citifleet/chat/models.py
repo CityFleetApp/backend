@@ -20,10 +20,11 @@ class Room(models.Model):
 
 
 class Message(models.Model):
-    text = models.TextField(_('Message'))
+    text = models.TextField(_('Message'), blank=True)
     room = models.ForeignKey(Room, verbose_name=_('Room'), related_name='messages')
     author = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='author', related_name='messages')
     created = models.DateTimeField(_('Created'), auto_now_add=True)
+    image = models.ImageField(_('Image'), null=True)
 
     def __unicode__(self):
         return self.text[:20]

@@ -23,7 +23,8 @@ def report_created_nearby(sender, instance, created, **kwargs):
                         'lng': instance.location.y, 'report_type': instance.report_type}
         GCMDevice.objects.filter(user__in=nearby_drivers).send_message(push_message)
 
-        apns_push = {'report_created': {'id': instance.id, 'lat': instance.location.x, 'lng': instance.location.y, 'report_type': instance.report_type}}
+        apns_push = {'report_created': {'id': instance.id, 'lat': instance.location.x,
+                                        'lng': instance.location.y, 'report_type': instance.report_type}}
         APNSDevice.objects.filter(user__in=nearby_drivers).send_message(None, extra=apns_push)
 
 
@@ -34,10 +35,11 @@ def report_removed_nearby(sender, instance, **kwargs):
     removed report
     '''
     nearby_drivers = User.objects.filter(
-            location__distance_lte=(instance.location, D(m=settings.VISIBLE_REPORTS_RADIUS)))
+        location__distance_lte=(instance.location, D(m=settings.VISIBLE_REPORTS_RADIUS)))
     push_message = {'action': 'removed', 'id': instance.id, 'lat': instance.location.x,
                     'lng': instance.location.y, 'report_type': instance.report_type}
     GCMDevice.objects.filter(user__in=nearby_drivers).send_message(push_message)
 
-    apns_push = {'report_removed': {'id': instance.id, 'lat': instancel.location.x, 'lng': instance.location.y, 'report_type': instance.report_type}}
+    apns_push = {'report_removed': {'id': instance.id, 'lat': instance.location.x, 'lng': instance.location.y,
+                                    'report_type': instance.report_type}}
     APNSDevice.objects.filter(user__in=nearby_drivers).send_message(None, extra=apns_push)

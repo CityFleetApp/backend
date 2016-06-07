@@ -28,6 +28,8 @@ car_photos_router.register(r'', views.CarPhotoViewSet, base_name='carphotos')
 goods_photos_router = DefaultRouter()
 goods_photos_router.register(r'', views.GoodsPhotoViewSet, base_name='goodsphotos')
 
+colors_router = DefaultRouter()
+colors_router.register(r'', views.CarColorViewSet, base_name='colors')
 
 urlpatterns = [
     url(r'^/cars/', include(router.urls)),
@@ -37,7 +39,7 @@ urlpatterns = [
     url(r'^/goodsphotos', include(goods_photos_router.urls)),
     url(r'^/fuel/$', views.fuel_types, name='fuel'),
     url(r'^/types/$', views.car_types, name='types'),
-    url(r'^/colors/$', views.colors, name='colors'),
+    url(r'^/colors', include(colors_router.urls)),
     url(r'^/seats/$', views.seats, name='seats'),
     url(r'^/vehicles/$', views.vehicle_choices, name='vehicles'),
     url(r'^/job_types/$', views.job_types, name='job_types'),

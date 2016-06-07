@@ -6,5 +6,5 @@ from .models import Benefit
 class BenefitSerializer(serializers.ModelSerializer):
 
     class Meta:
-        fields = ('image_thumbnail', 'name', 'barcode')
+        fields = ('image_thumbnail', 'name', 'barcode', 'promo_code')
         model = Benefit

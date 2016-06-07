@@ -13,7 +13,7 @@ def joboffer_created(sender, instance, created, **kwargs):
     Send push notification to the drivers when new marketplace item is created
     '''
     if created:
-        extra = {'id': instance.id}
+        extra = {'id': instance.id, 'title': instance.title}
         users = get_user_model().objects.exclude(id=instance.owner.id)
         NotificationTemplate.send_notification(NotificationTemplate.JOBOFFER_CREATED, users, **extra)
 
@@ -32,4 +32,3 @@ def car_created(sender, instance, created, **kwargs):
         extra = {'id': instance.id, 'rent': instance.rent}
         users = get_user_model().objects.exclude(id=instance.owner.id)
         NotificationTemplate.send_notification(NotificationTemplate.CAR_CREATED, users, **extra)
-

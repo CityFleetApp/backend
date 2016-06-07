@@ -12,6 +12,9 @@ class NotificationBase(models.Model):
     title = models.CharField(_('title'), max_length=255)
     message = models.CharField(_('message'), max_length=255)
     category = models.CharField(_('category'), max_length=50)
+    ref_type = models.CharField(_('type'), max_length=255, blank=True)
+    ref_id = models.PositiveIntegerField(blank=True, null=True)
+
 
     @property
     def to_dict(self):
@@ -87,6 +90,11 @@ class NotificationTemplate(NotificationBase):
 
         if drivers is None:
             drivers = User.with_notifications.all()
+
+        if type == NotificationTemplate.JOBOFFER_CREATED:
+            template_dict['ref_type'] = NotificationTemplate.PUSH_TYPES[type]
+            template_dict['ref_id'] = extra.get('id')
+            template_dict['title'] = 'Job Offer "{}" created'.format(extra.get('title'))
 
         Notification.objects.bulk_create(
                 [Notification(user=user, **template_dict)

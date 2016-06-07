@@ -2,6 +2,8 @@ import json
 
 from channels import Group
 
+from citifleet.common.utils import get_full_path
+
 from .models import UserRoom
 from .serializers import MessageSerializer
 
@@ -20,6 +22,8 @@ class MessageHandler(object):
         if serializer.is_valid():
             message = serializer.save()
             response.update(MessageSerializer(message).data)
+            if message.image:
+                response['image'] = get_full_path(message.image.url)
             json_response = json.dumps(response)
 
             for participant in message.room.participants.all():
