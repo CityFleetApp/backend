@@ -90,12 +90,11 @@ class NotificationTemplate(NotificationBase):
 
         if drivers is None:
             drivers = User.with_notifications.all()
-        
+
         if type == NotificationTemplate.JOBOFFER_CREATED:
             template_dict['ref_type'] = NotificationTemplate.PUSH_TYPES[type]
             template_dict['ref_id'] = extra.get('id')
             template_dict['title'] = 'Job Offer "{}" created'.format(extra.get('title'))
-
 
         Notification.objects.bulk_create(
                 [Notification(user=user, **template_dict)

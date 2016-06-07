@@ -145,7 +145,7 @@ class MarketplaceJobOfferSerializer(serializers.ModelSerializer):
 
     def get_awarded(self, obj):
         return obj.driver == self.context['request'].user
-    
+
     def get_requested(self, obj):
         return obj.driver_requests.filter(id=self.context['request'].user.id).exists()
 

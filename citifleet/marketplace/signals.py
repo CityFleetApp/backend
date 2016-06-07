@@ -32,4 +32,3 @@ def car_created(sender, instance, created, **kwargs):
         extra = {'id': instance.id, 'rent': instance.rent}
         users = get_user_model().objects.exclude(id=instance.owner.id)
         NotificationTemplate.send_notification(NotificationTemplate.CAR_CREATED, users, **extra)
-

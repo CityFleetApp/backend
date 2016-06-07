@@ -213,8 +213,9 @@ class MarketJobOfferViewSet(viewsets.ModelViewSet):
         offer.paid_on_time = serializer.validated_data['paid_on_time']
         offer.status = JobOffer.COMPLETED
         offer.save()
-        
-        push_message = {'type': 'rate_driver', 'id': offer.id, 'title': 'Job offer {} completed'.format(offer.title), 'offer_title': offer.title, 'driver_name': request.user.full_name}
+
+        push_message = {'type': 'rate_driver', 'id': offer.id, 'title': 'Job offer {} completed'.format(offer.title),
+                        'offer_title': offer.title, 'driver_name': request.user.full_name}
         GCMDevice.objects.filter(user=offer.owner).send_message(push_message)
         APNSDevice.objects.filter(user=offer.owner).send_message(push_message)
 

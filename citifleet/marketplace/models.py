@@ -217,7 +217,7 @@ class JobOffer(models.Model):
 
     PERSONAL = 1
     COMPANY = 2
-    
+
     PERSONAL_CHOICES = (
         (PERSONAL, _('Personal')),
         (COMPANY, _('Company')),

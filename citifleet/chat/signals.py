@@ -19,7 +19,6 @@ def message_created(sender, instance, created, **kwargs):
         push_message.update(MessageSerializer(instance).data)
         if instance.image:
             push_message['image'] = get_full_path(instance.image.url)
-        
 
         GCMDevice.objects.filter(user__in=instance.room.participants.all(), active=True).send_message(push_message)
 
