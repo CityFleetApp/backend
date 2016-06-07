@@ -1,5 +1,3 @@
-from tempfile import NamedTemporaryFile
-
 from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
 from django.core import mail
@@ -10,6 +8,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from mock import patch
 from PIL import Image
+from io import BytesIO
 
 from citifleet.marketplace.factories import JobOfferFactory
 from citifleet.marketplace.models import JobOffer
@@ -28,7 +27,7 @@ class TestSignup(TestCase):
     def test_signup_successful(self):
         signup_data = {
             'full_name': 'John Smith', 'email': 'john@example.com', 'username': 'johnsmith12',
-            'phone': '+41524204242', 'hack_license': '123456', 'password': 'password',
+            'phone': '1524204242', 'hack_license': '123456', 'password': 'password',
             'password_confirm': 'password'
         }
 
@@ -40,7 +39,7 @@ class TestSignup(TestCase):
     def test_signup_unsuccessful(self):
         signup_data = {
             'email': 'john@example.com', 'username': 'johnsmith12',
-            'phone': '+41524204242', 'hack_license': '123456', 'password': 'password',
+            'phone': '1524204242', 'hack_license': '123456', 'password': 'password',
             'password_confirm': 'password'
         }
 
@@ -53,7 +52,7 @@ class TestSignup(TestCase):
     def test_login_after_signup_successful(self):
         signup_data = {
             'full_name': 'John Smith', 'email': 'john@example.com', 'username': 'johnsmith12',
-            'phone': '+41524204242', 'hack_license': '123456', 'password': 'password',
+            'phone': '1524204242', 'hack_license': '123456', 'password': 'password',
             'password_confirm': 'password'
         }
         resp = self.client.post(reverse('users:signup'), data=signup_data)
@@ -67,7 +66,7 @@ class TestSignup(TestCase):
     def test_unique_email(self):
         signup_data = {
             'full_name': 'John Smith', 'email': 'john@example.com', 'username': 'johnsmith12',
-            'phone': '+41524204242', 'hack_license': '123456', 'password': 'password',
+            'phone': '1524204242', 'hack_license': '123456', 'password': 'password',
             'password_confirm': 'password'
         }
         self.client.post(reverse('users:signup'), data=signup_data)
@@ -77,23 +76,10 @@ class TestSignup(TestCase):
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(resp.data, {'email': ['User with this email address already exists.']})
 
-    def test_unique_username(self):
-        signup_data = {
-            'full_name': 'John Smith', 'email': 'john@example.com', 'username': 'johnsmith12',
-            'phone': '+41524204242', 'hack_license': '123456', 'password': 'password',
-            'password_confirm': 'password'
-        }
-        self.client.post(reverse('users:signup'), data=signup_data)
-
-        signup_data['email'] = 'john12@example.com'
-        resp = self.client.post(reverse('users:signup'), data=signup_data)
-        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(resp.data, {'username': ['A user with that username already exists.']})
-
     def test_password_dont_match(self):
         signup_data = {
             'full_name': 'John Smith', 'email': 'john@example.com', 'username': 'johnsmith12',
-            'phone': '+41524204242', 'hack_license': '123456', 'password': 'password',
+            'phone': '1524204242', 'hack_license': '123456', 'password': 'password',
             'password_confirm': 'password1'
         }
 
@@ -226,24 +212,28 @@ class TestUploadAvatar(TestCase):
 
     # Unauthorized user tries to upload avatar
     def test_login_required(self):
-        tmp_file = NamedTemporaryFile(suffix='.jpg')
+        file = BytesIO()
 
-        image = Image.new('RGB', (100, 100))
-        image.save(tmp_file)
+        image = Image.new('RGB', size=(100, 100))
+        image.save(file, 'png')
+        file.name = 'test.jpg'
+        file.seek(0)
 
-        data = {'avatar': tmp_file}
+        data = {'avatar': file}
         resp = self.client.put(reverse('users:upload_avatar'), data=data)
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # User uploads avatar successfuly
     def test_upload_avatar(self):
         self.client.force_authenticate(user=self.user)
-        tmp_file = NamedTemporaryFile(suffix='.jpg')
+        file = BytesIO()
 
-        image = Image.new('RGB', (100, 100))
-        image.save(tmp_file)
+        image = Image.new('RGB', size=(100, 100))
+        image.save(file, 'png')
+        file.name = 'test.jpg'
+        file.seek(0)
 
-        data = {'avatar': tmp_file}
+        data = {'avatar': file}
         resp = self.client.put(reverse('users:upload_avatar'), data=data)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertTrue(self.user.avatar.url.endswith('.jpg'))
@@ -304,11 +294,14 @@ class TestPhotoUpload(TestCase):
 
     def test_upload_photo(self):
         self.client.force_authenticate(user=self.user)
-        tmp_file = NamedTemporaryFile(suffix='.jpg')
+        file = BytesIO()
 
-        image = Image.new('RGB', (100, 100))
-        image.save(tmp_file)
-        data = {'file': tmp_file}
+        image = Image.new('RGB', size=(100, 100))
+        image.save(file, 'png')
+        file.name = 'test.jpg'
+        file.seek(0)
+
+        data = {'file': file}
 
         resp = self.client.post(reverse('users:photos-list'), data=data)
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)

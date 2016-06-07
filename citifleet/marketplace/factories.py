@@ -2,7 +2,7 @@ from factory import DjangoModelFactory
 
 from django.utils import timezone
 
-from .models import CarModel, CarMake, JobOffer
+from .models import CarModel, CarMake, JobOffer, CarColor
 
 
 class CarMakeFactory(DjangoModelFactory):
@@ -26,3 +26,10 @@ class JobOfferFactory(DjangoModelFactory):
 
     class Meta:
         model = JobOffer
+
+
+class CarColorFactory(DjangoModelFactory):
+    name = 'black'
+
+    class Meta:
+        model = CarColor
