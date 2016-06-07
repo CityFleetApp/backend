@@ -14,7 +14,7 @@ django-crispy-forms==1.6.0
 django-model-utils==2.3.1
 
 # Images
-Pillow==3.0.0
+Pillow==3.2.0
 # Well-built with regular release cycles!
 django-allauth==0.23.0
 
@@ -33,7 +33,7 @@ celery==3.1.18
 
 # Your custom requirements go here
 djangorestframework==3.3.2
-sodapy==1.2.0
+sodapy==1.0.0
 django-phonenumber-field==1.0.0
 django-rest-swagger==0.3.5
 tweepy==3.5.0
