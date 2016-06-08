@@ -1,4 +1,4 @@
-from tempfile import NamedTemporaryFile
+from io import BytesIO
 
 from django.core.urlresolvers import reverse
 
@@ -12,7 +12,7 @@ from push_notifications.models import APNSDevice, GCMDevice
 from citifleet.users.factories import UserFactory
 
 from .models import JobOffer
-from .factories import CarMakeFactory, CarModelFactory, JobOfferFactory
+from .factories import CarMakeFactory, CarModelFactory, JobOfferFactory, CarColorFactory
 
 
 class TestMarketPlaceViewSet(TestCase):
@@ -22,6 +22,7 @@ class TestMarketPlaceViewSet(TestCase):
         self.user = UserFactory()
         self.make = CarMakeFactory()
         self.model = CarModelFactory(make=self.make)
+        self.color = CarColorFactory()
 
     def test_login_required(self):
         resp = self.client.get(reverse('marketplace:sale-list'))
@@ -30,18 +31,22 @@ class TestMarketPlaceViewSet(TestCase):
     def test_create_car(self):
         self.client.force_authenticate(user=self.user)
 
-        tmp_file1 = NamedTemporaryFile(suffix='.jpg')
-        image = Image.new('RGB', (100, 100))
-        image.save(tmp_file1)
+        file1 = BytesIO()
+        image = Image.new('RGB', size=(100, 100))
+        image.save(file1, 'png')
+        file1.name = 'test1.jpg'
+        file1.seek(0)
 
-        tmp_file2 = NamedTemporaryFile(suffix='.jpg')
-        image = Image.new('RGB', (100, 100))
-        image.save(tmp_file2)
+        file2 = BytesIO()
+        image = Image.new('RGB', size=(100, 100))
+        image.save(file2, 'png')
+        file2.name = 'test2.jpg'
+        file2.seek(0)
 
         data = {
-            'make': self.make.id, 'model': self.model.id, 'type': 1, 'color': 1, 'year': 2012,
+            'make': self.make.id, 'model': self.model.id, 'type': 1, 'color': self.color.id, 'year': 2012,
             'fuel': 1, 'seats': 5, 'price': 5000, 'description': 'Text',
-            'photos': [tmp_file1, tmp_file2]
+            'photos': [file1, file2]
         }
 
         resp = self.client.post(reverse('marketplace:postings-rent-list'), data=data)

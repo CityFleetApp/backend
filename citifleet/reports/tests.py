@@ -143,8 +143,7 @@ class TestPushNotificationSent(TestCase):
         report = ReportFactory(location=self.point)
         self.assertEqual(apns_mock.call_count, 1)
         apns_mock.assert_called_with(
-            alert={'action': 'added', 'id': report.id, 'lat': self.report.location.x,
-                   'lng': self.report.location.y, 'report_type': report.report_type},
+            alert=None, extra={'report_created': {'lat': -50.0, 'lng': -50.0, 'id': 28, 'report_type': 1}},
             registration_ids=[''])
         self.assertEqual(gcm_mock.call_count, 1)
         gcm_mock.assert_called_with(
@@ -159,8 +158,8 @@ class TestPushNotificationSent(TestCase):
         report_id = self.report.id
         self.report.delete()
         apns_mock.assert_called_with(
-            alert={'action': 'removed', 'id': report_id, 'lat': self.report.location.x,
-                   'lng': self.report.location.y, 'report_type': self.report.report_type}, registration_ids=[''])
+            alert=None, extra={'report_removed': {'lat': -50.0, 'lng': -50.0, 'id': 29, 'report_type': 1}},
+            registration_ids=[''])
         gcm_mock.assert_called_with(
             data={'message': {'action': 'removed', 'id': report_id, 'lat': self.report.location.x,
                   'lng': self.report.location.y, 'report_type': self.report.report_type}}, registration_ids=[''])
