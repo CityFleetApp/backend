@@ -105,7 +105,7 @@ class Car(models.Model):
     description = models.TextField(_('Description'))
     rent = models.BooleanField(_('For rent'), default=False)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_('Owner'))
-    created = models.DateTimeField(_('Created'), auto_now_add=True)
+    created = models.DateTimeField(_('Created'), auto_now=True)
 
     objects = Manager()
     expired = ExpiredManager()
@@ -153,7 +153,7 @@ class GeneralGood(models.Model):
     condition = models.SmallIntegerField(_('Condition'), choices=CONDITION_CHOICES)
     description = models.CharField(_('Description'), max_length=250)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_('User'))
-    created = models.DateTimeField(_('Created'), auto_now_add=True)
+    created = models.DateTimeField(_('Created'), auto_now=True)
 
     objects = Manager()
     expired = ExpiredManager()

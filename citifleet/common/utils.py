@@ -3,7 +3,7 @@ from urllib2 import HTTPError
 from django.conf import settings
 from django.contrib.sites.models import Site
 
-#from sodapy import Socrata
+from sodapy import Socrata
 
 
 def validate_license(license_number, full_name):
@@ -14,15 +14,15 @@ def validate_license(license_number, full_name):
     '''
     if settings.DEBUG:
         return True
-    #else:
-    #    client = Socrata(settings.TLC_URL, settings.APP_TOKEN)
-    #    try:
-    #        resp = client.get(settings.TLC_OPEN_DATA_ID,
-    #                          license_number=license_number, q=full_name)
-    #    except HTTPError:
-    #        return False
-    #    else:
-    #        return len(resp) > 0
+    else:
+        client = Socrata(settings.TLC_URL, settings.APP_TOKEN)
+        try:
+            resp = client.get(settings.TLC_OPEN_DATA_ID,
+                              license_number=license_number, q=full_name)
+        except HTTPError:
+            return False
+        else:
+            return len(resp) > 0
 
 
 def get_protocol():

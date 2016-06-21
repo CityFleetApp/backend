@@ -4,6 +4,7 @@ from django.views.generic import View
 from django.contrib.auth import get_user_model
 from django.http import HttpResponseRedirect
 from django.core.urlresolvers import reverse
+from django.utils import timezone
 
 from rest_framework import viewsets
 from rest_framework import filters
@@ -47,7 +48,7 @@ class PostCarRentViewSet(viewsets.ModelViewSet):
             return CarSerializer
         else:
             return RentCarPostingSerializer
-
+    
     def get_queryset(self):
         return Car.objects.filter(owner=self.request.user, rent=True)
 
@@ -184,6 +185,16 @@ class PostingJobOfferViewSet(viewsets.ModelViewSet):
             return MarketplaceJobOfferSerializer
         else:
             return PostingJobOfferSerializer
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        instance.created = timezone.now()
+        instance.save()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
 
     def get_queryset(self):
         return super(PostingJobOfferViewSet, self).get_queryset().filter(owner=self.request.user)
