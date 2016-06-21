@@ -222,7 +222,7 @@ AUTHENTICATION_BACKENDS = (
 )
 
 # Select the correct user model
-INSTALLED_APPS += ('citifleet.users',)
+INSTALLED_APPS += ('citifleet.users.apps.UsersConfig',)
 AUTH_USER_MODEL = 'users.User'
 LOGIN_REDIRECT_URL = 'users:redirect'
 # LOGIN_URL = 'account_login'
