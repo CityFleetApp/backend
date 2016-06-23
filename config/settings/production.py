@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
+import os
 
 from .common import *  # noqa
+
+import raven
 
 
 DEBUG = env.bool('DJANGO_DEBUG')
@@ -37,6 +40,15 @@ DEFAULT_FROM_EMAIL = env('DJANGO_DEFAULT_FROM_EMAIL')
 
 STATIC_ROOT = env('DJANGO_STATIC_ROOT')
 MEDIA_ROOT = env('DJANGO_MEDIA_ROOT')
+
+if os.environ.get('SENTRY_DSN'):
+    INSTALLED_APPS += ('raven.contrib.django.raven_compat',)
+    RAVEN_CONFIG = {
+        'dsn': env('SENTRY_DSN'),
+        # If you are using git, you can also automatically configure the
+        # release based on the git info.
+        'release': raven.fetch_git_sha(str(ROOT_DIR)),
+    }
 
 LOGGING = {
     'version': 1,
