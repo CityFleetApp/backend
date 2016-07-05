@@ -17,12 +17,14 @@ def validate_license(license_number, full_name):
     else:
         client = Socrata(settings.TLC_URL, settings.APP_TOKEN)
         try:
-            resp = client.get(settings.TLC_OPEN_DATA_ID,
-                              license_number=license_number, q=full_name)
+            fhv_resp = client.get(settings.TLC_FOR_HIRE_DRIVERS,
+                                  license_number=license_number, q=full_name)
+            medallion_resp = client.get(settings.TLC_MEDALLION,
+                                        license_number=license_number, q=full_name)
         except HTTPError:
             return False
         else:
-            return len(resp) > 0
+            return len(fhv_resp) > 0 or len(medallion_resp) > 0
 
 
 def get_protocol():
