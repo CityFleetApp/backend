@@ -244,7 +244,8 @@ ADMIN_URL = r'^admin/'
 # Socrata config
 TLC_URL = 'data.cityofnewyork.us'
 APP_TOKEN = env('APP_TOKEN', default=None)
-TLC_OPEN_DATA_ID = '7drc-shp9'
+TLC_FOR_HIRE_DRIVERS = 'p8xb-39i5'
+TLC_MEDALLION = 'pm46-7vyh'
 
 
 # DRF config
