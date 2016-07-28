@@ -47,8 +47,8 @@ class User(AbstractUser):
     phone format - international (+41524204242)
     '''
     phone = models.CharField(_('phone'), max_length=12)
-    hack_license = models.CharField(_('hack license'), max_length=150)
-    full_name = models.CharField(_('full name'), max_length=200)
+    hack_license = models.CharField(_('hack license'), max_length=150, blank=True)
+    full_name = models.CharField(_('full name'), max_length=200, blank=True)
     location = models.PointField(_('location'), null=True, blank=True)
     bio = models.TextField(_('bio'), blank=True)
     drives = models.CharField(_('drives'), max_length=200, blank=True)
@@ -63,11 +63,11 @@ class User(AbstractUser):
     chat_privacy = models.BooleanField(_('chat privacy'), default=True)
     visible = models.BooleanField(_('visible'), default=True)
 
-    car_make = models.ForeignKey('marketplace.CarMake', null=True)
-    car_model = models.ForeignKey('marketplace.CarModel', null=True)
-    car_year = models.PositiveIntegerField(_('Car year'), null=True)
-    car_type = models.PositiveIntegerField(_('Car type'), null=True, choices=Car.TYPES)
-    car_color = models.PositiveIntegerField(_('Car color'), null=True, choices=Car.COLORS)
+    car_make = models.ForeignKey('marketplace.CarMake', null=True, blank=True)
+    car_model = models.ForeignKey('marketplace.CarModel', null=True, blank=True)
+    car_year = models.PositiveIntegerField(_('Car year'), null=True, blank=True)
+    car_type = models.PositiveIntegerField(_('Car type'), null=True, choices=Car.TYPES, blank=True)
+    car_color = models.PositiveIntegerField(_('Car color'), null=True, choices=Car.COLORS, blank=True)
 
     card_id = models.CharField(_('Vault id'), max_length=255, blank=True)
 

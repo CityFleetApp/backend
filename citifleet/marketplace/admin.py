@@ -55,6 +55,9 @@ class GoodPhotoInline(admin.TabularInline):
 class GeneralGoodsModelAdmin(admin.ModelAdmin):
     inlines = [GoodPhotoInline]
     form = GeneralGoodAdminForm
+    list_display = ['item', 'price', 'condition', 'owner', 'created']
+    list_filter = ['condition']
+    search_fields = ['owner__email', 'owner__first_name', 'owner__last_name']
 
     def save_model(self, request, obj, form, change):
         if not change and not request.user.is_superuser:
