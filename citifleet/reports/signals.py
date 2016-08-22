@@ -25,7 +25,10 @@ def report_created_nearby(sender, instance, created, **kwargs):
 
         apns_push = {'report_created': {'id': instance.id, 'lat': instance.location.x,
                                         'lng': instance.location.y, 'report_type': instance.report_type}}
-        APNSDevice.objects.filter(user__in=nearby_drivers).send_message(None, extra=apns_push)
+
+        nearby_drivers_id = APNSDevice.objects.filter(user__in=nearby_drivers).values_list('id', flat=True)
+        for i in xrange(0, len(nearby_drivers_id), 20):
+            APNSDevice.objects.filter(id__in=nearby_drivers_id[i:i + 20]).send_message(None, extra=apns_push)
 
 
 @receiver(pre_delete, sender=Report)
@@ -42,4 +45,7 @@ def report_removed_nearby(sender, instance, **kwargs):
 
     apns_push = {'report_removed': {'id': instance.id, 'lat': instance.location.x, 'lng': instance.location.y,
                                     'report_type': instance.report_type}}
-    APNSDevice.objects.filter(user__in=nearby_drivers).send_message(None, extra=apns_push)
+
+    nearby_drivers_id = APNSDevice.objects.filter(user__in=nearby_drivers).values_list('id', flat=True)
+    for i in xrange(0, len(nearby_drivers_id), 20):
+        APNSDevice.objects.filter(id__in=nearby_drivers_id[i:i + 20]).send_message(None, extra=apns_push)
