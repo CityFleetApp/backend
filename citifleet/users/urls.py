@@ -35,4 +35,5 @@ urlpatterns = [
     url(r'^profile/$', views.profile, name='profile'),
     url(r'^person/(?P<id>\d+)/photos', include(friends_photos.urls)),
     url(r'^person/(?P<id>\d+)/', views.friend, name='friend'),
+    url(r'^send_mass_push_notification/$', views.send_mass_push_notification, name='send_mass_push_notification'),
 ]

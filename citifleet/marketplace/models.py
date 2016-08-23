@@ -161,6 +161,9 @@ class GeneralGood(models.Model):
     class Meta:
         ordering = ['-created']
 
+    def __unicode__(self):
+        return self.item
+
 
 class GoodPhoto(models.Model):
     goods = models.ForeignKey(GeneralGood, verbose_name=_('Good'), related_name='photos')

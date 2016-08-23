@@ -1,3 +1,10 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import Report
+
+
+class ReportAdmin(admin.ModelAdmin):
+    change_list_template = 'reports/admin_list.html'
+
+
+admin.site.register(Report, ReportAdmin)
