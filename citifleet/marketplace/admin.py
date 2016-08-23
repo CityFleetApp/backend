@@ -18,9 +18,10 @@ class CarModelModelAdmin(admin.ModelAdmin):
 
 
 class CarModelAdmin(admin.ModelAdmin):
-    list_display = ['model', 'make', 'type', 'year', 'fuel', 'seats', 'price']
+    list_display = ['model', 'make', 'type', 'year', 'fuel', 'seats', 'price', 'owner']
     list_filter = ['make', 'model', 'type', 'fuel', 'seats']
     inlines = [CarPhotoInline]
+    search_fields = ['owner__email', 'owner__full_name', 'owner__phone']
 
 
 class GoodPhotoInline(admin.TabularInline):
@@ -32,6 +33,9 @@ class GoodPhotoInline(admin.TabularInline):
 
 class GeneralGoodsModelAdmin(admin.ModelAdmin):
     inlines = [GoodPhotoInline]
+    list_display = ['item', 'price', 'condition', 'owner', 'created']
+    list_filter = ['condition']
+    search_fields = ['owner__email', 'owner__full_name', 'owner__phone']
 
 
 class DriverInline(admin.TabularInline):
@@ -70,10 +74,12 @@ class DriverInline(admin.TabularInline):
 
 class JobOfferModelAdmin(admin.ModelAdmin):
     list_filter = ['status', 'job_type', 'vehicle_type']
-    list_display = ['id', 'pickup_address', 'destination', 'pickup_datetime', 'status']
+    list_display = ['id', 'owner', 'pickup_address', 'destination', 'pickup_datetime',
+                    'status', 'job_type', 'fare', 'gratuity']
     form = AvailableJobOfferAdminForm
     inlines = [DriverInline]
     readonly_fields = ['driver', 'owner_rating']
+    search_fields = ['owner__email', 'owner__full_name', 'owner__phone']
 
     def save_model(self, request, obj, form, change):
         obj.owner = request.user
@@ -93,4 +99,3 @@ admin.site.register(Car, CarModelAdmin)
 admin.site.register(GeneralGood, GeneralGoodsModelAdmin)
 admin.site.register(JobOffer, JobOfferModelAdmin)
 admin.site.register(CarColor)
-

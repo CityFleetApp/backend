@@ -1,0 +1,10 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<form method="POST" action="">
+    {% csrf_token %}
+    {{ form.text.label }} {{ form.text }}
+    {{ form.text.errors }}
+    <input type="submit" name="Send" value="Send"></input>
+</form>
+{% endblock content %}

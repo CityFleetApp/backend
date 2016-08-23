@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
+from django.views.generic import FormView
+from django.http import HttpResponseRedirect
+from django.core.urlresolvers import reverse
+from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
+from django.utils.decorators import method_decorator
+
 from rest_framework.generics import UpdateAPIView, RetrieveAPIView, RetrieveUpdateAPIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
@@ -16,6 +23,7 @@ from .serializers import (SignupSerializer, ResetPasswordSerializer, ChangePassw
                           InstagramSerializer, PhotoSerializer, AvatarSerializer, SettingsSerializer,
                           ProfileSerializer)
 from .models import Photo, User
+from .forms import NotificationForm
 
 
 class SignUpView(APIView):
@@ -221,7 +229,7 @@ profile = ProfileView.as_view()
 
 class FriendView(RetrieveAPIView):
     serializer_class = UserDetailSerializer
-    
+
     def get_object(self):
         return User.objects.get(id=self.kwargs['id'])
 
@@ -237,3 +245,22 @@ class FriendPhotoModelViewSet(ModelViewSet):
 
     def get_queryset(self):
         return super(FriendPhotoModelViewSet, self).get_queryset().filter(user=self.kwargs['id'])
+
+
+class SendMassPushNotification(FormView):
+    form_class = NotificationForm
+    template_name = 'users/notification_form.html'
+
+    @method_decorator(staff_member_required)
+    def dispatch(self, *args, **kwargs):
+        return super(SendMassPushNotification, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        text = form.cleaned_data['text']
+        GCMDevice.objects.filter(active=True).send_message(text)
+        APNSDevice.objects.filter(active=True).send_message(text)
+        messages.add_message(self.request, messages.SUCCESS, 'Push notification sent')
+        return HttpResponseRedirect(reverse('admin:users_user_changelist'))
+
+
+send_mass_push_notification = SendMassPushNotification.as_view()

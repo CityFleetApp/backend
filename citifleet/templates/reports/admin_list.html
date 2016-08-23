@@ -1,0 +1,25 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+    <script src="http://maps.googleapis.com/maps/api/js"></script>
+    <script>
+    function initialize() {
+      var mapProp = {
+        center:new google.maps.LatLng(40.730610,-73.935242),
+        zoom: 10,
+        mapTypeId:google.maps.MapTypeId.ROADMAP
+      };
+      var map=new google.maps.Map(document.getElementById("map"),mapProp);
+
+      {% for it in cl.queryset %}
+      new google.maps.Marker({
+        position: { lat: {{it.location.x}}, lng: {{it.location.y}} } ,
+        map: map,
+        title: "{{ it.get_report_type_display }}"
+      });
+      {% endfor %}
+    }
+    google.maps.event.addDomListener(window, 'load', initialize);
+    </script>
+    <div id="map" style="width: 1800px; height: 800px;"></div>
+{% endblock content %}
