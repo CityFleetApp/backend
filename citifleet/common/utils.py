@@ -3,6 +3,7 @@ from urllib2 import HTTPError
 from django.conf import settings
 from django.contrib.sites.models import Site
 
+from constance import config
 from sodapy import Socrata
 
 
@@ -12,7 +13,7 @@ def validate_license(license_number, full_name):
     Returns True if license is verified, otherwise - False.
     In DEBUG mode always returns False.
     '''
-    if settings.DEBUG:
+    if settings.DEBUG or not config.SODA_CHECK_ENABLED:
         return True
     else:
         client = Socrata(settings.TLC_URL, settings.APP_TOKEN)

@@ -46,6 +46,8 @@ THIRD_PARTY_APPS = (
     'image_cropping',
     'push_notifications',
     'channels',
+    'constance',
+    'constance.backends.database',
 )
 
 # Apps specific for this project go here.
@@ -292,4 +294,11 @@ CHANNEL_LAYERS = {
         },
         "ROUTING": "citifleet.chat.routing.channel_routing",
     },
+}
+
+# Constance config
+CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
+
+CONSTANCE_CONFIG = {
+    'SODA_CHECK_ENABLED': (True, 'Hack license check via SODA API enabled'),
 }
