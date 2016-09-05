@@ -82,6 +82,7 @@ DJANGO_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.flatpages',
     'django.contrib.admin',
+    'django.contrib.gis',
 )
 
 THIRD_PARTY_APPS = (
@@ -221,7 +222,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': None
 }
 
-VISIBLE_REPORTS_RADIUS = 1000
+VISIBLE_REPORTS_RADIUS = 1000  # meters
 AUTOCLOSE_INTERVAL = 60
 
 # Twitter keys

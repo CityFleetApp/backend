@@ -1,8 +1,7 @@
-from django.conf import settings
-from django.contrib.gis.measure import D
+# -*- coding: utf-8 -*-
+
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.db.models import Q
 
 from rest_framework import viewsets, status
 from rest_framework.decorators import detail_route
@@ -15,37 +14,27 @@ from .serializers import ReportSerializer, LocationSerializer
 
 
 class BaseReportViewSet(viewsets.ModelViewSet):
-    '''
-    GET - returns list of nearby reports
+    """
+    GET - returns list of all reports
     DELETE - removes report
-    '''
+    """
     serializer_class = ReportSerializer
     queryset = Report.objects.all()
 
     def list(self, request, *args, **kwargs):
-        '''
-        Validate location passed in GET request
-        '''
+        """ Validate location passed in GET request """
         serializer = LocationSerializer(data=request.GET)
         serializer.is_valid(raise_exception=True)
         self.location = serializer.validated_data['location']
         return super(BaseReportViewSet, self).list(request, *args, **kwargs)
 
     def get_object(self):
-        '''
-        Return object by passed pk from all reports, not from get_queryset result
-        '''
+        """ Return object by passed pk from all reports, not from get_queryset result """
         return get_object_or_404(Report, pk=self.kwargs['pk'])
-
-    def get_queryset(self):
-        return super(BaseReportViewSet, self).get_queryset().filter(
-            Q(report_type=Report.TLC) | (Q(location__distance_lte=(self.location, D(m=settings.VISIBLE_REPORTS_RADIUS))) & ~Q(report_type=Report.TLC)))
 
     @detail_route(methods=['post'])
     def confirm_report(self, request, pk=None):
-        '''
-        Updates report's last updated date so that it still appears on the map
-        '''
+        """ Updates report's last updated date so that it still appears on the map """
         report = self.get_object()
         report.not_here = False
         report.updated = timezone.now()
@@ -67,9 +56,7 @@ class BaseReportViewSet(viewsets.ModelViewSet):
 class NearbyReportViewSet(BaseReportViewSet):
 
     def list(self, request, *args, **kwargs):
-        '''
-        Save current user location on GET request
-        '''
+        """ Save current user location on GET request """
         resp = super(NearbyReportViewSet, self).list(request, *args, **kwargs)
         self.request.user.location = self.location
         self.request.user.save()
@@ -84,6 +71,4 @@ class FriendViewSet(BaseReportViewSet):
     serializer_class = FriendSerializer
 
     def get_queryset(self):
-        return self.request.user.friends.filter(
-            location__distance_lte=(self.location, D(m=settings.VISIBLE_REPORTS_RADIUS)),
-            visible=True).exclude(id=self.request.user.id)
+        return self.request.user.friends.filter(visible=True).exclude(id=self.request.user.id)
