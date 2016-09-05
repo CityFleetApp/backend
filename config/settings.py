@@ -100,7 +100,7 @@ THIRD_PARTY_APPS = (
 LOCAL_APPS = (
     'citifleet.reports.apps.ReportsConfig',
     'citifleet.legalaid',
-    'citifleet.documents',
+    'citifleet.documents.apps.DocumentsConfig',
     'citifleet.benefits',
     'citifleet.notifications.apps.NotificationsConfig',
     'citifleet.marketplace.apps.MarketplaceConfig',

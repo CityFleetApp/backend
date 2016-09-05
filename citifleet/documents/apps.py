@@ -4,4 +4,8 @@ from django.apps import AppConfig
 
 
 class DocumentsConfig(AppConfig):
-    name = 'documents'
+    name = 'citifleet.documents'
+    verbose_name = 'Documents'
+
+    def ready(self):
+        from citifleet.documents import tasks
