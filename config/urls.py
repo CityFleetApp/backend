@@ -19,4 +19,7 @@ urlpatterns = [
     url(r'^api/marketplace', include('citifleet.marketplace.urls', namespace='marketplace')),
     url(r'^docs/', include('rest_framework_swagger.urls')),
     url(r'^api/', include('django.contrib.flatpages.urls')),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+]
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
