@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+
+import random
+import string
+
 from django.contrib.auth.hashers import make_password
 
 import factory
@@ -10,7 +15,7 @@ from .models import User, Photo
 
 class UserFactory(DjangoModelFactory):
     hack_license = factory.Faker('ean8')
-    phone = factory.Faker('phone_number')
+    phone = factory.LazyAttribute(lambda x: ''.join([random.choice(string.digits) for n in range(11)]))
     email = factory.Faker('email')
     full_name = factory.Faker('name')
     username = factory.Faker('name')
