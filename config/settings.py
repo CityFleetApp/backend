@@ -259,6 +259,7 @@ CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 
 CONSTANCE_CONFIG = {
     'SODA_CHECK_ENABLED': (True, 'Hack license check via SODA API enabled'),
+    'TLC_PUSH_NOTIFICATION_RADIUS': (0.5, 'Radius in miles within which we should send notification about nearby TLC reports'),  # noqa
 }
 
 LOGGING = {

@@ -14,6 +14,7 @@ from easy_thumbnails.files import get_thumbnailer
 from citifleet.documents.models import Document
 from citifleet.common.utils import get_full_path
 from citifleet.marketplace.models import Car, JobOffer
+from citifleet.users.signals import user_location_changed
 
 
 class UserManager(BaseUserManager):
@@ -38,13 +39,13 @@ class AllowNotificationManager(UserManager):
 
 @python_2_unicode_compatible
 class User(AbstractUser):
-    '''
+    """
     Custom user model.
     phone and email fields - unique
     location is saved using data from mobile app
     hack_license is verified via SODA API
     phone format - international (+41524204242)
-    '''
+    """
     phone = models.CharField(_('phone'), max_length=12)
     hack_license = models.CharField(_('hack license'), max_length=150, blank=True)
     full_name = models.CharField(_('full name'), max_length=200)
@@ -68,6 +69,8 @@ class User(AbstractUser):
     car_type = models.PositiveIntegerField(_('Car type'), null=True, choices=Car.TYPES, blank=True)
     car_color = models.PositiveIntegerField(_('Car color'), null=True, choices=Car.COLORS, blank=True)
 
+    notified_reports = models.ManyToManyField('reports.Report', blank=True, related_name='notified_users')
+
     objects = UserManager()
     with_notifications = AllowNotificationManager()
 
@@ -78,20 +81,24 @@ class User(AbstractUser):
         return reverse('users:detail', kwargs={'username': self.username})
 
     def avatar_url(self):
-        '''
-        Return full avatar url
-        '''
+        """ Return full avatar url """
         if self.avatar:
             return get_full_path(self.avatar.url)
-        else:
-            return ''
+        return ''
+
+    def set_location(self, new_location, commit=True):
+        self.location = new_location
+        if commit:
+            self.save()
+
+        user_location_changed.send(sender=self.__class__, user=self)
+        return self
 
     @property
     def drives(self):
         if self.car_make and self.car_model:
             return '{}/{}'.format(self.car_make.name, self.car_model.name)
-        else:
-            return ''
+        return ''
 
     @property
     def documents_up_to_date(self):
@@ -113,9 +120,7 @@ class User(AbstractUser):
 
 
 class Photo(models.Model):
-    '''
-    Store uploaded user's photos
-    '''
+    """ Store uploaded user's photos """
     file = models.ImageField(_('photo'), upload_to='photos/')
     user = models.ForeignKey(User, verbose_name=_('user'))
     created = models.DateTimeField(_('created'), auto_now_add=True)
@@ -126,9 +131,7 @@ class Photo(models.Model):
 
     @property
     def thumbnail(self):
-        '''
-        Return photo's thumbnail url
-        '''
+        """ Return photo's thumbnail url """
         return get_full_path(get_thumbnailer(self.file).get_thumbnail({
             'size': (255, 255),
             'crop': True,

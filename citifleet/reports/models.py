@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
 from django.contrib.gis.db import models
@@ -6,9 +7,7 @@ from django.conf import settings
 
 
 class Report(models.Model):
-    '''
-    Stores report's type, location and last update time
-    '''
+    """ Stores report's type, location and last update time """
     POLICE = 1
     TLC = 2
     ACCIDENT = 3
@@ -27,7 +26,6 @@ class Report(models.Model):
 
     location = models.PointField(_('location'))
     report_type = models.PositiveSmallIntegerField(_('type'), choices=REPORT_CHOICES)
-    updated = models.DateTimeField(_('updated'), auto_now=True)
     updated = models.DateTimeField(_('updated'), auto_now_add=True)
     not_here = models.BooleanField(_('not here'), default=False)
     declined = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_('declined'), null=True, blank=True)
