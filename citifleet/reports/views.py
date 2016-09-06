@@ -58,8 +58,7 @@ class NearbyReportViewSet(BaseReportViewSet):
     def list(self, request, *args, **kwargs):
         """ Save current user location on GET request """
         resp = super(NearbyReportViewSet, self).list(request, *args, **kwargs)
-        self.request.user.location = self.location
-        self.request.user.save()
+        self.request.user.set_location(self.location)
         return resp
 
 
