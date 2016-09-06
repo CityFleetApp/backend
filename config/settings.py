@@ -57,7 +57,7 @@ ADMINS = tuple([tuple(admins.split(':')) for admins in env.list('DJANGO_ADMINS')
 
 MANAGERS = ADMINS
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/New_York'
 
 LANGUAGE_CODE = 'en-us'
 
