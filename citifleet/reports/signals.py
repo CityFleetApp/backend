@@ -66,9 +66,9 @@ def update_tlc_notifications(user, **kwargs):
     ))
     if reports_to_notify:
         message = _('TLC TRAPS REPORTED {} miles away, open CityFleet now to see')
-        type = 'near_tlc_report'
-        android_push_msg = {'type': type, }
-        apns_push_msg = {'type': type, }
+        notification_type = 'near_tlc_report'
+        android_push_msg = {'type': notification_type, }
+        apns_push_msg = {'type': notification_type, }
 
         if len(reports_to_notify) == 1:
             message = _('TLC TRAP REPORTED {} miles away, tap here to see')
