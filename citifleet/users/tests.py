@@ -343,4 +343,3 @@ class TestUserSettings(TestCase):
         resp = self.client.put(reverse('users:settings'), data=data)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(resp.data, {'visible': False, 'chat_privacy': False, 'notifications_enabled': False})
-

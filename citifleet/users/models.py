@@ -50,6 +50,7 @@ class User(AbstractUser):
     hack_license = models.CharField(_('hack license'), max_length=150, blank=True)
     full_name = models.CharField(_('full name'), max_length=200)
     location = models.PointField(_('location'), null=True, blank=True)
+    datetime_location_changed = models.DateTimeField(_('time location changed'), blank=True, null=True)
     bio = models.TextField(_('bio'), blank=True)
     drives = models.CharField(_('drives'), max_length=200, blank=True)
     avatar = models.ImageField(_('avatar'), upload_to='avatars/', null=True, blank=True)
@@ -88,6 +89,7 @@ class User(AbstractUser):
 
     def set_location(self, new_location, commit=True):
         self.location = new_location
+        self.datetime_location_changed = timezone.now()
         if commit:
             self.save()
 
