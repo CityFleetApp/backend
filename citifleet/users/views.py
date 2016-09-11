@@ -27,9 +27,7 @@ from .forms import NotificationForm
 
 
 class SignUpView(APIView):
-    '''
-    POST - signs up new user and returns authorization token
-    '''
+    """ POST - signs up new user and returns authorization token """
     serializer_class = SignupSerializer
     permission_classes = (AllowAny,)
 
@@ -44,9 +42,8 @@ signup = SignUpView.as_view()
 
 
 class ResetPassword(APIView):
-    '''
-    POST - resets password and send new password to user's email
-    '''
+    """ POST - resets password and send new password to user's email """
+
     serializer_class = ResetPasswordSerializer
     permission_classes = (AllowAny,)
 
@@ -60,9 +57,7 @@ reset_password = ResetPassword.as_view()
 
 
 class ChangePassword(APIView):
-    '''
-    POST - change password. No password confirm
-    '''
+    """ POST - change password. No password confirm """
     serializer_class = ChangePasswordSerializer
 
     def post(self, request, *args, **kwargs):
@@ -75,10 +70,10 @@ change_password = ChangePassword.as_view()
 
 
 class LoginView(ObtainAuthToken):
-    '''
+    """
     Custom login API.
     Login user, return auth token and user info in response
-    '''
+    """
 
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
@@ -127,51 +122,49 @@ add_contacts_friends = AddFriendsFromContactsView.as_view()
 
 
 class AddFriendsFromFacebookView(BaseAddFriendsView):
-    '''
+    """
     Receive driver's facebook token and retrieve facebook friends.
     Find drivers among facebook friends and add them to driver's friends
     ---
     POST:
         request_serializer: FacebookSerializer
         response_serializer: UserDetailSerializer
-    '''
+    """
     serializer_class = FacebookSerializer
 
 add_facebook_friends = AddFriendsFromFacebookView.as_view()
 
 
 class AddFriendsFromTwitterView(BaseAddFriendsView):
-    '''
+    """
     Receive driver's twitter token and token secret. Retrieve twitter friends.
     Find drivers among twitter friends and add them to driver's friends
     ---
     POST:
         request_serializer: TwitterSerializer
         response_serializer: UserDetailSerializer
-    '''
+    """
     serializer_class = TwitterSerializer
 
 add_twitter_friends = AddFriendsFromTwitterView.as_view()
 
 
 class AddFriendsFromInstagramView(BaseAddFriendsView):
-    '''
+    """
     Receive driver's instagram token. Retrieve instagram friends.
     Find drivers among instagram friends and add them to driver's friends
     ---
     POST:
         request_serializer: InstagramSerializer
         response_serializer: UserDetailSerializer
-    '''
+    """
     serializer_class = InstagramSerializer
 
 add_instagram_friends = AddFriendsFromInstagramView.as_view()
 
 
 class UploadAvatarView(UpdateAPIView):
-    '''
-    Update driver avatar
-    '''
+    """ Update driver avatar """
     serializer_class = AvatarSerializer
 
     def get_object(self):
@@ -181,9 +174,7 @@ upload_avatar = UploadAvatarView.as_view()
 
 
 class UserInfoView(RetrieveAPIView):
-    '''
-    Retrieve driver's info for dashboard
-    '''
+    """ Retrieve driver's info for dashboard """
     serializer_class = UserDetailSerializer
 
     def get_object(self):
@@ -193,9 +184,7 @@ info = UserInfoView.as_view()
 
 
 class PhotoModelViewSet(ModelViewSet):
-    '''
-    Model viewset for create/delete photos
-    '''
+    """ Model viewset for create/delete photos """
     serializer_class = PhotoSerializer
     queryset = Photo.objects.all()
 
@@ -204,9 +193,7 @@ class PhotoModelViewSet(ModelViewSet):
 
 
 class SettingsView(RetrieveUpdateAPIView):
-    '''
-    APIView for editing user's settings
-    '''
+    """ APIView for editing user's settings """
     serializer_class = SettingsSerializer
 
     def get_object(self):
@@ -216,9 +203,7 @@ settings = SettingsView.as_view()
 
 
 class ProfileView(RetrieveUpdateAPIView):
-    '''
-    APIView for editing profile's info
-    '''
+    """ APIView for editing profile's info """
     serializer_class = ProfileSerializer
 
     def get_object(self):
@@ -237,9 +222,7 @@ friend = FriendView.as_view()
 
 
 class FriendPhotoModelViewSet(ModelViewSet):
-    '''
-    Model viewset for create/delete photos
-    '''
+    """ Model viewset for create/delete photos """
     serializer_class = PhotoSerializer
     queryset = Photo.objects.all()
 

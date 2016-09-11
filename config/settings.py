@@ -10,19 +10,70 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 """
 from __future__ import absolute_import, unicode_literals
 
+import os
+
 import environ
+import raven
 from easy_thumbnails.conf import Settings as thumbnail_settings
 
-ROOT_DIR = environ.Path(__file__) - 3  # (/a/b/myfile.py - 3 = /)
+
+ROOT_DIR = environ.Path(__file__) - 2  # (/a/b/myfile.py - 3 = /)
 APPS_DIR = ROOT_DIR.path('citifleet')
 
-env = environ.Env()
+env = environ.Env(
+    DJANGO_DEBUG=(bool, False),
+    DJANGO_SECRET_KEY=(str, '-z$4z#z7v5g^zx-79xu#qlh-m3m@pb!m_qcylfs%55yytu&5xs'),
+    DJANGO_ADMINS=(list, []),
+    DJANGO_ALLOWED_HOSTS=(list, []),
+    DJANGO_STATIC_ROOT=(str, str(APPS_DIR('staticfiles'))),
+    DJANGO_MEDIA_ROOT=(str, str(APPS_DIR('media'))),
+    DJANGO_DATABASE_URL=(str, 'postgis:///cityfleet'),
+    DJANGO_EMAIL_URL=(environ.Env.email_url_config, 'consolemail://user@:password@localhost:25'),
+    DJANGO_DEFAULT_FROM_EMAIL=(str, 'admin@example.com'),
+    DJANGO_EMAIL_BACKEND=(str, 'django.core.mail.backends.smtp.EmailBackend'),
+    SERVER_EMAIL=(str, 'root@localhost.com'),
+    CELERY_BROKER_URL=(str, 'redis://localhost:6379/0'),
+    DJANGO_CELERY_BACKEND=(str, 'redis://localhost:6379/0'),
+    APP_TOKEN=(str, ''),  # Socrata token
+    CONSUMER_KEY=(str, ''),  # twitter consumer key
+    CONSUMER_SECRET=(str, ''),  # twitter consumer secret
+    CLIENT_SECRET=(str, ''),  # instagram client secret
+    GCM_API_KEY=(str, ''),
+    APNS_CERTIFICATE_PATH=(str, ''),
+    REDIS_URL=(str, 'redis://localhost:6379'),
+
+    DJANGO_USE_DEBUG_TOOLBAR=(bool, False),
+    DJANGO_CELERY_ALWAYS_EAGER=(bool, False),
+)
 environ.Env.read_env()
 
-# APP CONFIGURATION
-# ------------------------------------------------------------------------------
+DEBUG = env.bool("DJANGO_DEBUG")
+
+SECRET_KEY = env('DJANGO_SECRET_KEY')
+
+ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS')
+
+ADMINS = tuple([tuple(admins.split(':')) for admins in env.list('DJANGO_ADMINS')])
+
+MANAGERS = ADMINS
+
+TIME_ZONE = 'America/New_York'
+
+LANGUAGE_CODE = 'en-us'
+
+SITE_ID = 1
+
+USE_I18N = True
+
+USE_L10N = True
+
+USE_TZ = True
+
+DATABASES = {
+    'default': env.db('DJANGO_DATABASE_URL')
+}
+
 DJANGO_APPS = (
-    # Default Django apps:
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -30,15 +81,11 @@ DJANGO_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.flatpages',
-
-    # Useful template tags:
-    # 'django.contrib.humanize',
-
-    # Admin
     'django.contrib.admin',
+    'django.contrib.gis',
 )
+
 THIRD_PARTY_APPS = (
-    'crispy_forms',
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_swagger',
@@ -48,26 +95,23 @@ THIRD_PARTY_APPS = (
     'channels',
     'constance',
     'constance.backends.database',
+    'django_extensions',
 )
 
-# Apps specific for this project go here.
 LOCAL_APPS = (
     'citifleet.reports.apps.ReportsConfig',
     'citifleet.legalaid',
-    'citifleet.documents',
+    'citifleet.documents.apps.DocumentsConfig',
     'citifleet.benefits',
     'citifleet.notifications.apps.NotificationsConfig',
     'citifleet.marketplace.apps.MarketplaceConfig',
     'citifleet.chat.apps.ChatConfig',
+    'citifleet.users.apps.UsersConfig',
 )
 
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
-# MIDDLEWARE CONFIGURATION
-# ------------------------------------------------------------------------------
 MIDDLEWARE_CLASSES = (
-    # Make sure djangosecure.middleware.SecurityMiddleware is listed first
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -77,72 +121,23 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.flatpages.middleware.FlatpageFallbackMiddleware',
 )
 
-# MIGRATIONS CONFIGURATION
-# ------------------------------------------------------------------------------
-MIGRATION_MODULES = {
-}
-
-# DEBUG
-# ------------------------------------------------------------------------------
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#debug
-DEBUG = env.bool("DJANGO_DEBUG", False)
-
-# FIXTURE CONFIGURATION
-# ------------------------------------------------------------------------------
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#std:setting-FIXTURE_DIRS
-FIXTURE_DIRS = (
-    str(APPS_DIR.path('fixtures')),
-)
 
 # EMAIL CONFIGURATION
 # ------------------------------------------------------------------------------
-EMAIL_BACKEND = env('DJANGO_EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
-SERVER_EMAIL = env('SERVER_EMAIL', default='root@localhost.com')
-# MANAGER CONFIGURATION
-# ------------------------------------------------------------------------------
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#admins
-ADMINS = (
-    ("""Nick Guzy""", 'guzy@steelkiwi.com'),
-)
+EMAIL_URL = env.email_url('DJANGO_EMAIL_URL')
+EMAIL_BACKEND = EMAIL_URL['EMAIL_BACKEND']
+EMAIL_HOST = EMAIL_URL.get('EMAIL_HOST', '')
+if EMAIL_URL.get('EMAIL_HOST_PASSWORD', '') == 'special':
+    EMAIL_HOST_PASSWORD = env('DJANGO_EMAIL_HOST_PASSWORD_SPECIAL')
+else:
+    EMAIL_HOST_PASSWORD = EMAIL_URL.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_HOST_USER = EMAIL_URL.get('EMAIL_HOST_USER', '')
+EMAIL_PORT = EMAIL_URL.get('EMAIL_PORT', '')
+EMAIL_USE_SSL = 'EMAIL_USE_SSL' in EMAIL_URL
+EMAIL_USE_TLS = 'EMAIL_USE_TLS' in EMAIL_URL
+EMAIL_FILE_PATH = EMAIL_URL.get('EMAIL_FILE_PATH', '')
 
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#managers
-MANAGERS = ADMINS
-
-# DATABASE CONFIGURATION
-# ------------------------------------------------------------------------------
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#databases
-
-DATABASES = {
-    'default': {'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': 'citifleet',
-        'USER': '',
-        'PASSWORD': '',
-        'ATOMIC_REQUESTS': True
-    }
-}
-
-# GENERAL CONFIGURATION
-# ------------------------------------------------------------------------------
-# Local time zone for this installation. Choices can be found here:
-# http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
-# although not all choices may be available on all operating systems.
-# In a Windows environment this must be set to your system time zone.
-TIME_ZONE = 'UTC'
-
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#language-code
-LANGUAGE_CODE = 'en-us'
-
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#site-id
-SITE_ID = 1
-
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#use-i18n
-USE_I18N = True
-
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#use-l10n
-USE_L10N = True
-
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#use-tz
-USE_TZ = True
+DEFAULT_FROM_EMAIL = env('DJANGO_DEFAULT_FROM_EMAIL')
 
 # TEMPLATE CONFIGURATION
 # ------------------------------------------------------------------------------
@@ -174,81 +169,45 @@ TEMPLATES = [
                 'django.template.context_processors.static',
                 'django.template.context_processors.tz',
                 'django.contrib.messages.context_processors.messages',
-                # Your stuff: custom template context processors go here
             ],
         },
     },
 ]
 
-# See: http://django-crispy-forms.readthedocs.org/en/latest/install.html#template-packs
-CRISPY_TEMPLATE_PACK = 'bootstrap3'
 
-# STATIC FILE CONFIGURATION
-# ------------------------------------------------------------------------------
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#static-root
-STATIC_ROOT = str(ROOT_DIR('staticfiles'))
-
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#static-url
 STATIC_URL = '/static/'
+STATIC_ROOT = env('DJANGO_STATIC_ROOT')
 
-# See: https://docs.djangoproject.com/en/dev/ref/contrib/staticfiles/#std:setting-STATICFILES_DIRS
+MEDIA_URL = '/media/'
+MEDIA_ROOT = env('DJANGO_MEDIA_ROOT')
+
 STATICFILES_DIRS = (
     str(APPS_DIR.path('static')),
 )
 
-# See: https://docs.djangoproject.com/en/dev/ref/contrib/staticfiles/#staticfiles-finders
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 )
 
-# MEDIA CONFIGURATION
-# ------------------------------------------------------------------------------
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#media-root
-MEDIA_ROOT = str(APPS_DIR('media'))
-
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#media-url
-MEDIA_URL = '/media/'
-
-# URL Configuration
-# ------------------------------------------------------------------------------
 ROOT_URLCONF = 'config.urls'
 
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#wsgi-application
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# AUTHENTICATION CONFIGURATION
-# ------------------------------------------------------------------------------
-AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
-)
-
-# Select the correct user model
-INSTALLED_APPS += ('citifleet.users.apps.UsersConfig',)
 AUTH_USER_MODEL = 'users.User'
 LOGIN_REDIRECT_URL = 'users:redirect'
-# LOGIN_URL = 'account_login'
-
-# SLUGLIFIER
-AUTOSLUG_SLUGIFY_FUNCTION = 'slugify.slugify'
-########## CELERY
-INSTALLED_APPS += ('citifleet.taskapp.celery.CeleryConfig',)
-# if you are not using the django database broker (e.g. rabbitmq, redis, memcached), you can remove the next line.
-INSTALLED_APPS += ('kombu.transport.django',)
-BROKER_URL = env("CELERY_BROKER_URL", default='django://')
-########## END CELERY
-
-# Location of root django.contrib.admin URL, use {% url 'admin:index' %}
 ADMIN_URL = r'^admin/'
 
-# Your common stuff: Below this line define 3rd party library settings
+# celery settigs
+BROKER_URL = env('CELERY_BROKER_URL')
+CELERY_BACKEND = env('DJANGO_CELERY_BACKEND')
+CELERY_ALWAYS_EAGER = env.bool('DJANGO_CELERY_ALWAYS_EAGER')
 
 # Socrata config
 TLC_URL = 'data.cityofnewyork.us'
 APP_TOKEN = env('APP_TOKEN', default=None)
 TLC_FOR_HIRE_DRIVERS = 'p8xb-39i5'
 TLC_MEDALLION = 'pm46-7vyh'
-
 
 # DRF config
 REST_FRAMEWORK = {
@@ -263,8 +222,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': None
 }
 
-VISIBLE_REPORTS_RADIUS = 1000
-
+VISIBLE_REPORTS_RADIUS = 1000  # meters
 AUTOCLOSE_INTERVAL = 60
 
 # Twitter keys
@@ -281,8 +239,8 @@ THUMBNAIL_PROCESSORS = (
 
 # Push notifications config
 PUSH_NOTIFICATIONS_SETTINGS = {
-        "GCM_API_KEY": env('GCM_API_KEY', default=None),
-        "APNS_CERTIFICATE": env('APNS_CERTIFICATE_PATH', default=None),
+        "GCM_API_KEY": env('GCM_API_KEY'),
+        "APNS_CERTIFICATE": env('APNS_CERTIFICATE_PATH'),
 }
 
 # Channels Layer config
@@ -290,7 +248,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "asgi_redis.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [env('REDIS_URL', default='redis://localhost:6379')],
+            "hosts": [env('REDIS_URL')],
         },
         "ROUTING": "citifleet.chat.routing.channel_routing",
     },
@@ -301,4 +259,72 @@ CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 
 CONSTANCE_CONFIG = {
     'SODA_CHECK_ENABLED': (True, 'Hack license check via SODA API enabled'),
+    'TLC_PUSH_NOTIFICATION_RADIUS': (0.5, 'Radius in miles within which we should send notification about nearby TLC reports'),  # noqa
 }
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse'
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s '
+                      '%(process)d %(thread)d %(message)s'
+        },
+    },
+    'handlers': {
+        'mail_admins': {
+            'level': 'ERROR',
+            'filters': ['require_debug_false'],
+            'class': 'django.utils.log.AdminEmailHandler'
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'propagate': True,
+            'level': 'WARN',
+        },
+        'django.request': {
+            'handlers': ['mail_admins'],
+            'level': 'ERROR',
+            'propagate': True
+        },
+        'django.security.DisallowedHost': {
+            'level': 'ERROR',
+            'handlers': ['console', 'mail_admins'],
+            'propagate': True
+        },
+    }
+}
+
+if os.environ.get('SENTRY_DSN'):
+    INSTALLED_APPS += ('raven.contrib.django.raven_compat',)
+    RAVEN_CONFIG = {
+        'dsn': env('SENTRY_DSN'),
+        # If you are using git, you can also automatically configure the
+        # release based on the git info.
+        'release': raven.fetch_git_sha(str(ROOT_DIR)),
+    }
+
+if env.bool('DJANGO_USE_DEBUG_TOOLBAR'):
+    MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware', )
+    INSTALLED_APPS += ('debug_toolbar', )
+    DEBUG_TOOLBAR_CONFIG = {
+        'DISABLE_PANELS': [
+            'debug_toolbar.panels.redirects.RedirectsPanel',
+        ],
+        'SHOW_TEMPLATE_CONTEXT': True,
+    }

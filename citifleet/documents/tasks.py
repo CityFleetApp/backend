@@ -11,9 +11,7 @@ from .models import Document
 
 @periodic_task(run_every=timedelta(days=1))
 def document_expired_notification():
-    '''
-    Send notification when document becomes expired
-    '''
+    """ Send notification when document becomes expired """
     expiry_date = timezone.now() - timedelta(days=1)
     users_to_notify = Document.objects.filter(expiry_date=expiry_date.date()).values('user', flat=True)
     for user in users_to_notify:

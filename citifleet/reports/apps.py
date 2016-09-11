@@ -8,3 +8,4 @@ class ReportsConfig(AppConfig):
 
     def ready(self):
         from . import signals
+        from citifleet.reports import tasks
