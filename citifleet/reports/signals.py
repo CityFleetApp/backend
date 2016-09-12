@@ -27,12 +27,12 @@ def report_created_nearby(sender, instance, created, **kwargs):
         )
         push_message = {'action': 'added', 'id': instance.id, 'lat': instance.location.x,
                         'lng': instance.location.y, 'report_type': instance.report_type}
-        GCMDevice.objects.filter(user__in=nearby_drivers).send_message(push_message)
+        GCMDevice.objects.filter(user__in=nearby_drivers, active=True).send_message(push_message)
 
         apns_push = {'report_created': {'id': instance.id, 'lat': instance.location.x,
                                         'lng': instance.location.y, 'report_type': instance.report_type}}
 
-        nearby_drivers_id = APNSDevice.objects.filter(user__in=nearby_drivers).values_list('id', flat=True)
+        nearby_drivers_id = APNSDevice.objects.filter(user__in=nearby_drivers, active=True).values_list('id', flat=True)
         for i in xrange(0, len(nearby_drivers_id), 20):
             APNSDevice.objects.filter(id__in=nearby_drivers_id[i:i + 20]).send_message(None, extra=apns_push)
 
@@ -45,12 +45,13 @@ def report_removed_nearby(sender, instance, **kwargs):
     )
     push_message = {'action': 'removed', 'id': instance.id, 'lat': instance.location.x,
                     'lng': instance.location.y, 'report_type': instance.report_type}
-    GCMDevice.objects.filter(user__in=nearby_drivers).send_message(push_message)
+
+    GCMDevice.objects.filter(user__in=nearby_drivers, active=True).send_message(push_message)
 
     apns_push = {'report_removed': {'id': instance.id, 'lat': instance.location.x, 'lng': instance.location.y,
                                     'report_type': instance.report_type}}
 
-    nearby_drivers_id = APNSDevice.objects.filter(user__in=nearby_drivers).values_list('id', flat=True)
+    nearby_drivers_id = APNSDevice.objects.filter(user__in=nearby_drivers, active=True).values_list('id', flat=True)
     for i in xrange(0, len(nearby_drivers_id), 20):
         APNSDevice.objects.filter(id__in=nearby_drivers_id[i:i + 20]).send_message(None, extra=apns_push)
 
@@ -85,8 +86,8 @@ def update_tlc_notifications(user, **kwargs):
             apns_push_msg.update(report_data)
 
         message = message.format(config.TLC_PUSH_NOTIFICATION_RADIUS)
-        GCMDevice.objects.filter(user=user).send_message(message=message, extra=android_push_msg)
-        APNSDevice.objects.filter(user=user).send_message(message=message, extra=apns_push_msg)
+        GCMDevice.objects.filter(user=user, active=True).send_message(message=message, extra=android_push_msg)
+        APNSDevice.objects.filter(user=user, active=True).send_message(message=message, extra=apns_push_msg)
 
     user.notified_reports.clear()
     user.notified_reports.add(*reports_withing_radius)
