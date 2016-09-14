@@ -70,4 +70,4 @@ class FriendViewSet(BaseReportViewSet):
     serializer_class = FriendSerializer
 
     def get_queryset(self):
-        return self.request.user.friends.filter(visible=True).exclude(id=self.request.user.id)
+        return self.request.user.friends.filter(visible=True, location__isnull=False).exclude(id=self.request.user.id)
