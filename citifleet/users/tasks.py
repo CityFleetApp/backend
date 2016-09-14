@@ -21,4 +21,4 @@ def remove_expired_users_locations():
     User.objects.filter(
         models.Q(datetime_location_changed__isnull=True) |
         models.Q(datetime_location_changed__lte=expired_time)
-    ).update(location=None, datetime_location_changed=None)
+    ).filter(location__isnull=False).update(location=None, datetime_location_changed=None)
