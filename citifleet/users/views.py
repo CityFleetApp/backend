@@ -18,17 +18,14 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from push_notifications.models import GCMDevice, APNSDevice
 
-from .serializers import (SignupSerializer, ResetPasswordSerializer, ChangePasswordSerializer,
-                          UserDetailSerializer, ContactsSerializer, FacebookSerializer, TwitterSerializer,
-                          InstagramSerializer, PhotoSerializer, AvatarSerializer, SettingsSerializer,
-                          ProfileSerializer)
+from citifleet.users import serializers as users_serializers
 from .models import Photo, User
 from .forms import NotificationForm
 
 
 class SignUpView(APIView):
     """ POST - signs up new user and returns authorization token """
-    serializer_class = SignupSerializer
+    serializer_class = users_serializers.SignupSerializer
     permission_classes = (AllowAny,)
 
     def post(self, request, *args, **kwargs):
@@ -44,7 +41,7 @@ signup = SignUpView.as_view()
 class ResetPassword(APIView):
     """ POST - resets password and send new password to user's email """
 
-    serializer_class = ResetPasswordSerializer
+    serializer_class = users_serializers.ResetPasswordSerializer
     permission_classes = (AllowAny,)
 
     def post(self, request, *args, **kwargs):
@@ -58,7 +55,7 @@ reset_password = ResetPassword.as_view()
 
 class ChangePassword(APIView):
     """ POST - change password. No password confirm """
-    serializer_class = ChangePasswordSerializer
+    serializer_class = users_serializers.ChangePasswordSerializer
 
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data, context={'user': request.user})
@@ -81,7 +78,7 @@ class LoginView(ObtainAuthToken):
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
 
-        user_data = UserDetailSerializer(user).data
+        user_data = users_serializers.UserDetailSerializer(user).data
         user_data['token'] = token.key
 
         return Response(user_data)
@@ -98,7 +95,7 @@ class BaseAddFriendsView(APIView):
         friends = serializer.validated_data['users']
         request.user.friends.add(*friends)
 
-        user_data = UserDetailSerializer(friends, many=True).data
+        user_data = users_serializers.UserDetailSerializer(friends, many=True).data
         return Response(user_data)
 
 
@@ -116,7 +113,7 @@ class AddFriendsFromContactsView(BaseAddFriendsView):
               paramType: form
         response_serializer: UserDetailSerializer
     """
-    serializer_class = ContactsSerializer
+    serializer_class = users_serializers.ContactsSerializer
 
 add_contacts_friends = AddFriendsFromContactsView.as_view()
 
@@ -130,7 +127,7 @@ class AddFriendsFromFacebookView(BaseAddFriendsView):
         request_serializer: FacebookSerializer
         response_serializer: UserDetailSerializer
     """
-    serializer_class = FacebookSerializer
+    serializer_class = users_serializers.FacebookSerializer
 
 add_facebook_friends = AddFriendsFromFacebookView.as_view()
 
@@ -144,7 +141,7 @@ class AddFriendsFromTwitterView(BaseAddFriendsView):
         request_serializer: TwitterSerializer
         response_serializer: UserDetailSerializer
     """
-    serializer_class = TwitterSerializer
+    serializer_class = users_serializers.TwitterSerializer
 
 add_twitter_friends = AddFriendsFromTwitterView.as_view()
 
@@ -158,14 +155,14 @@ class AddFriendsFromInstagramView(BaseAddFriendsView):
         request_serializer: InstagramSerializer
         response_serializer: UserDetailSerializer
     """
-    serializer_class = InstagramSerializer
+    serializer_class = users_serializers.InstagramSerializer
 
 add_instagram_friends = AddFriendsFromInstagramView.as_view()
 
 
 class UploadAvatarView(UpdateAPIView):
     """ Update driver avatar """
-    serializer_class = AvatarSerializer
+    serializer_class = users_serializers.AvatarSerializer
 
     def get_object(self):
         return self.request.user
@@ -175,7 +172,7 @@ upload_avatar = UploadAvatarView.as_view()
 
 class UserInfoView(RetrieveAPIView):
     """ Retrieve driver's info for dashboard """
-    serializer_class = UserDetailSerializer
+    serializer_class = users_serializers.UserDetailSerializer
 
     def get_object(self):
         return self.request.user
@@ -185,7 +182,7 @@ info = UserInfoView.as_view()
 
 class PhotoModelViewSet(ModelViewSet):
     """ Model viewset for create/delete photos """
-    serializer_class = PhotoSerializer
+    serializer_class = users_serializers.PhotoSerializer
     queryset = Photo.objects.all()
 
     def get_queryset(self):
@@ -194,7 +191,7 @@ class PhotoModelViewSet(ModelViewSet):
 
 class SettingsView(RetrieveUpdateAPIView):
     """ APIView for editing user's settings """
-    serializer_class = SettingsSerializer
+    serializer_class = users_serializers.SettingsSerializer
 
     def get_object(self):
         return self.request.user
@@ -204,7 +201,7 @@ settings = SettingsView.as_view()
 
 class ProfileView(RetrieveUpdateAPIView):
     """ APIView for editing profile's info """
-    serializer_class = ProfileSerializer
+    serializer_class = users_serializers.ProfileSerializer
 
     def get_object(self):
         return self.request.user
@@ -213,7 +210,7 @@ profile = ProfileView.as_view()
 
 
 class FriendView(RetrieveAPIView):
-    serializer_class = UserDetailSerializer
+    serializer_class = users_serializers.UserDetailSerializer
 
     def get_object(self):
         return User.objects.get(id=self.kwargs['id'])
@@ -223,7 +220,7 @@ friend = FriendView.as_view()
 
 class FriendPhotoModelViewSet(ModelViewSet):
     """ Model viewset for create/delete photos """
-    serializer_class = PhotoSerializer
+    serializer_class = users_serializers.PhotoSerializer
     queryset = Photo.objects.all()
 
     def get_queryset(self):
@@ -247,3 +244,13 @@ class SendMassPushNotification(FormView):
 
 
 send_mass_push_notification = SendMassPushNotification.as_view()
+
+
+class CheckUsernameInUseApiView(APIView):
+    serializer_class = users_serializers.UsernameInUseSerializer
+    permission_classes = (AllowAny, )
+
+    def get(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.GET)
+        serializer.is_valid(raise_exception=True)
+        return Response({'in_use': False}, status=status.HTTP_200_OK)

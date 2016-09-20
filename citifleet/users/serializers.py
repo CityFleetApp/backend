@@ -2,8 +2,9 @@
 
 import re
 
-from django.core.mail import send_mail
 from django.conf import settings
+from django.core.mail import send_mail
+from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
@@ -239,3 +240,10 @@ class FriendSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'avatar_url', 'full_name', 'email', 'username', 'phone', 'lat', 'lng')
+
+
+class UsernameInUseSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ('username', )
