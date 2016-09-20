@@ -253,4 +253,4 @@ class CheckUsernameInUseApiView(APIView):
     def get(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.GET)
         serializer.is_valid(raise_exception=True)
-        return Response({'in_use': False}, status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
