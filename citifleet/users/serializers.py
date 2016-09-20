@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+
 import re
 
-from django.core.mail import send_mail
 from django.conf import settings
+from django.core.mail import send_mail
+from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
@@ -15,9 +18,7 @@ from .models import User, Photo
 
 
 class SignupSerializer(serializers.ModelSerializer):
-    '''
-    Serializes sign up data. Creates new user and logins it automatically
-    '''
+    """ Serializes sign up data. Creates new user and logins it automatically """
     password_confirm = serializers.CharField(max_length=128)
 
     class Meta:
@@ -37,9 +38,7 @@ class SignupSerializer(serializers.ModelSerializer):
                 return value
 
     def validate(self, attrs):
-        '''
-        Validates driver's hack license and full name via SODA API
-        '''
+        """ Validates driver's hack license and full name via SODA API """
         if not validate_license(attrs['hack_license'], attrs['full_name']):
             raise serializers.ValidationError('Invalid license number')
 
@@ -50,25 +49,21 @@ class SignupSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        '''
-        Saves user, creates and returns authentication token to skip login step
-        '''
+        """ Saves user, creates and returns authentication token to skip login step """
         user = User.objects.create_user(**validated_data)
         token = Token.objects.create(user=user)
         return token
 
 
 class ResetPasswordSerializer(serializers.Serializer):
-    '''
+    """
     Serializes email and provides method to reset password for user
     with passed email
-    '''
+    """
     email = serializers.EmailField()
 
     def validate(self, attrs):
-        '''
-        Checks if user with passed email exists in database
-        '''
+        """ Checks if user with passed email exists in database """
         try:
             self.user = User.objects.get(email=attrs['email'])
         except User.DoesNotExist:
@@ -77,9 +72,7 @@ class ResetPasswordSerializer(serializers.Serializer):
         return attrs
 
     def reset_password(self):
-        '''
-        Generate and set new password. Send email with new password
-        '''
+        """ Generate and set new password. Send email with new password """
         new_password = User.objects.make_random_password(length=10)
         self.user.set_password(new_password)
         self.user.save()
@@ -89,9 +82,7 @@ class ResetPasswordSerializer(serializers.Serializer):
 
 
 class ChangePasswordSerializer(serializers.Serializer):
-    '''
-    Serialize new password's length and provide method to change password
-    '''
+    """ Serialize new password's length and provide method to change password """
     old_password = serializers.CharField(max_length=128)
     password = serializers.CharField(max_length=128)
     password_confirm = serializers.CharField(max_length=128)
@@ -109,18 +100,14 @@ class ChangePasswordSerializer(serializers.Serializer):
         return attrs
 
     def change_password(self):
-        '''
-        Get user from serializer's context and change password
-        '''
+        """ Get user from serializer's context and change password """
         user = self.context['user']
         user.set_password(self.validated_data['password'])
         user.save()
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
-    '''
-    Serializer for user details screen
-    '''
+    """ Serializer for user details screen """
 
     class Meta:
         model = User
@@ -130,9 +117,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
 
 class ContactsSerializer(serializers.Serializer):
-    '''
-    Take list of phone numbers and return list of users with these numbers
-    '''
+    """ Take list of phone numbers and return list of users with these numbers """
     contacts = serializers.ListField(child=serializers.CharField())
 
     def validate(self, attrs):
@@ -142,10 +127,10 @@ class ContactsSerializer(serializers.Serializer):
 
 
 class FacebookSerializer(serializers.Serializer):
-    '''
+    """
     Take facebook token and facebook id
     Fetch friends list from facebook
-    '''
+    """
     token = serializers.CharField()
 
     def validate(self, attrs):
@@ -162,10 +147,10 @@ class FacebookSerializer(serializers.Serializer):
 
 
 class TwitterSerializer(serializers.Serializer):
-    '''
+    """
     Take twitter token and secret token
     Fetch friends list from twitter
-    '''
+    """
     token = serializers.CharField()
     token_secret = serializers.CharField()
 
@@ -186,10 +171,10 @@ class TwitterSerializer(serializers.Serializer):
 
 
 class InstagramSerializer(serializers.Serializer):
-    '''
+    """
     Take instagram token
     Fetch friends list from instagram
-    '''
+    """
     token = serializers.CharField()
 
     def validate(self, attrs):
@@ -211,18 +196,14 @@ class InstagramSerializer(serializers.Serializer):
 
 
 class AvatarSerializer(serializers.ModelSerializer):
-    '''
-    Update user avatar
-    '''
+    """ Update user avatar """
     class Meta:
         model = User
         fields = ('avatar',)
 
 
 class PhotoSerializer(serializers.ModelSerializer):
-    '''
-    Serialize uploaded photo
-    '''
+    """ Serialize uploaded photo """
     class Meta:
         model = Photo
         fields = ('id', 'file', 'thumbnail')
@@ -233,18 +214,14 @@ class PhotoSerializer(serializers.ModelSerializer):
 
 
 class SettingsSerializer(serializers.ModelSerializer):
-    '''
-    Serialize user's settings info
-    '''
+    """ Serialize user's settings info """
     class Meta:
         model = User
         fields = ('notifications_enabled', 'chat_privacy', 'visible')
 
 
 class ProfileSerializer(serializers.ModelSerializer):
-    '''
-    Serialize user personal info
-    '''
+    """ Serialize user personal info """
     car_make_display = serializers.ReadOnlyField(source='car_make.name')
     car_model_display = serializers.ReadOnlyField(source='car_model.name')
     car_color_display = serializers.ReadOnlyField(source='get_car_color_display')
@@ -263,3 +240,10 @@ class FriendSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'avatar_url', 'full_name', 'email', 'username', 'phone', 'lat', 'lng')
+
+
+class UsernameInUseSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ('username', )

@@ -36,4 +36,5 @@ urlpatterns = [
     url(r'^person/(?P<id>\d+)/photos', include(friends_photos.urls)),
     url(r'^person/(?P<id>\d+)/', views.friend, name='friend'),
     url(r'^send_mass_push_notification/$', views.send_mass_push_notification, name='send_mass_push_notification'),
+    url(r'^username/check/$', views.CheckUsernameInUseApiView.as_view(), name='check_username_in_use'),
 ]
