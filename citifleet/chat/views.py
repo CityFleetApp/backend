@@ -35,7 +35,10 @@ class MessageViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         UserRoom.objects.filter(user=self.request.user, room=self.kwargs['room']).update(unseen=0)
-        return Room.objects.get(id=self.kwargs['room'], participants=self.request.user).messages.order_by('-created')
+        return Room.objects.filter(
+            id=self.kwargs['room'],
+            participants=self.request.user
+        ).distinct().get().messages.order_by('-created')
 
 
 class FriendsViewSet(viewsets.ReadOnlyModelViewSet):
