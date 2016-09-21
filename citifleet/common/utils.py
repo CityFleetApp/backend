@@ -67,7 +67,7 @@ def generate_username(fullname):
             try_count += 1
 
     if not new_username:
-        allowed_chars = ''.join((string.lowercase, string.uppercase, string.digits))
+        allowed_chars = ''.join((string.uppercase, string.digits))
         new_username = ''.join(random.choice(allowed_chars) for _ in range(10))
 
     return new_username
