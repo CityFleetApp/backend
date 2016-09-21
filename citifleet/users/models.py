@@ -17,13 +17,14 @@ from citifleet.documents.models import Document
 from citifleet.common.utils import get_full_path
 from citifleet.marketplace.models import Car, JobOffer
 from citifleet.users.signals import user_location_changed
+from citifleet.common.utils import generate_username
 
 
 class UserManager(BaseUserManager):
 
     def create_user(self, **kwargs):
         user = User(**kwargs)
-        user.username = user.email
+        user.username = generate_username(kwargs.get('full_name', '')) or user.email
         user.set_password(kwargs['password'])
         user.save()
         return user
