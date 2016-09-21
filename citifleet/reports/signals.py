@@ -22,21 +22,38 @@ User = get_user_model()
 def report_created_nearby(sender, instance, created, **kwargs):
     """ Send push notification to the drivers that are within VISIBLE_REPORTS_RADIUS to created report """
     if created:
+        apns_message = {
+            'report_created':
+                {
+                    'id': instance.id, 'lat': instance.location.x,
+                    'lng': instance.location.y, 'report_type': instance.report_type
+                }
+        }
+        gcm_message = {
+            'action': 'added', 'id': instance.id, 'lat': instance.location.x,
+            'lng': instance.location.y, 'report_type': instance.report_type
+        }
+        gcm_kwargs = {'message': gcm_message, }
+        apns_kwargs = {'message': None, 'extra': apns_message}
+
         nearby_drivers = User.objects.filter(
             location__distance_lte=(instance.location, D(mi=config.TLC_PUSH_NOTIFICATION_RADIUS))
         )
-        message = _('TLC TRAP REPORTED {} miles away, tap here to see').format(config.TLC_PUSH_NOTIFICATION_RADIUS)
+        if instance.report_type == Report.TLC:
+            message = _('TLC TRAP REPORTED {} miles away, tap here to see').format(config.TLC_PUSH_NOTIFICATION_RADIUS)
+            gcm_kwargs = {
+                'message': message,
+                'extra': gcm_message
+            }
+            apns_kwargs = {
+                'message': message,
+                'extra': apns_message
+            }
 
-        push_message = {'action': 'added', 'id': instance.id, 'lat': instance.location.x,
-                        'lng': instance.location.y, 'report_type': instance.report_type}
-        GCMDevice.objects.filter(user__in=nearby_drivers, active=True).send_message(message=message, extra=push_message)
-
-        apns_push = {'report_created': {'id': instance.id, 'lat': instance.location.x,
-                                        'lng': instance.location.y, 'report_type': instance.report_type}}
-
+        GCMDevice.objects.filter(user__in=nearby_drivers, active=True).send_message(**gcm_kwargs)
         nearby_drivers_id = APNSDevice.objects.filter(user__in=nearby_drivers, active=True).values_list('id', flat=True)
         for i in xrange(0, len(nearby_drivers_id), 20):
-            APNSDevice.objects.filter(id__in=nearby_drivers_id[i:i + 20]).send_message(message=message, extra=apns_push)
+            APNSDevice.objects.filter(id__in=nearby_drivers_id[i:i + 20]).send_message(**apns_kwargs)
 
 
 @receiver(pre_delete, sender=Report)
@@ -45,19 +62,16 @@ def report_removed_nearby(sender, instance, **kwargs):
     nearby_drivers = User.objects.filter(
         location__distance_lte=(instance.location, D(mi=config.TLC_PUSH_NOTIFICATION_RADIUS))
     )
-    message = _('TLC TRAP REPORTED {} miles away, tap here to see').format(config.TLC_PUSH_NOTIFICATION_RADIUS)
-
     push_message = {'action': 'removed', 'id': instance.id, 'lat': instance.location.x,
                     'lng': instance.location.y, 'report_type': instance.report_type}
-
-    GCMDevice.objects.filter(user__in=nearby_drivers, active=True).send_message(message=message, extra=push_message)
+    GCMDevice.objects.filter(user__in=nearby_drivers).send_message(push_message)
 
     apns_push = {'report_removed': {'id': instance.id, 'lat': instance.location.x, 'lng': instance.location.y,
                                     'report_type': instance.report_type}}
 
-    nearby_drivers_id = APNSDevice.objects.filter(user__in=nearby_drivers, active=True).values_list('id', flat=True)
+    nearby_drivers_id = APNSDevice.objects.filter(user__in=nearby_drivers).values_list('id', flat=True)
     for i in xrange(0, len(nearby_drivers_id), 20):
-        APNSDevice.objects.filter(id__in=nearby_drivers_id[i:i + 20]).send_message(message=message, extra=apns_push)
+        APNSDevice.objects.filter(id__in=nearby_drivers_id[i:i + 20]).send_message(None, extra=apns_push)
 
 
 @receiver(user_location_changed, sender=User)
