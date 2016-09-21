@@ -8,6 +8,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
+from rest_framework import validators as rf_validators
 from open_facebook import OpenFacebook
 from instagram.client import InstagramAPI
 import tweepy
@@ -247,3 +248,9 @@ class UsernameInUseSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('username', )
+
+    def __init__(self, *args, **kwargs):
+        super(UsernameInUseSerializer, self).__init__(*args, **kwargs)
+        for validator in self.fields['username'].validators:
+            if isinstance(validator, rf_validators.UniqueValidator):
+                validator.message = _('Username is already in use')
