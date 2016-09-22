@@ -76,6 +76,9 @@ def report_removed_nearby(sender, instance, **kwargs):
 
 @receiver(user_location_changed, sender=User)
 def update_tlc_notifications(user, **kwargs):
+    if not user.location:
+        return
+
     reports_withing_radius = Report.objects.filter(
         report_type=Report.TLC,
         location__distance_lte=(user.location, D(mi=config.TLC_PUSH_NOTIFICATION_RADIUS))
