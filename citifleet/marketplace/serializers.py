@@ -75,7 +75,7 @@ class CarSerializer(serializers.ModelSerializer):
     color = serializers.ReadOnlyField(source='color.name')
     dimensions = serializers.SerializerMethodField()
     photos = CarIdPhotoSerializer(many=True)
-    owner_name = serializers.ReadOnlyField(source='owner.full_name')
+    owner_name = serializers.ReadOnlyField(source='owner.username')
 
     def get_dimensions(self, obj):
         photo = obj.photos.first()
@@ -101,7 +101,7 @@ class GeneralGoodSerializer(serializers.ModelSerializer):
     condition = serializers.ReadOnlyField(source='get_condition_display')
     photos = GoodsIdPhotoSerializer(many=True)
     dimensions = serializers.SerializerMethodField()
-    owner_name = serializers.ReadOnlyField(source='owner.full_name')
+    owner_name = serializers.ReadOnlyField(source='owner.username')
 
     def get_dimensions(self, obj):
         photo = obj.photos.first()
