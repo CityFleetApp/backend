@@ -8,14 +8,13 @@ from django.core.mail import send_mail
 from django.utils.translation import ugettext_lazy as _
 
 import tweepy
-from drf_extra_fields.geo_fields import PointField
 from instagram.client import InstagramAPI
 from open_facebook import OpenFacebook
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
-from rest_framework import validators as rf_validators
 
 from citifleet.common.utils import validate_license, generate_username, validate_username
+from citifleet.common.geo_fields import PointField
 from citifleet.users.models import Photo
 
 User = get_user_model()
