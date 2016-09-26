@@ -3,19 +3,22 @@
 import re
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.utils.translation import ugettext_lazy as _
 
+import tweepy
+from drf_extra_fields.geo_fields import PointField
+from instagram.client import InstagramAPI
+from open_facebook import OpenFacebook
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 from rest_framework import validators as rf_validators
-from open_facebook import OpenFacebook
-from instagram.client import InstagramAPI
-import tweepy
 
 from citifleet.common.utils import validate_license
+from citifleet.users.models import Photo
 
-from .models import User, Photo
+User = get_user_model()
 
 
 class SignupSerializer(serializers.ModelSerializer):
@@ -254,3 +257,14 @@ class UsernameInUseSerializer(serializers.ModelSerializer):
         for validator in self.fields['username'].validators:
             if isinstance(validator, rf_validators.UniqueValidator):
                 validator.message = _('Username is already in use')
+
+
+class UpdateUserLocationSerializer(serializers.ModelSerializer):
+    location = PointField()
+
+    class Meta:
+        model = User
+        fields = ('location', )
+
+    def save(self, **kwargs):
+        return self.instance.set_location(self.validated_data['location'])
