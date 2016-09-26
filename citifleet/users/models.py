@@ -24,7 +24,8 @@ class UserManager(BaseUserManager):
 
     def create_user(self, **kwargs):
         user = User(**kwargs)
-        user.username = generate_username(kwargs.get('full_name', '')) or user.email
+        if not user.username:
+            user.username = generate_username(kwargs.get('full_name', '')) or user.email
         user.set_password(kwargs['password'])
         user.save()
         return user

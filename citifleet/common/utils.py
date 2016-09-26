@@ -1,14 +1,20 @@
 # -*- coding: utf-8 -*-
-
 import random
+import re
 import string
+
 from urllib2 import HTTPError
 
+from django import forms
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
+from django.utils.translation import ugettext_lazy as _
 
 from constance import config
 from sodapy import Socrata
+
+USERNAME_REGEX = re.compile(r'^[\w.@+-]+$', re.UNICODE)
 
 
 def validate_license(license_number, full_name):
@@ -44,8 +50,6 @@ def get_full_path(relative_url):
 
 
 def generate_username(fullname):
-    from django.contrib.auth import get_user_model
-
     User = get_user_model()
     if not fullname.strip():
         return ''
@@ -71,3 +75,17 @@ def generate_username(fullname):
         new_username = ''.join(random.choice(allowed_chars) for _ in range(10))
 
     return new_username
+
+
+def validate_username(username):
+    if not USERNAME_REGEX.match(username):
+        raise forms.ValidationError(
+            _('Enter a valid username. This value may contain only letters, numbers ' 'and @/./+/-/_ characters.')
+        )
+
+    User = get_user_model()
+    try:
+        User.objects.get(username=username)
+    except User.DoesNotExist:
+        return username
+    raise forms.ValidationError(_("This username is already taken. Please choose another."))

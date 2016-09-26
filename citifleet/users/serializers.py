@@ -15,7 +15,7 @@ from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 from rest_framework import validators as rf_validators
 
-from citifleet.common.utils import validate_license
+from citifleet.common.utils import validate_license, generate_username, validate_username
 from citifleet.users.models import Photo
 
 User = get_user_model()
@@ -24,11 +24,28 @@ User = get_user_model()
 class SignupSerializer(serializers.ModelSerializer):
     """ Serializes sign up data. Creates new user and logins it automatically """
     password_confirm = serializers.CharField(max_length=128)
+    username = serializers.CharField(
+        max_length=User._meta.get_field('username').max_length,
+        allow_blank=True,
+        required=False,
+    )
+    email = serializers.EmailField(
+        required=True,
+        error_messages={
+            'blank': _('Email field can not be blank'),
+            'required': _('Email field can not be blank'),
+        }
+    )
 
     class Meta:
         model = User
         fields = ('email', 'full_name', 'phone', 'hack_license', 'username',
                   'password', 'password_confirm')
+
+    def validate_username(self, username):
+        if username:
+            username = validate_username(username)
+        return username
 
     def validate_phone(self, value):
         try:
@@ -41,15 +58,25 @@ class SignupSerializer(serializers.ModelSerializer):
             else:
                 return value
 
+    def validate_email(self, email):
+        if email and User.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError(_('This email is already in use.'))
+        return email
+
     def validate(self, attrs):
         """ Validates driver's hack license and full name via SODA API """
-        if not validate_license(attrs['hack_license'], attrs['full_name']):
-            raise serializers.ValidationError('Invalid license number')
+        if (attrs.get('hack_license') and attrs.get('full_name') and
+                not validate_license(attrs['hack_license'], attrs['full_name'])):
+            raise serializers.ValidationError(_('Invalid license number'))
 
-        if attrs['password'] != attrs['password_confirm']:
-            raise serializers.ValidationError("Passwords don't match")
+        if attrs.get('password') and attrs.get('password_confirm'):
+            if attrs['password'] != attrs['password_confirm']:
+                raise serializers.ValidationError(_('Passwords don\'t match'))
+            del attrs['password_confirm']
 
-        del attrs['password_confirm']
+        if not attrs.get('username'):
+            attrs['username'] = generate_username(attrs.get('full_name', ''))
+
         return attrs
 
     def create(self, validated_data):

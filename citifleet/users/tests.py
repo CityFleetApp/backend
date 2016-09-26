@@ -1,6 +1,7 @@
 from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
 from django.core import mail
+from django.utils.translation import gettext as _
 
 from test_plus.test import TestCase
 from rest_framework.test import APIClient
@@ -72,9 +73,9 @@ class TestSignup(TestCase):
         self.client.post(reverse('users:signup'), data=signup_data)
 
         signup_data['username'] = 'johnsmith13'
-        resp = self.client.post(reverse('users:signup'), data=signup_data)
+        resp = self.client.post(reverse('users:signup'), data=signup_data, format='json')
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(resp.data, {'email': ['User with this email address already exists.']})
+        self.assertEqual(resp.data, {'email': [_('This email is already in use.')]})
 
     def test_password_dont_match(self):
         signup_data = {
