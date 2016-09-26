@@ -273,17 +273,18 @@ class FriendSerializer(serializers.ModelSerializer):
         fields = ('id', 'avatar_url', 'full_name', 'email', 'username', 'phone', 'lat', 'lng')
 
 
-class UsernameInUseSerializer(serializers.ModelSerializer):
+class UsernameInUseSerializer(serializers.Serializer):
 
-    class Meta:
-        model = User
-        fields = ('username', )
+    username = serializers.CharField(
+        max_length=User._meta.get_field('username').max_length,
+        allow_blank=True,
+        required=False,
+    )
 
-    def __init__(self, *args, **kwargs):
-        super(UsernameInUseSerializer, self).__init__(*args, **kwargs)
-        for validator in self.fields['username'].validators:
-            if isinstance(validator, rf_validators.UniqueValidator):
-                validator.message = _('Username is already in use')
+    def validate_username(self, username):
+        if username:
+            username = validate_username(username)
+        return username
 
 
 class UpdateUserLocationSerializer(serializers.ModelSerializer):

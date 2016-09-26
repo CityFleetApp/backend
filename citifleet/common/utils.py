@@ -88,4 +88,4 @@ def validate_username(username):
         User.objects.get(username=username)
     except User.DoesNotExist:
         return username
-    raise forms.ValidationError(_("This username is already taken. Please choose another."))
+    raise forms.ValidationError(_('This username is already taken. Please choose another.'))
