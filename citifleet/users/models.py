@@ -82,6 +82,7 @@ class User(AbstractUser):
 
     notified_reports = models.ManyToManyField('reports.Report', blank=True, related_name='notified_users')
     user_type = models.SmallIntegerField(_('user type'), choices=USER_TYPES, default=USER_TYPES.user)
+    is_development = models.BooleanField(_('development?'), default=False)
 
     objects = UserManager()
     with_notifications = AllowNotificationManager()
