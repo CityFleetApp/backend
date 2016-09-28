@@ -22,6 +22,8 @@ User = get_user_model()
 def report_created_nearby(sender, instance, created, **kwargs):
     """ Send push notification to the drivers about created report """
     if created:
+        # hack to prevent notification about new report
+        instance.user.notified_reports.add(instance)
         apns_message = {
             'report_created':
                 {
