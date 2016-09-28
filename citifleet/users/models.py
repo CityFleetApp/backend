@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, absolute_import
 
+from model_utils.choices import Choices
+
 from django.contrib.auth.models import AbstractUser, UserManager as BaseUserManager
 from django.core.urlresolvers import reverse
 from django.contrib.gis.db import models
@@ -15,20 +17,23 @@ from citifleet.documents.models import Document
 from citifleet.common.utils import get_full_path
 from citifleet.marketplace.models import Car, JobOffer
 from citifleet.users.signals import user_location_changed
+from citifleet.common.utils import generate_username
 
 
 class UserManager(BaseUserManager):
 
     def create_user(self, **kwargs):
         user = User(**kwargs)
-        user.username = user.email
+        if not user.username:
+            user.username = generate_username(kwargs.get('full_name', '')) or user.email
         user.set_password(kwargs['password'])
         user.save()
         return user
 
     def create_superuser(self, email, password):
         return self.create_user(email=email, password=password, phone='1', hack_license='1',
-                                full_name='admin', is_staff=True, is_superuser=True)
+                                full_name='admin', is_staff=True, is_superuser=True,
+                                user_type=User.USER_TYPES.staff)
 
 
 class AllowNotificationManager(UserManager):
@@ -46,6 +51,11 @@ class User(AbstractUser):
     hack_license is verified via SODA API
     phone format - international (+41524204242)
     """
+    USER_TYPES = Choices(
+        (0, 'user', 'Just a User'),
+        (1, 'staff', 'Any staff user (admin/superuser/staff)')
+    )
+
     phone = models.CharField(_('phone'), max_length=12)
     hack_license = models.CharField(_('hack license'), max_length=150, blank=True)
     full_name = models.CharField(_('full name'), max_length=200)
@@ -71,6 +81,7 @@ class User(AbstractUser):
     car_color = models.PositiveIntegerField(_('Car color'), null=True, choices=Car.COLORS, blank=True)
 
     notified_reports = models.ManyToManyField('reports.Report', blank=True, related_name='notified_users')
+    user_type = models.SmallIntegerField(_('user type'), choices=USER_TYPES, default=USER_TYPES.user)
 
     objects = UserManager()
     with_notifications = AllowNotificationManager()

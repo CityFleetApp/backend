@@ -5,10 +5,11 @@ from django.views.generic import FormView
 from django.http import HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils.decorators import method_decorator
 
-from rest_framework.generics import UpdateAPIView, RetrieveAPIView, RetrieveUpdateAPIView
+from rest_framework.generics import UpdateAPIView, RetrieveAPIView, RetrieveUpdateAPIView, GenericAPIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -19,14 +20,16 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from push_notifications.models import GCMDevice, APNSDevice
 
 from citifleet.users import serializers as users_serializers
-from .models import Photo, User
+from .models import Photo
 from .forms import NotificationForm
+
+User = get_user_model()
 
 
 class SignUpView(APIView):
     """ POST - signs up new user and returns authorization token """
     serializer_class = users_serializers.SignupSerializer
-    permission_classes = (AllowAny,)
+    permission_classes = (AllowAny, )
 
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
@@ -254,3 +257,20 @@ class CheckUsernameInUseApiView(APIView):
         serializer = self.serializer_class(data=request.GET)
         serializer.is_valid(raise_exception=True)
         return Response({}, status=status.HTTP_200_OK)
+
+
+class UpdateUserLocationApiView(GenericAPIView):
+    """ Update user's location """
+    serializer_class = users_serializers.UpdateUserLocationSerializer
+
+    def get_object(self):
+        return self.request.user
+
+    def post(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({}, status=status.HTTP_200_OK)
+
+update_user_location = UpdateUserLocationApiView.as_view()

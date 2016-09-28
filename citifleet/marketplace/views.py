@@ -36,11 +36,11 @@ class MarketPageNumberPagination(PageNumberPagination):
 
 
 class PostCarRentViewSet(viewsets.ModelViewSet):
-    '''
+    """
     ViewSet for posting cars rent
     Use different serializers for retrieving and updating car info,
     because of creating cars with relation to car photos
-    '''
+    """
     serializer_class = RentCarPostingSerializer
 
     def get_serializer_class(self):
@@ -54,11 +54,11 @@ class PostCarRentViewSet(viewsets.ModelViewSet):
 
 
 class PostCarSaleViewSet(viewsets.ModelViewSet):
-    '''
+    """
     ViewSet for posting cars for sale
     Use different serializers for retrieving and updating car info,
     because of creating cars with relation to car photos
-    '''
+    """
     serializer_class = SaleCarPostingSerializer
 
     def get_serializer_class(self):
@@ -72,9 +72,7 @@ class PostCarSaleViewSet(viewsets.ModelViewSet):
 
 
 class CarRentModelViewSet(viewsets.ModelViewSet):
-    '''
-    ViewSet for retrieving cars for rent in marketplace section
-    '''
+    """ ViewSet for retrieving cars for rent in marketplace section """
     serializer_class = CarSerializer
     queryset = Car.objects.filter(rent=True)
     pagination_class = PageNumberPagination
@@ -83,11 +81,8 @@ class CarRentModelViewSet(viewsets.ModelViewSet):
     search_fields = ('make__name', 'model__name', 'year', 'color__name')
 
 
-
 class CarSaleModelViewSet(viewsets.ModelViewSet):
-    '''
-    ViewSet for retrieving cars for sale in marketplace section
-    '''
+    """ ViewSet for retrieving cars for sale in marketplace section """
     serializer_class = CarSerializer
     queryset = Car.objects.filter(rent=False)
     pagination_class = PageNumberPagination
@@ -97,10 +92,10 @@ class CarSaleModelViewSet(viewsets.ModelViewSet):
 
 
 class CarMakeViewSet(viewsets.ReadOnlyModelViewSet):
-    '''
+    """
     ViewSet for retrieving available Car Make choices
     Used in car create/edit form
-    '''
+    """
     serializer_class = CarMakeSerializer
     queryset = CarMake.objects.all()
 

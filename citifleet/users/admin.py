@@ -16,6 +16,17 @@ class MyUserChangeForm(UserChangeForm):
         model = User
         fields = '__all__'
 
+    def save(self, commit=True):
+        self.instance = super(MyUserChangeForm, self).save(commit=False)
+        self.instance.user_type = User.USER_TYPES.user
+        if self.cleaned_data['is_staff'] or self.cleaned_data['is_superuser']:
+            self.instance.user_type = User.USER_TYPES.staff
+
+        if commit:
+            self.instance.save()
+            self.save_m2m()
+        return self.instance
+
 
 class MyUserCreationForm(UserCreationForm):
 

@@ -3,29 +3,48 @@
 import re
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.utils.translation import ugettext_lazy as _
 
+import tweepy
+from instagram.client import InstagramAPI
+from open_facebook import OpenFacebook
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
-from rest_framework import validators as rf_validators
-from open_facebook import OpenFacebook
-from instagram.client import InstagramAPI
-import tweepy
 
-from citifleet.common.utils import validate_license
+from citifleet.common.utils import validate_license, generate_username, validate_username
+from citifleet.common.geo_fields import PointField
+from citifleet.users.models import Photo
 
-from .models import User, Photo
+User = get_user_model()
 
 
 class SignupSerializer(serializers.ModelSerializer):
     """ Serializes sign up data. Creates new user and logins it automatically """
     password_confirm = serializers.CharField(max_length=128)
+    username = serializers.CharField(
+        max_length=User._meta.get_field('username').max_length,
+        allow_blank=True,
+        required=False,
+    )
+    email = serializers.EmailField(
+        required=True,
+        error_messages={
+            'blank': _('Email field can not be blank'),
+            'required': _('Email field can not be blank'),
+        }
+    )
 
     class Meta:
         model = User
         fields = ('email', 'full_name', 'phone', 'hack_license', 'username',
                   'password', 'password_confirm')
+
+    def validate_username(self, username):
+        if username:
+            username = validate_username(username)
+        return username
 
     def validate_phone(self, value):
         try:
@@ -38,15 +57,25 @@ class SignupSerializer(serializers.ModelSerializer):
             else:
                 return value
 
+    def validate_email(self, email):
+        if email and User.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError(_('This email is already in use.'))
+        return email
+
     def validate(self, attrs):
         """ Validates driver's hack license and full name via SODA API """
-        if not validate_license(attrs['hack_license'], attrs['full_name']):
-            raise serializers.ValidationError('Invalid license number')
+        if (attrs.get('hack_license') and attrs.get('full_name') and
+                not validate_license(attrs['hack_license'], attrs['full_name'])):
+            raise serializers.ValidationError(_('Invalid license number'))
 
-        if attrs['password'] != attrs['password_confirm']:
-            raise serializers.ValidationError("Passwords don't match")
+        if attrs.get('password') and attrs.get('password_confirm'):
+            if attrs['password'] != attrs['password_confirm']:
+                raise serializers.ValidationError(_('Passwords don\'t match'))
+            del attrs['password_confirm']
 
-        del attrs['password_confirm']
+        if not attrs.get('username'):
+            attrs['username'] = generate_username(attrs.get('full_name', ''))
+
         return attrs
 
     def create(self, validated_data):
@@ -114,7 +143,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
         model = User
         fields = ('email', 'full_name', 'phone', 'hack_license', 'username',
                   'bio', 'drives', 'avatar_url', 'documents_up_to_date', 'jobs_completed',
-                  'rating', 'id')
+                  'rating', 'id', 'user_type', )
 
 
 class ContactsSerializer(serializers.Serializer):
@@ -243,14 +272,26 @@ class FriendSerializer(serializers.ModelSerializer):
         fields = ('id', 'avatar_url', 'full_name', 'email', 'username', 'phone', 'lat', 'lng')
 
 
-class UsernameInUseSerializer(serializers.ModelSerializer):
+class UsernameInUseSerializer(serializers.Serializer):
+
+    username = serializers.CharField(
+        max_length=User._meta.get_field('username').max_length,
+        allow_blank=True,
+        required=False,
+    )
+
+    def validate_username(self, username):
+        if username:
+            username = validate_username(username)
+        return username
+
+
+class UpdateUserLocationSerializer(serializers.ModelSerializer):
+    location = PointField()
 
     class Meta:
         model = User
-        fields = ('username', )
+        fields = ('location', )
 
-    def __init__(self, *args, **kwargs):
-        super(UsernameInUseSerializer, self).__init__(*args, **kwargs)
-        for validator in self.fields['username'].validators:
-            if isinstance(validator, rf_validators.UniqueValidator):
-                validator.message = _('Username is already in use')
+    def save(self, **kwargs):
+        return self.instance.set_location(self.validated_data['location'])

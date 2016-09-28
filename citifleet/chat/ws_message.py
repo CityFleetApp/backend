@@ -11,9 +11,7 @@ from .serializers import MessageSerializer
 class MessageHandler(object):
 
     def _post_message(self):
-        '''
-        Create message and send to other group participants
-        '''
+        """ Create message and send to other group participants """
         response = {'type': 'receive_message'}
 
         self.msg['author'] = self.user.id
@@ -30,15 +28,11 @@ class MessageHandler(object):
                 Group('chat-%s' % participant.id).send({'text': json_response})
 
     def _read_room(self):
-        '''
-        User reads new channel messages
-        '''
+        """ User reads new channel messages """
         UserRoom.objects.filter(user=self.user, room_id=self.msg['room']).update(unseen=0)
 
     def on_message(self, msg):
-        '''
-        Message routing
-        '''
+        """ Message routing """
         self.user = msg.user
         self.msg = json.loads(msg.content['text'])
 
