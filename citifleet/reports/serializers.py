@@ -15,9 +15,7 @@ class LocationSerializer(serializers.Serializer):
 
 
 class ReportSerializer(serializers.ModelSerializer):
-    '''
-    Reports Model serializer. Serializes lat and lng to report's location
-    '''
+    """ Reports Model serializer. Serializes lat and lng to report's location """
     lat = serializers.FloatField(source='location.x')
     lng = serializers.FloatField(source='location.y')
 

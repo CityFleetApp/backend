@@ -21,6 +21,11 @@ class BaseReportViewSet(viewsets.ModelViewSet):
     serializer_class = ReportSerializer
     queryset = Report.objects.all()
 
+    def perform_create(self, serializer):
+        if self.request.user.is_authenticated():
+            serializer.save(user=self.request.user)
+        return super(BaseReportViewSet, self).perform_create(serializer)
+
     def list(self, request, *args, **kwargs):
         """ Validate location passed in GET request """
         serializer = LocationSerializer(data=request.GET)
