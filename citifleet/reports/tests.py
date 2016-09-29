@@ -6,8 +6,9 @@ from test_plus.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
 from mock import patch
-from push_notifications.models import APNSDevice, GCMDevice
+from push_notifications.models import GCMDevice
 
+from citifleet.common.serializers import CustomAPNSDevice as APNSDevice
 from citifleet.users.factories import UserFactory
 
 from .models import Report
@@ -174,5 +175,5 @@ class TestPushNotificationSent(TestCase):
         self.assertEqual(gcm_mock.call_count, 1)
 
         report.delete()
-        self.assertEqual(apns_mock.call_count, 1)
-        self.assertEqual(gcm_mock.call_count, 1)
+        self.assertEqual(apns_mock.call_count, 2)
+        self.assertEqual(gcm_mock.call_count, 2)

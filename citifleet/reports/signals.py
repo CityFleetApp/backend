@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.gis.measure import D
 from django.db.models.signals import post_save, pre_delete
@@ -9,8 +8,9 @@ from django.dispatch import receiver
 from django.utils.translation import ugettext as _
 
 from constance import config
-from push_notifications.models import APNSDevice, GCMDevice
+from push_notifications.models import GCMDevice
 
+from citifleet.common.serializers import CustomAPNSDevice as APNSDevice
 from citifleet.users.signals import user_location_changed
 from .models import Report
 

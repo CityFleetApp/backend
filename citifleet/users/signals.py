@@ -3,7 +3,9 @@
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver, Signal
 
-from push_notifications.models import APNSDevice, GCMDevice
+from push_notifications.models import GCMDevice
+
+from citifleet.common.serializers import CustomAPNSDevice as APNSDevice
 
 
 user_location_changed = Signal(providing_args=['user', ])
