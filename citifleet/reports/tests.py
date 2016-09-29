@@ -58,6 +58,7 @@ class TestNearbyReportViewSet(TestCase):
         self.assertEqual(report.report_type, Report.POLICE)
         self.assertEqual(report.location.x, 47.0)
         self.assertEqual(report.location.y, 51.0)
+        self.assertEqual(report.user, self.user)
 
     # Authorized user deletes report by it's id
     def test_deny_report(self):
@@ -164,14 +165,14 @@ class TestPushNotificationSent(TestCase):
             data={'message': {'action': 'removed', 'id': report_id, 'lat': self.report.location.x,
                   'lng': self.report.location.y, 'report_type': self.report.report_type}}, registration_ids=[''])
 
-    # Push notification not sent for not nearby drivers
+    # Push notification was sent to drivers
     @patch('push_notifications.apns.apns_send_bulk_message')
     @patch('push_notifications.gcm.gcm_send_bulk_message')
     def test_push_not_sent(self, gcm_mock, apns_mock):
         report = ReportFactory(location=Point(20, 20))
-        self.assertEqual(apns_mock.call_count, 0)
-        self.assertEqual(gcm_mock.call_count, 0)
+        self.assertEqual(apns_mock.call_count, 1)
+        self.assertEqual(gcm_mock.call_count, 1)
 
         report.delete()
-        self.assertEqual(apns_mock.call_count, 0)
-        self.assertEqual(gcm_mock.call_count, 0)
+        self.assertEqual(apns_mock.call_count, 1)
+        self.assertEqual(gcm_mock.call_count, 1)
