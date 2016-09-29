@@ -40,6 +40,7 @@ env = environ.Env(
     CLIENT_SECRET=(str, ''),  # instagram client secret
     GCM_API_KEY=(str, ''),
     APNS_CERTIFICATE_PATH=(str, ''),
+    APNS_CERTIFICATE_DEV_PATH=(str, ''),
     REDIS_URL=(str, 'redis://localhost:6379'),
 
     DJANGO_USE_DEBUG_TOOLBAR=(bool, False),
@@ -99,6 +100,7 @@ THIRD_PARTY_APPS = (
 )
 
 LOCAL_APPS = (
+    'citifleet.common',
     'citifleet.reports.apps.ReportsConfig',
     'citifleet.legalaid',
     'citifleet.documents.apps.DocumentsConfig',
@@ -241,6 +243,7 @@ THUMBNAIL_PROCESSORS = (
 PUSH_NOTIFICATIONS_SETTINGS = {
         "GCM_API_KEY": env('GCM_API_KEY'),
         "APNS_CERTIFICATE": env('APNS_CERTIFICATE_PATH'),
+        "APNS_CERTIFICATE_DEV": env('APNS_CERTIFICATE_DEV_PATH'),
 }
 
 # Channels Layer config

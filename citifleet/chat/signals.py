@@ -2,7 +2,9 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db.models import F
 
-from push_notifications.models import APNSDevice, GCMDevice
+from push_notifications.models import GCMDevice
+
+from citifleet.common.serializers import CustomAPNSDevice as APNSDevice
 from citifleet.common.utils import get_full_path
 
 from .models import Message, UserRoom
