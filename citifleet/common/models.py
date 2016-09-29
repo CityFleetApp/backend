@@ -30,7 +30,6 @@ class CustomAPNSDevice(Device):
 
     class Meta:
         verbose_name = _('APNS device')
-        app_label = 'push_notifications'
 
     def send_message(self, message, **kwargs):
         return apns_send_message(registration_id=self.registration_id, alert=message, **kwargs)
