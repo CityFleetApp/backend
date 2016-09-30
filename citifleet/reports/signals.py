@@ -22,8 +22,6 @@ User = get_user_model()
 def report_created_nearby(sender, instance, created, **kwargs):
     """ Send push notification to the drivers about created report """
     if created:
-        # hack to prevent notification about new report
-        instance.user.notified_reports.add(instance)
         apns_message = {
             'report_created':
                 {
@@ -50,6 +48,11 @@ def report_created_nearby(sender, instance, created, **kwargs):
                 'sound': 'default',
                 'extra': apns_message
             }
+
+        # hack to prevent notification about new report in zone
+        for u in driver_to_notify:
+            u.notified_reports.add(instance)
+        instance.user.notified_reports.add(instance)
 
         GCMDevice.objects.filter(user__in=driver_to_notify, active=True).send_message(**gcm_kwargs)
         nearby_drivers_id = APNSDevice.objects.filter(user__in=driver_to_notify, active=True).values_list('id', flat=True)
