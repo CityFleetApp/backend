@@ -47,6 +47,7 @@ def report_created_nearby(sender, instance, created, **kwargs):
             }
             apns_kwargs = {
                 'message': message,
+                'sound': 'default',
                 'extra': apns_message
             }
 
