@@ -106,7 +106,11 @@ def update_tlc_notifications(user, **kwargs):
 
         message = message.format(config.TLC_PUSH_NOTIFICATION_RADIUS)
         GCMDevice.objects.filter(user=user, active=True).send_message(message=message, extra=android_push_msg)
-        APNSDevice.objects.filter(user=user, active=True).send_message(message=message, extra=apns_push_msg)
+        APNSDevice.objects.filter(user=user, active=True).send_message(
+            message=message,
+            sound='default',
+            extra=apns_push_msg
+        )
 
     user.notified_reports.clear()
     user.notified_reports.add(*reports_withing_radius)
