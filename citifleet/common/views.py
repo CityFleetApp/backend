@@ -1,3 +1,3 @@
-from django.shortcuts import render
+# -*- encoding: utf-8 -*-
 
-# Create your views here.
+from __future__ import unicode_literals

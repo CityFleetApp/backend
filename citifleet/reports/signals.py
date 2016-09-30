@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.gis.measure import D
 from django.db.models.signals import post_save, pre_delete
@@ -9,7 +8,7 @@ from django.dispatch import receiver
 from django.utils.translation import ugettext as _
 
 from constance import config
-from push_notifications.models import APNSDevice, GCMDevice
+from push_notifications.models import GCMDevice, APNSDevice
 
 from citifleet.users.signals import user_location_changed
 from .models import Report
@@ -22,8 +21,6 @@ User = get_user_model()
 def report_created_nearby(sender, instance, created, **kwargs):
     """ Send push notification to the drivers about created report """
     if created:
-        # hack to prevent notification about new report
-        instance.user.notified_reports.add(instance)
         apns_message = {
             'report_created':
                 {
@@ -47,8 +44,14 @@ def report_created_nearby(sender, instance, created, **kwargs):
             }
             apns_kwargs = {
                 'message': message,
+                'sound': 'default',
                 'extra': apns_message
             }
+
+        # hack to prevent notification about new report in zone
+        for u in driver_to_notify:
+            u.notified_reports.add(instance)
+        instance.user.notified_reports.add(instance)
 
         GCMDevice.objects.filter(user__in=driver_to_notify, active=True).send_message(**gcm_kwargs)
         nearby_drivers_id = APNSDevice.objects.filter(user__in=driver_to_notify, active=True).values_list('id', flat=True)
@@ -106,7 +109,11 @@ def update_tlc_notifications(user, **kwargs):
 
         message = message.format(config.TLC_PUSH_NOTIFICATION_RADIUS)
         GCMDevice.objects.filter(user=user, active=True).send_message(message=message, extra=android_push_msg)
-        APNSDevice.objects.filter(user=user, active=True).send_message(message=message, extra=apns_push_msg)
+        APNSDevice.objects.filter(user=user, active=True).send_message(
+            message=message,
+            sound='default',
+            extra=apns_push_msg
+        )
 
     user.notified_reports.clear()
     user.notified_reports.add(*reports_withing_radius)

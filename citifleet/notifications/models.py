@@ -108,7 +108,7 @@ class NotificationTemplate(NotificationBase):
 
         alert_message = template_dict['title']
         APNSDevice.objects.filter(user__in=drivers).send_message(
-            alert_message, sound='defauld', extra={push_message['type']: extra})
+            alert_message, sound='default', extra={push_message['type']: extra})
 
     class Meta:
         verbose_name = _('Notification Template')

@@ -1,4 +1,5 @@
 from django.core.urlresolvers import reverse
+from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.test.utils import override_settings
 
@@ -6,7 +7,7 @@ from test_plus.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
 from mock import patch
-from push_notifications.models import APNSDevice, GCMDevice
+from push_notifications.models import GCMDevice, APNSDevice
 
 from citifleet.users.factories import UserFactory
 
@@ -145,7 +146,8 @@ class TestPushNotificationSent(TestCase):
         self.assertEqual(apns_mock.call_count, 1)
         apns_mock.assert_called_with(
             alert=None, extra={'report_created': {'lat': -50.0, 'lng': -50.0, 'id': 28, 'report_type': 1}},
-            registration_ids=[''])
+            registration_ids=[''],
+        )
         self.assertEqual(gcm_mock.call_count, 1)
         gcm_mock.assert_called_with(
             data={'message': {'action': 'added', 'id': report.id, 'lat': self.report.location.x,
@@ -160,7 +162,8 @@ class TestPushNotificationSent(TestCase):
         self.report.delete()
         apns_mock.assert_called_with(
             alert=None, extra={'report_removed': {'lat': -50.0, 'lng': -50.0, 'id': 29, 'report_type': 1}},
-            registration_ids=[''])
+            registration_ids=[''],
+        )
         gcm_mock.assert_called_with(
             data={'message': {'action': 'removed', 'id': report_id, 'lat': self.report.location.x,
                   'lng': self.report.location.y, 'report_type': self.report.report_type}}, registration_ids=[''])
@@ -174,5 +177,5 @@ class TestPushNotificationSent(TestCase):
         self.assertEqual(gcm_mock.call_count, 1)
 
         report.delete()
-        self.assertEqual(apns_mock.call_count, 1)
-        self.assertEqual(gcm_mock.call_count, 1)
+        self.assertEqual(apns_mock.call_count, 2)
+        self.assertEqual(gcm_mock.call_count, 2)

@@ -4,7 +4,7 @@ from __future__ import absolute_import, unicode_literals
 from django.conf.urls import url, include
 
 from rest_framework.routers import DefaultRouter
-from push_notifications.api.rest_framework import APNSDeviceAuthorizedViewSet, GCMDeviceAuthorizedViewSet
+from push_notifications.api.rest_framework import GCMDeviceAuthorizedViewSet, APNSDeviceAuthorizedViewSet
 
 from . import views
 
