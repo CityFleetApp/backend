@@ -8,9 +8,8 @@ from django.dispatch import receiver
 from django.utils.translation import ugettext as _
 
 from constance import config
-from push_notifications.models import GCMDevice
+from push_notifications.models import GCMDevice, APNSDevice
 
-from citifleet.common.serializers import CustomAPNSDevice as APNSDevice
 from citifleet.users.signals import user_location_changed
 from .models import Report
 

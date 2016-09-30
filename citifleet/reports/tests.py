@@ -7,9 +7,8 @@ from test_plus.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
 from mock import patch
-from push_notifications.models import GCMDevice
+from push_notifications.models import GCMDevice, APNSDevice
 
-from citifleet.common.serializers import CustomAPNSDevice as APNSDevice
 from citifleet.users.factories import UserFactory
 
 from .models import Report
@@ -140,7 +139,7 @@ class TestPushNotificationSent(TestCase):
         self.gcm = GCMDevice.objects.create(user=self.user)
 
     # Push notification sent on report creation
-    @patch('citifleet.common.models.apns_send_bulk_message')
+    @patch('push_notifications.apns.apns_send_bulk_message')
     @patch('push_notifications.gcm.gcm_send_bulk_message')
     def test_push_sent_on_new_report(self, gcm_mock, apns_mock):
         report = ReportFactory(location=self.point)
@@ -148,7 +147,6 @@ class TestPushNotificationSent(TestCase):
         apns_mock.assert_called_with(
             alert=None, extra={'report_created': {'lat': -50.0, 'lng': -50.0, 'id': 28, 'report_type': 1}},
             registration_ids=[''],
-            certfile=settings.PUSH_NOTIFICATIONS_SETTINGS['APNS_CERTIFICATE']
         )
         self.assertEqual(gcm_mock.call_count, 1)
         gcm_mock.assert_called_with(
@@ -157,7 +155,7 @@ class TestPushNotificationSent(TestCase):
             registration_ids=[''])
 
     # Push notification sent on report delete
-    @patch('citifleet.common.models.apns_send_bulk_message')
+    @patch('push_notifications.apns.apns_send_bulk_message')
     @patch('push_notifications.gcm.gcm_send_bulk_message')
     def test_push_sent_on_report_remove(self, gcm_mock, apns_mock):
         report_id = self.report.id
@@ -165,14 +163,13 @@ class TestPushNotificationSent(TestCase):
         apns_mock.assert_called_with(
             alert=None, extra={'report_removed': {'lat': -50.0, 'lng': -50.0, 'id': 29, 'report_type': 1}},
             registration_ids=[''],
-            certfile=settings.PUSH_NOTIFICATIONS_SETTINGS['APNS_CERTIFICATE']
         )
         gcm_mock.assert_called_with(
             data={'message': {'action': 'removed', 'id': report_id, 'lat': self.report.location.x,
                   'lng': self.report.location.y, 'report_type': self.report.report_type}}, registration_ids=[''])
 
     # Push notification was sent to drivers
-    @patch('citifleet.common.models.apns_send_bulk_message')
+    @patch('push_notifications.apns.apns_send_bulk_message')
     @patch('push_notifications.gcm.gcm_send_bulk_message')
     def test_push_not_sent(self, gcm_mock, apns_mock):
         report = ReportFactory(location=Point(20, 20))

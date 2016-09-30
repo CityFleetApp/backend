@@ -17,9 +17,8 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
-from push_notifications.models import GCMDevice
+from push_notifications.models import GCMDevice, APNSDevice
 
-from citifleet.common.serializers import CustomAPNSDevice as APNSDevice
 from citifleet.users import serializers as users_serializers
 from .models import Photo
 from .forms import NotificationForm

@@ -4,16 +4,15 @@ from __future__ import absolute_import, unicode_literals
 from django.conf.urls import url, include
 
 from rest_framework.routers import DefaultRouter
-from push_notifications.api.rest_framework import GCMDeviceAuthorizedViewSet
+from push_notifications.api.rest_framework import GCMDeviceAuthorizedViewSet, APNSDeviceAuthorizedViewSet
 
-from citifleet.common import views as common_views
 from . import views
 
 router = DefaultRouter()
 router.register(r'', views.PhotoModelViewSet, base_name='photos')
 
 device_router = DefaultRouter()
-device_router.register(r'device/apns', common_views.APNSDeviceAuthorizedViewSet)
+device_router.register(r'device/apns', APNSDeviceAuthorizedViewSet)
 device_router.register(r'device/gcm', GCMDeviceAuthorizedViewSet)
 
 friends_photos = DefaultRouter()
