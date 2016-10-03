@@ -258,6 +258,8 @@ class CheckUsernameInUseApiView(APIView):
         serializer.is_valid(raise_exception=True)
         return Response({}, status=status.HTTP_200_OK)
 
+check_username_in_use = CheckUsernameInUseApiView.as_view()
+
 
 class UpdateUserLocationApiView(GenericAPIView):
     """ Update user's location """
@@ -274,3 +276,18 @@ class UpdateUserLocationApiView(GenericAPIView):
         return Response({}, status=status.HTTP_200_OK)
 
 update_user_location = UpdateUserLocationApiView.as_view()
+
+
+class FriendsFromContactsListView(APIView):
+    http_method_names = ('post', )
+    request_serializer_class = users_serializers.FriendsFromContactsSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.request_serializer_class(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+
+        friends = serializer.get_friends(request.user)
+        user_data = users_serializers.SimpleUserSerializer(friends, many=True).data
+        return Response(user_data)
+
+friends_from_contacts = FriendsFromContactsListView.as_view()

@@ -6,6 +6,7 @@ from model_utils.choices import Choices
 from django.contrib.auth.models import AbstractUser, UserManager as BaseUserManager
 from django.core.urlresolvers import reverse
 from django.contrib.gis.db import models
+from django.templatetags.static import static
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
@@ -94,9 +95,10 @@ class User(AbstractUser):
 
     def avatar_url(self):
         """ Return full avatar url """
+        picture_url = static('images/default_profile_picture.png')
         if self.avatar:
-            return get_full_path(self.avatar.url)
-        return ''
+            picture_url = self.avatar.url
+        return get_full_path(picture_url)
 
     def set_location(self, new_location, commit=True):
         self.location = new_location
