@@ -311,10 +311,10 @@ class FriendsFromContactsSerializer(serializers.Serializer):
     def validate_phones(self, phones):
         return [re.sub(r'\+\d', '', phone) for phone in phones]
 
-    def get_friends(self, user):
+    def get_users(self, user):
         emails = self.validated_data.get('emails', [])
         phones = self.validated_data.get('phones', [])
         return User.objects.filter(
             models.Q(email__in=emails) |
             models.Q(phone__in=phones)
-        ).exclude(pk=user.pk)
+        ).exclude(models.Q(pk=user.pk) | models.Q(pk__in=user.friends.only('id').values_list('id', flat=True)))

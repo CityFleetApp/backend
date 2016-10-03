@@ -286,7 +286,7 @@ class FriendsFromContactsListView(APIView):
         serializer = self.request_serializer_class(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
 
-        friends = serializer.get_friends(request.user)
+        friends = serializer.get_users(request.user)
         user_data = users_serializers.SimpleUserSerializer(friends, many=True).data
         return Response(user_data)
 
