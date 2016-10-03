@@ -309,7 +309,7 @@ class FriendsFromContactsSerializer(serializers.Serializer):
     emails = serializers.ListField(child=serializers.EmailField(), required=False)
 
     def validate_phones(self, phones):
-        return [re.sub(r'\+\d', '', phone) for phone in phones]
+        return [re.sub(r'\D', '', phone) for phone in phones]
 
     def get_users(self, user):
         emails = self.validated_data.get('emails', [])
