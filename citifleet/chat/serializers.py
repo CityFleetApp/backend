@@ -15,7 +15,7 @@ class ChatFriendSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ('id', 'username', 'full_name', 'phone', 'avatar_url')
+        fields = ('id', 'username', 'full_name', 'phone', 'avatar_url', 'email', )
 
 
 class MessageSerializer(serializers.ModelSerializer):
