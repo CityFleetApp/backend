@@ -11,6 +11,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from django.utils.translation import ugettext_lazy as _
 
+from push_notifications.models import GCMDevice, APNSDevice
 from constance import config
 from sodapy import Socrata
 
@@ -89,3 +90,16 @@ def validate_username(username):
     except User.DoesNotExist:
         return username
     raise forms.ValidationError(_('This username is already taken. Please choose another.'))
+
+
+# TODO: send push notifications in celery task
+def send_gcm_push_notification(users_list, gcm_kwargs):
+    return GCMDevice.objects.filter(user__in=users_list, active=True).send_message(**gcm_kwargs)
+
+
+def send_apns_push_notification(users_list, apns_kwargs):
+    apns_devices_ids = APNSDevice.objects.filter(
+        user__in=users_list, active=True
+    ).only('id').values_list('id', flat=True)
+    for i in xrange(0, len(apns_devices_ids), 20):
+        APNSDevice.objects.filter(id__in=apns_devices_ids[i:i + 20]).send_message(**apns_kwargs)

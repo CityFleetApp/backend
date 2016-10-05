@@ -1,8 +1,15 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import unicode_literals
+
+from django.contrib.auth import get_user_model
 from django.contrib.gis.geos import Point
 
 from rest_framework import serializers
 
-from .models import Report
+from citifleet.reports.models import Report
+
+User = get_user_model()
 
 
 class LocationSerializer(serializers.Serializer):
@@ -26,3 +33,11 @@ class ReportSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         attrs['location'] = Point(attrs['location']['x'], attrs['location']['y'])
         return attrs
+
+    def create(self, validated_data):
+        instance = super(ReportSerializer, self).create(validated_data)
+        instance.user.notified_reports.add(instance)
+        for u in User.objects.filter(location__isnull=False).exclude(pk=instance.user.pk):
+            u.notified_reports.add(instance)
+
+        return instance

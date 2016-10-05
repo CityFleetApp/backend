@@ -8,10 +8,10 @@ from django.dispatch import receiver
 from django.utils.translation import ugettext as _
 
 from constance import config
-from push_notifications.models import GCMDevice, APNSDevice
 
+from citifleet.common.utils import send_gcm_push_notification, send_apns_push_notification
 from citifleet.users.signals import user_location_changed
-from .models import Report
+from citifleet.reports.models import Report
 
 
 User = get_user_model()
@@ -19,14 +19,17 @@ User = get_user_model()
 
 @receiver(post_save, sender=Report)
 def report_created_nearby(sender, instance, created, **kwargs):
-    """ Send push notification to the drivers about created report """
+    """
+    Send notification about new report creation
+    - in first part hidden push notifications are sent to every user that are online to update report's marks on map
+    - in second part push notification about TLC in radius are sent to users that are within N miles
+    """
     if created:
         apns_message = {
-            'report_created':
-                {
-                    'id': instance.id, 'lat': instance.location.x,
-                    'lng': instance.location.y, 'report_type': instance.report_type
-                }
+            'report_created': {
+                'id': instance.id, 'lat': instance.location.x,
+                'lng': instance.location.y, 'report_type': instance.report_type
+            }
         }
         gcm_message = {
             'action': 'added', 'id': instance.id, 'lat': instance.location.x,
@@ -36,7 +39,14 @@ def report_created_nearby(sender, instance, created, **kwargs):
         apns_kwargs = {'message': None, 'extra': apns_message}
 
         driver_to_notify = User.objects.filter(location__isnull=False).exclude(pk=instance.user.pk)
+
+        gcm_response = send_gcm_push_notification(driver_to_notify, gcm_kwargs)
+        apns_response = send_apns_push_notification(driver_to_notify, apns_kwargs)
+
         if instance.report_type == Report.TLC:
+            driver_withing_report = driver_to_notify.filter(
+                location__distance_lte=(instance.location, D(mi=config.TLC_PUSH_NOTIFICATION_RADIUS))
+            )
             message = _('TLC TRAP REPORTED {} miles away, tap here to see').format(config.TLC_PUSH_NOTIFICATION_RADIUS)
             gcm_kwargs = {
                 'message': message,
@@ -47,36 +57,34 @@ def report_created_nearby(sender, instance, created, **kwargs):
                 'sound': 'default',
                 'extra': apns_message
             }
-
-        # hack to prevent notification about new report in zone
-        for u in driver_to_notify:
-            u.notified_reports.add(instance)
-        instance.user.notified_reports.add(instance)
-
-        GCMDevice.objects.filter(user__in=driver_to_notify, active=True).send_message(**gcm_kwargs)
-        nearby_drivers_id = APNSDevice.objects.filter(user__in=driver_to_notify, active=True).values_list('id', flat=True)
-        for i in xrange(0, len(nearby_drivers_id), 20):
-            APNSDevice.objects.filter(id__in=nearby_drivers_id[i:i + 20]).send_message(**apns_kwargs)
+            gcm_response = send_gcm_push_notification(driver_withing_report, gcm_kwargs)
+            apns_response = send_apns_push_notification(driver_withing_report, apns_kwargs)
 
 
 @receiver(pre_delete, sender=Report)
 def report_removed_nearby(sender, instance, **kwargs):
-    """ Send push notification to the drivers to removed report """
+    """ Send hidden push notification to the all users to removed report mark from map """
     driver_to_notify = User.objects.filter(location__isnull=False)
-    push_message = {'action': 'removed', 'id': instance.id, 'lat': instance.location.x,
-                    'lng': instance.location.y, 'report_type': instance.report_type}
-    GCMDevice.objects.filter(user__in=driver_to_notify).send_message(push_message)
-
-    apns_push = {'report_removed': {'id': instance.id, 'lat': instance.location.x, 'lng': instance.location.y,
-                                    'report_type': instance.report_type}}
-
-    nearby_drivers_id = APNSDevice.objects.filter(user__in=driver_to_notify).values_list('id', flat=True)
-    for i in xrange(0, len(nearby_drivers_id), 20):
-        APNSDevice.objects.filter(id__in=nearby_drivers_id[i:i + 20]).send_message(None, extra=apns_push)
+    push_message = {
+        'action': 'removed', 'id': instance.id, 'lat': instance.location.x,
+        'lng': instance.location.y, 'report_type': instance.report_type,
+    }
+    apns_push = {
+        'report_removed': {
+            'id': instance.id, 'report_type': instance.report_type,
+            'lat': instance.location.x, 'lng': instance.location.y,
+        }
+    }
+    gcm_response = send_gcm_push_notification(driver_to_notify, {'message': push_message})
+    apns_response = send_apns_push_notification(driver_to_notify, {'message': None, 'extra': apns_push})
 
 
 @receiver(user_location_changed, sender=User)
 def update_tlc_notifications(user, **kwargs):
+    """
+    Send push notification for user if new TLC reports were found
+    within radius config.TLC_PUSH_NOTIFICATION_RADIUS
+    """
     if not user.location:
         return
 
@@ -108,11 +116,15 @@ def update_tlc_notifications(user, **kwargs):
             apns_push_msg.update(report_data)
 
         message = message.format(config.TLC_PUSH_NOTIFICATION_RADIUS)
-        GCMDevice.objects.filter(user=user, active=True).send_message(message=message, extra=android_push_msg)
-        APNSDevice.objects.filter(user=user, active=True).send_message(
-            message=message,
-            sound='default',
-            extra=apns_push_msg
+
+        gcm_response = send_gcm_push_notification([user, ], {'message': message, 'extra': android_push_msg})
+        apns_response = send_apns_push_notification(
+            [user, ],
+            {
+                'message': message,
+                'sound': 'default',
+                'extra': apns_push_msg
+            }
         )
 
     user.notified_reports.clear()
