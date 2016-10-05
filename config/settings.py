@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 from __future__ import absolute_import, unicode_literals
 
 import os
+import urllib
 
 import environ
 import raven
@@ -132,7 +133,7 @@ EMAIL_HOST = EMAIL_URL.get('EMAIL_HOST', '')
 if EMAIL_URL.get('EMAIL_HOST_PASSWORD', '') == 'special':
     EMAIL_HOST_PASSWORD = env('DJANGO_EMAIL_HOST_PASSWORD_SPECIAL')
 else:
-    EMAIL_HOST_PASSWORD = EMAIL_URL.get('EMAIL_HOST_PASSWORD', '')
+    EMAIL_HOST_PASSWORD = urllib.unquote(EMAIL_URL.get('EMAIL_HOST_PASSWORD', ''))
 EMAIL_HOST_USER = EMAIL_URL.get('EMAIL_HOST_USER', '')
 EMAIL_PORT = EMAIL_URL.get('EMAIL_PORT', '')
 EMAIL_USE_SSL = 'EMAIL_USE_SSL' in EMAIL_URL
