@@ -279,8 +279,7 @@ LOGGING = {
     },
     'formatters': {
         'verbose': {
-            'format': '%(levelname)s %(asctime)s %(module)s '
-                      '%(process)d %(thread)d %(message)s'
+            'format': '%(name)s - %(levelname)s - %(asctime)s - %(funcName)s - %(message)s'
         },
     },
     'handlers': {
@@ -309,6 +308,11 @@ LOGGING = {
         'django.security.DisallowedHost': {
             'level': 'ERROR',
             'handlers': ['console', 'mail_admins'],
+            'propagate': True
+        },
+        'cityfleet.push_notifications': {
+            'level': 'DEBUG',
+            'handlers': ['console', ],
             'propagate': True
         },
     }
