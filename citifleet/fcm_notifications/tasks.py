@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from pyfcm import FCMNotification
-
 from citifleet.taskapp.celery import app
+from citifleet.fcm_notifications.fcm import CustomFCMNotification
 
 
 @app.task
 def send_push_notification_task(api_key, registration_ids, kwargs):
-    push_service = FCMNotification(api_key=api_key)
+    push_service = CustomFCMNotification(api_key=api_key)
+    # kwargs['dry_run'] = True
     if not isinstance(registration_ids, list):
         registration_ids = [registration_ids, ]
 
@@ -23,5 +23,9 @@ def send_push_notification_task(api_key, registration_ids, kwargs):
         })
         push_method = push_service.notify_multiple_devices
 
-    resp = push_method(**kwargs)
-    print(resp)
+    responses = push_method(**kwargs)
+    for response in responses:
+        if response['status_code'] != 200:
+            print('some error occurred. Status code: %s', response['status_code'])
+            return
+        # TODO: parse response here
