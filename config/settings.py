@@ -110,6 +110,7 @@ LOCAL_APPS = (
     'citifleet.marketplace.apps.MarketplaceConfig',
     'citifleet.chat.apps.ChatConfig',
     'citifleet.users.apps.UsersConfig',
+    'citifleet.fcm_notifications.apps.FcmNotificationsConfig',
 )
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
