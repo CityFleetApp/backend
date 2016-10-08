@@ -7,6 +7,20 @@ from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 
+from citifleet.fcm_notifications.tasks import send_push_notification_task
+
+
+class FCMDeviceManager(models.Manager):
+    def get_queryset(self):
+        return FCMDeviceQuerySet(self.model)
+
+
+class FCMDeviceQuerySet(models.query.QuerySet):
+    def send_push_notification(self, **kwargs):
+        if self:
+            reg_ids = list(self.filter(active=True).values_list('registration_id', flat=True))
+            send_push_notification_task.delay(settings.FCM_SERVER_KEY, reg_ids, kwargs)
+
 
 @python_2_unicode_compatible
 class FCMDevice(models.Model):
@@ -35,6 +49,7 @@ class FCMDevice(models.Model):
         verbose_name=_('Registration ID'),
         unique=True
     )
+    objects = FCMDeviceManager()
 
     class Meta:
         verbose_name = _('FCM Device')
