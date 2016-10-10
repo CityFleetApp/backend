@@ -17,6 +17,7 @@ urlpatterns = [
     url(r'^api/benefits', include('citifleet.benefits.urls', namespace='benefits')),
     url(r'^api/notifications', include('citifleet.notifications.urls', namespace='notifications')),
     url(r'^api/marketplace', include('citifleet.marketplace.urls', namespace='marketplace')),
+    url(r'^api/devices', include('citifleet.fcm_notifications.urls', namespace='fcm_notifications')),
     url(r'^docs/', include('rest_framework_swagger.urls')),
     url(r'^api/', include('django.contrib.flatpages.urls')),
 ]

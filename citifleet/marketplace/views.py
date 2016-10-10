@@ -13,8 +13,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import detail_route
 from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
-from push_notifications.models import APNSDevice, GCMDevice
 
+from citifleet.fcm_notifications.utils import send_push_notifications
 from .models import Car, CarMake, CarModel, GeneralGood, JobOffer, CarPhoto, GoodPhoto, CarColor
 from .serializers import (CarSerializer, CarMakeSerializer, CarModelSerializer,
                           RentCarPostingSerializer, SaleCarPostingSerializer,
@@ -220,11 +220,20 @@ class MarketJobOfferViewSet(viewsets.ModelViewSet):
         offer.status = JobOffer.COMPLETED
         offer.save()
 
-        push_message = {'type': 'rate_driver', 'id': offer.id, 'title': 'Job offer {} completed'.format(offer.title),
-                        'offer_title': offer.title, 'driver_name': request.user.full_name}
-        GCMDevice.objects.filter(user=offer.owner).send_message(push_message)
-        APNSDevice.objects.filter(user=offer.owner).send_message(push_message)
-
+        notification_data = {
+            'notification_type': 'job_offer_completed',
+            'offer': {
+                'id': offer.id,
+                'title': offer.title,
+                'driver_name': request.user.full_name,
+            }
+        }
+        send_push_notifications(
+            [offer.owner],
+            message_title='Job offer {} completed'.format(offer.title),
+            sound='default',
+            data_message=notification_data,
+        )
         return Response(status=status.HTTP_200_OK)
 
     @detail_route(methods=['post'])

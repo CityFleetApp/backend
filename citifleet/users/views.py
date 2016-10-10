@@ -17,8 +17,8 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
-from push_notifications.models import GCMDevice, APNSDevice
 
+from citifleet.fcm_notifications.utils import send_mass_push_notifications
 from citifleet.users import serializers as users_serializers
 from .models import Photo
 from .forms import NotificationForm
@@ -239,9 +239,13 @@ class SendMassPushNotification(FormView):
         return super(SendMassPushNotification, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
-        text = form.cleaned_data['text']
-        GCMDevice.objects.filter(active=True).send_message(text)
-        APNSDevice.objects.filter(active=True).send_message(text)
+        notification_data = {
+            'notification_type': 'mass_notification',
+        }
+        send_mass_push_notifications(
+            message_title=form.cleaned_data['text'],
+            data_message=notification_data,
+        )
         messages.add_message(self.request, messages.SUCCESS, 'Push notification sent')
         return HttpResponseRedirect(reverse('admin:users_user_changelist'))
 

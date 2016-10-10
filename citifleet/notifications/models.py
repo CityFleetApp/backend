@@ -1,10 +1,10 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
-from push_notifications.models import APNSDevice, GCMDevice
-
+from citifleet.fcm_notifications.utils import send_push_notifications
 from citifleet.users.models import User
 
 
@@ -14,7 +14,6 @@ class NotificationBase(models.Model):
     category = models.CharField(_('category'), max_length=50)
     ref_type = models.CharField(_('type'), max_length=255, blank=True)
     ref_id = models.PositiveIntegerField(blank=True, null=True)
-
 
     @property
     def to_dict(self):
@@ -96,19 +95,16 @@ class NotificationTemplate(NotificationBase):
             template_dict['ref_id'] = extra.get('id')
             template_dict['title'] = 'Job Offer "{}" created'.format(extra.get('title'))
 
-        Notification.objects.bulk_create(
-                [Notification(user=user, **template_dict)
-                 for user in drivers])
-
-        push_message = {'type': NotificationTemplate.PUSH_TYPES[type],
-                        'title': template_dict['title']}
-        push_message.update(extra)
-
-        GCMDevice.objects.filter(user__in=drivers).send_message(push_message)
-
-        alert_message = template_dict['title']
-        APNSDevice.objects.filter(user__in=drivers).send_message(
-            alert_message, sound='default', extra={push_message['type']: extra})
+        Notification.objects.bulk_create([Notification(user=user, **template_dict) for user in drivers])
+        send_push_notifications(
+            drivers,
+            message_title=template_dict['title'],
+            sound='default',
+            message_data={
+                'notification_type': NotificationTemplate.PUSH_TYPES[type],
+                'notification': extra,
+            }
+        )
 
     class Meta:
         verbose_name = _('Notification Template')

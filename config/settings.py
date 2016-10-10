@@ -35,13 +35,11 @@ env = environ.Env(
     SERVER_EMAIL=(str, 'root@localhost.com'),
     CELERY_BROKER_URL=(str, 'redis://localhost:6379/0'),
     DJANGO_CELERY_BACKEND=(str, 'redis://localhost:6379/0'),
+    DJANGO_FCM_SERVER_KEY=(str, ''),  # FCM server key
     APP_TOKEN=(str, ''),  # Socrata token
     CONSUMER_KEY=(str, ''),  # twitter consumer key
     CONSUMER_SECRET=(str, ''),  # twitter consumer secret
     CLIENT_SECRET=(str, ''),  # instagram client secret
-    GCM_API_KEY=(str, ''),
-    APNS_CERTIFICATE_PATH=(str, ''),
-    APNS_CERTIFICATE_DEV_PATH=(str, ''),
     REDIS_URL=(str, 'redis://localhost:6379'),
 
     DJANGO_USE_DEBUG_TOOLBAR=(bool, False),
@@ -93,7 +91,6 @@ THIRD_PARTY_APPS = (
     'rest_framework_swagger',
     'easy_thumbnails',
     'image_cropping',
-    'push_notifications',
     'channels',
     'constance',
     'constance.backends.database',
@@ -110,6 +107,7 @@ LOCAL_APPS = (
     'citifleet.marketplace.apps.MarketplaceConfig',
     'citifleet.chat.apps.ChatConfig',
     'citifleet.users.apps.UsersConfig',
+    'citifleet.fcm_notifications.apps.FcmNotificationsConfig',
 )
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -239,14 +237,7 @@ INSTAGRAM_CLIENT_SECRET = env('CLIENT_SECRET')
 THUMBNAIL_PROCESSORS = (
     'image_cropping.thumbnail_processors.crop_corners',
 ) + thumbnail_settings.THUMBNAIL_PROCESSORS
-
 # Push notifications config
-PUSH_NOTIFICATIONS_SETTINGS = {
-        "GCM_API_KEY": env('GCM_API_KEY'),
-        "APNS_CERTIFICATE": env('APNS_CERTIFICATE_PATH'),
-        "APNS_CERTIFICATE_DEV": env('APNS_CERTIFICATE_DEV_PATH'),
-}
-
 # Channels Layer config
 CHANNEL_LAYERS = {
     "default": {
@@ -336,3 +327,5 @@ if env.bool('DJANGO_USE_DEBUG_TOOLBAR'):
         ],
         'SHOW_TEMPLATE_CONTEXT': True,
     }
+
+FCM_SERVER_KEY = env.str('DJANGO_FCM_SERVER_KEY')
