@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from celery.utils.log import get_task_logger
+
 from citifleet.taskapp.celery import app
 from citifleet.fcm_notifications.fcm import CustomFCMNotification
+
+logger = get_task_logger(__name__)
 
 
 @app.task
 def send_push_notification_task(api_key, registration_ids, kwargs):
     from citifleet.fcm_notifications.utils import update_fcmdevice_registration_id, remove_fcmdevice_registration_id
-
-    logger = send_push_notification_task.get_logger()
 
     push_service = CustomFCMNotification(api_key=api_key)
     if not isinstance(registration_ids, list):
