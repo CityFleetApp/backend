@@ -53,6 +53,7 @@ def report_created_nearby(sender, instance, created, **kwargs):
             send_push_notifications(
                 driver_withing_report,
                 message_title=message,
+                message_body=message,
                 data_message=notification_data,
                 sound='default',
             )
@@ -118,6 +119,7 @@ def update_tlc_notifications(user, **kwargs):
         send_push_notifications(
             [user, ],
             message_title=message,
+            message_body=message,
             data_message=notification_data,
             sound='default',
         )

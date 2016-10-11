@@ -244,6 +244,7 @@ class SendMassPushNotification(FormView):
         }
         send_mass_push_notifications(
             message_title=form.cleaned_data['text'],
+            message_body=form.cleaned_data['text'],
             data_message=notification_data,
         )
         messages.add_message(self.request, messages.SUCCESS, 'Push notification sent')

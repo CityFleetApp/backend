@@ -99,6 +99,7 @@ class NotificationTemplate(NotificationBase):
         send_push_notifications(
             drivers,
             message_title=template_dict['title'],
+            message_body=template_dict['title'],
             sound='default',
             data_message={
                 'notification_type': NotificationTemplate.PUSH_TYPES[type],

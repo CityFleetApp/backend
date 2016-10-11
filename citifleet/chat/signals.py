@@ -28,6 +28,7 @@ def message_created(sender, instance, created, **kwargs):
         send_push_notifications(
             instance.room.participants.all(),
             message_title=alert_message,
+            message_body=alert_message,
             sound='default',
             data_message=notification_data,
         )

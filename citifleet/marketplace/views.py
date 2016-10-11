@@ -231,6 +231,7 @@ class MarketJobOfferViewSet(viewsets.ModelViewSet):
         send_push_notifications(
             [offer.owner],
             message_title='Job offer {} completed'.format(offer.title),
+            message_body='Job offer {} completed'.format(offer.title),
             sound='default',
             data_message=notification_data,
         )

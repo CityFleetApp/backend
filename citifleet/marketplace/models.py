@@ -275,6 +275,7 @@ class JobOffer(models.Model):
         send_push_notifications(
             [self.driver, ],
             message_title='Your job offer accepted',
+            message_body='Your job offer accepted',
             sound='default',
             data_message=notification_data,
         )
