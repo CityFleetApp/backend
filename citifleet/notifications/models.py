@@ -100,7 +100,7 @@ class NotificationTemplate(NotificationBase):
             drivers,
             message_title=template_dict['title'],
             sound='default',
-            message_data={
+            data_message={
                 'notification_type': NotificationTemplate.PUSH_TYPES[type],
                 'notification': extra,
             }

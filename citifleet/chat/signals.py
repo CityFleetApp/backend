@@ -29,7 +29,7 @@ def message_created(sender, instance, created, **kwargs):
             instance.room.participants.all(),
             message_title=alert_message,
             sound='default',
-            message_data=notification_data,
+            data_message=notification_data,
         )
         participants = instance.room.participants.exclude(id=instance.author.id)
         UserRoom.objects.filter(room=instance.room, user__in=participants).update(unseen=F('unseen') + 1)
