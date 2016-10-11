@@ -20,15 +20,12 @@ def message_created(sender, instance, created, **kwargs):
         if instance.image:
             message_data['image'] = get_full_path(instance.image.url)
 
-        alert_message = u'{} {}'.format(instance.author.username, instance.text)
         notification_data = {
             'notification_type': 'message_created',
             'message': message_data
         }
         send_push_notifications(
             instance.room.participants.all(),
-            message_title=alert_message,
-            message_body=alert_message,
             sound='default',
             data_message=notification_data,
         )
