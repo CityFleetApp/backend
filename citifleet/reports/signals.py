@@ -50,6 +50,8 @@ def report_created_nearby(sender, instance, created, **kwargs):
             )
             logger.debug('Send notification to \'%s\' users', driver_withing_report)
             message = _('TLC TRAP REPORTED {} miles away, tap here to see').format(config.TLC_PUSH_NOTIFICATION_RADIUS)
+
+            notification_data['notification_type'] = 'tlc_report_withing_radius'
             send_push_notifications(
                 driver_withing_report,
                 message_title=message,
