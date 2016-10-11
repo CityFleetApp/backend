@@ -14,6 +14,7 @@ from constance import config
 from citifleet.fcm_notifications.utils import send_push_notifications
 from citifleet.users.signals import user_location_changed
 from citifleet.reports.models import Report
+from citifleet.reports.serializers import ReportSerializer
 
 logger = logging.getLogger('cityfleet.push_notifications')
 User = get_user_model()
@@ -32,12 +33,7 @@ def report_created_nearby(sender, instance, created, **kwargs):
 
         notification_data = {
             'notification_type': 'report_created',
-            'report': {
-                'id': instance.id,
-                'lat': instance.location.x,
-                'lng': instance.location.y,
-                'type': instance.report_type
-            }
+            'report': ReportSerializer(instance).data
         }
         driver_to_notify = User.objects.filter(location__isnull=False).exclude(pk=instance.user.pk)
         logger.debug('Send data notification to users %s', driver_to_notify)
@@ -69,12 +65,7 @@ def report_removed_nearby(sender, instance, **kwargs):
     driver_to_notify = User.objects.filter(location__isnull=False)
     notification_data = {
         'notification_type': 'report_removed',
-        'report': {
-            'id': instance.id,
-            'lat': instance.location.x,
-            'lng': instance.location.y,
-            'type': instance.report_type
-        }
+        'report': ReportSerializer(instance).data
     }
     send_push_notifications(
         driver_to_notify,
@@ -110,13 +101,8 @@ def update_tlc_notifications(user, **kwargs):
         message = _('TLC TRAPS REPORTED {} miles away, open CityFleet now to see')
         if reports_to_notify_count == 1:
             message = _('TLC TRAP REPORTED {} miles away, tap here to see')
-            report = reports_to_notify[0]
-            notification_data['report'] = {
-                'id': report.pk,
-                'lat': report.location.x,
-                'lng': report.location.y,
-                'type': report.report_type
-            }
+            notification_data['report'] = ReportSerializer(reports_to_notify[0]).data
+
         message = message.format(config.TLC_PUSH_NOTIFICATION_RADIUS)
         send_push_notifications(
             [user, ],
