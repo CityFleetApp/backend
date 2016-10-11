@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import unicode_literals
+
 import re
 
 from django.db import models
@@ -16,7 +18,7 @@ from rest_framework.authtoken.models import Token
 
 from citifleet.common.utils import validate_license, generate_username, validate_username
 from citifleet.common.geo_fields import PointField
-from citifleet.users.models import Photo
+from citifleet.users.models import Photo, FriendRequest
 
 User = get_user_model()
 
@@ -318,3 +320,27 @@ class FriendsFromContactsSerializer(serializers.Serializer):
             models.Q(email__in=emails) |
             models.Q(phone__in=phones)
         ).exclude(models.Q(pk=user.pk) | models.Q(pk__in=user.friends.only('id').values_list('id', flat=True)))
+
+
+class FriendRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FriendRequest
+        fields = ('id', 'from_user', 'to_user')
+
+
+class CreateFriendRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FriendRequest
+        fields = ('id', 'to_user')
+
+    def validate(self, data):
+        request = self.context.get('request')
+        to_user = data.get('to_user')
+        if to_user and request and request.user and request.user.is_authenticated():
+            if request.user == data['to_user']:
+                raise serializers.ValidationError(FriendRequest.error_messages['user_try_to_invite_himself_error'])
+            if request.user.friends.filter(pk=data['to_user'].pk).exists():
+                raise serializers.ValidationError(FriendRequest.error_messages['user_is_already_friend_error'])
+            if FriendRequest.objects.filter(from_user=request.user, to_user=data['to_user']).exists():
+                raise serializers.ValidationError(FriendRequest.error_messages['duplicate_error'])
+        return data

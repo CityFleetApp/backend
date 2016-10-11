@@ -9,19 +9,22 @@ from django.contrib.auth import get_user_model
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils.decorators import method_decorator
 
-from rest_framework.generics import UpdateAPIView, RetrieveAPIView, RetrieveUpdateAPIView, GenericAPIView
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.mixins import ListModelMixin, CreateModelMixin
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.decorators import list_route, detail_route
+from rest_framework.generics import (UpdateAPIView, RetrieveAPIView,
+                                     RetrieveUpdateAPIView, GenericAPIView)
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.views import APIView
 
 from citifleet.fcm_notifications.utils import send_mass_push_notifications
 from citifleet.users import serializers as users_serializers
-from .models import Photo
-from .forms import NotificationForm
+from citifleet.users.models import Photo, FriendRequest
+from citifleet.users.forms import NotificationForm
 
 User = get_user_model()
 
@@ -296,3 +299,45 @@ class FriendsFromContactsListView(APIView):
         return Response(user_data)
 
 friends_from_contacts = FriendsFromContactsListView.as_view()
+
+
+class FriendRequestViewSet(ListModelMixin, CreateModelMixin, GenericViewSet):
+    serializer_class = users_serializers.CreateFriendRequestSerializer
+    queryset = FriendRequest.objects.all()
+
+    def perform_create(self, serializer):
+        serializer.save(from_user=self.request.user)
+
+    def get_serializer_class(self):
+        if self.action in ['incoming', 'outgoing']:
+            return users_serializers.FriendRequestSerializer
+        return super(FriendRequestViewSet, self).get_serializer_class()
+
+    def get_queryset(self):
+        qs = super(FriendRequestViewSet, self).get_queryset()
+        if self.action in ['incoming', 'accept', 'decline']:
+            return qs.filter(to_user=self.request.user)
+        elif self.action == 'outgoing':
+            return qs.filter(from_user=self.request.user)
+        return qs
+
+    @list_route(methods=['get'])
+    def incoming(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @list_route(methods=['get'])
+    def outgoing(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @detail_route(methods=['post'])
+    def accept(self, request, pk=None, *args, **kwargs):
+        friend_request = self.get_object()
+        self.request.user.friends.add(friend_request.to_user)
+        friend_request.delete()
+        return Response(status=status.HTTP_200_OK)
+
+    @detail_route(methods=['post'])
+    def decline(self, request, pk=None, *args, **kwargs):
+        friend_request = self.get_object()
+        friend_request.delete()
+        return Response(status=status.HTTP_200_OK)

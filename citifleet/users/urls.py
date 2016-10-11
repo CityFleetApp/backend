@@ -8,7 +8,8 @@ from rest_framework.routers import DefaultRouter
 from . import views
 
 router = DefaultRouter()
-router.register(r'', views.PhotoModelViewSet, base_name='photos')
+router.register(r'friend-request', views.FriendRequestViewSet, base_name='friend-request')
+router.register(r'photos', views.PhotoModelViewSet, base_name='photos')
 
 friends_photos = DefaultRouter()
 friends_photos.register(r'', views.FriendPhotoModelViewSet, base_name='friends_photos')
@@ -25,7 +26,6 @@ urlpatterns = [
     url(r'^upload-avatar/$', views.upload_avatar, name='upload_avatar'),
     url(r'^info/$', views.info, name='info'),
     url(r'^settings/$', views.settings, name='settings'),
-    url(r'^photos', include(router.urls)),
     url(r'^profile/$', views.profile, name='profile'),
     url(r'^person/(?P<id>\d+)/photos', include(friends_photos.urls)),
     url(r'^person/(?P<id>\d+)/', views.friend, name='friend'),
@@ -33,4 +33,5 @@ urlpatterns = [
     url(r'^username/check/$', views.check_username_in_use, name='check_username_in_use'),
     url(r'^location/update/$', views.update_user_location, name='update_user_location'),
     url(r'^contacts/$', views.friends_from_contacts, name='friends_from_contacts'),
+    url(r'^', include(router.urls)),
 ]
