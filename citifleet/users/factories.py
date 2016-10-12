@@ -9,8 +9,7 @@ import factory
 from factory import DjangoModelFactory
 
 from citifleet.common.test_utils import FuzzyPoint
-
-from .models import User, Photo
+from citifleet.users.models import User, Photo, FriendRequest
 
 
 class UserFactory(DjangoModelFactory):
@@ -34,3 +33,11 @@ class PhotoFactory(DjangoModelFactory):
 
     class Meta:
         model = Photo
+
+
+class FriendRequestFactory(DjangoModelFactory):
+    from_user = factory.SubFactory(UserFactory)
+    to_user = factory.SubFactory(UserFactory)
+
+    class Meta:
+        model = FriendRequest

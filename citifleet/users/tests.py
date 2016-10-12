@@ -1,10 +1,14 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import unicode_literals
+
 from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
 from django.core import mail
-from django.utils.translation import gettext as _
+from django.utils.translation import force_text, gettext as _
 
 from test_plus.test import TestCase
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APITestCase
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from mock import patch
@@ -14,8 +18,8 @@ from io import BytesIO
 from citifleet.marketplace.factories import JobOfferFactory
 from citifleet.marketplace.models import JobOffer
 
-from .models import User, Photo
-from .factories import UserFactory, PhotoFactory
+from citifleet.users.models import User, Photo, FriendRequest
+from citifleet.users.factories import UserFactory, PhotoFactory, FriendRequestFactory
 
 
 @override_settings(DEBUG=True)
@@ -344,3 +348,104 @@ class TestUserSettings(TestCase):
         resp = self.client.put(reverse('users:settings'), data=data)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(resp.data, {'visible': False, 'chat_privacy': False, 'notifications_enabled': False})
+
+
+class TestFriendRequestAPI(APITestCase):
+
+    def setUp(self):
+        self.user1 = UserFactory.create(email='user1@example.com')
+        self.user2 = UserFactory.create(email='user2@example.com')
+
+    def test_login_required(self):
+        friend_request = FriendRequestFactory.create()
+        resp = self.client.post(reverse('users:friend-request-list'))
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+        resp = self.client.get(reverse('users:friend-request-incoming'))
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+        resp = self.client.get(reverse('users:friend-request-outgoing'))
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+        resp = self.client.get(reverse('users:friend-request-accept', kwargs={'pk': friend_request.pk}))
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+        resp = self.client.get(reverse('users:friend-request-decline', kwargs={'pk': friend_request.pk}))
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_friend_request_create_endpoint(self):
+        self.client.force_authenticate(user=self.user1)
+        friend_request_data = {'to_user': self.user2.pk}
+        resp = self.client.post(reverse('users:friend-request-list'), data=friend_request_data)
+
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(FriendRequest.objects.count(), 1)
+
+        friend_requests = FriendRequest.objects.get(pk=resp.data['id'])
+        self.assertEqual(friend_requests.from_user, self.user1)
+        self.assertEqual(friend_requests.to_user, self.user2)
+
+    def test_friend_request_create_return_error_when_user_invite_himself(self):
+        self.client.force_authenticate(user=self.user1)
+        friend_request_data = {'to_user': self.user1.pk}
+        resp = self.client.post(reverse('users:friend-request-list'), data=friend_request_data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(FriendRequest.objects.count(), 0)
+        self.assertEqual(resp.data['non_field_errors'][0],
+                         force_text(FriendRequest.error_messages['user_try_to_invite_himself_error']))  # noqa
+
+    def test_friend_request_create_return_error_on_duplicate(self):
+        self.client.force_authenticate(user=self.user1)
+        FriendRequestFactory.create(from_user=self.user1, to_user=self.user2)
+
+        friend_request_data = {'to_user': self.user2.pk}
+        resp = self.client.post(reverse('users:friend-request-list'), data=friend_request_data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(FriendRequest.objects.count(), 1)
+        self.assertEqual(resp.data['non_field_errors'][0],
+                         force_text(FriendRequest.error_messages['duplicate_error']))
+
+    def test_friend_request_create_return_error_if_user_is_already_friend(self):
+        self.client.force_authenticate(user=self.user1)
+        self.user1.friends.add(self.user2)
+        friend_request_data = {'to_user': self.user2.pk}
+        resp = self.client.post(reverse('users:friend-request-list'), data=friend_request_data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(FriendRequest.objects.count(), 0)
+        self.assertEqual(resp.data['non_field_errors'][0],
+                         force_text(FriendRequest.error_messages['user_is_already_friend_error']))  # noqa
+
+    def test_friend_request_outgoing_list(self):
+        self.client.force_authenticate(user=self.user1)
+        FriendRequestFactory.create(from_user=self.user1, to_user=self.user2)
+        resp = self.client.get(reverse('users:friend-request-outgoing'))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 1)
+
+    def test_friend_request_incoming_list(self):
+        self.client.force_authenticate(user=self.user1)
+        FriendRequestFactory.create(from_user=self.user2, to_user=self.user1)
+        resp = self.client.get(reverse('users:friend-request-incoming'))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(resp.data), 1)
+
+    def test_friend_request_accept(self):
+        self.client.force_authenticate(user=self.user1)
+        friend_request = FriendRequestFactory.create(from_user=self.user2, to_user=self.user1)
+        resp = self.client.post(reverse('users:friend-request-accept', kwargs={'pk': friend_request.pk}),)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(FriendRequest.objects.count(), 0)
+        self.assertEqual(self.user1.friends.count(), 1)
+        self.assertTrue(self.user1.friends.filter(pk=self.user2.pk).exists())
+
+    def test_friend_request_decline(self):
+        self.client.force_authenticate(user=self.user1)
+        friend_request = FriendRequestFactory.create(from_user=self.user2, to_user=self.user1)
+        resp = self.client.post(reverse('users:friend-request-decline', kwargs={'pk': friend_request.pk}),)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(FriendRequest.objects.count(), 0)
+        self.assertEqual(self.user1.friends.count(), 0)
+
+    def test_friend_request_404_errors_for_invalid_pks(self):
+        self.client.force_authenticate(user=self.user1)
+        friend_request = FriendRequestFactory.create(from_user=self.user1, to_user=self.user2)
+        resp = self.client.post(reverse('users:friend-request-accept', kwargs={'pk': friend_request.pk}),)
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        resp = self.client.post(reverse('users:friend-request-decline', kwargs={'pk': friend_request.pk}),)
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)

@@ -332,7 +332,7 @@ class FriendRequestViewSet(ListModelMixin, CreateModelMixin, GenericViewSet):
     @detail_route(methods=['post'])
     def accept(self, request, pk=None, *args, **kwargs):
         friend_request = self.get_object()
-        self.request.user.friends.add(friend_request.to_user)
+        self.request.user.friends.add(friend_request.from_user)
         friend_request.delete()
         return Response(status=status.HTTP_200_OK)
 
