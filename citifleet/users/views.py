@@ -316,9 +316,9 @@ class FriendRequestViewSet(ListModelMixin, CreateModelMixin, GenericViewSet):
     def get_queryset(self):
         qs = super(FriendRequestViewSet, self).get_queryset()
         if self.action in ['incoming', 'accept', 'decline']:
-            return qs.filter(to_user=self.request.user)
+            return qs.filter(to_user=self.request.user).order_by('-created')
         elif self.action == 'outgoing':
-            return qs.filter(from_user=self.request.user)
+            return qs.filter(from_user=self.request.user).order_by('-created')
         return qs
 
     @list_route(methods=['get'])

@@ -323,6 +323,9 @@ class FriendsFromContactsSerializer(serializers.Serializer):
 
 
 class FriendRequestSerializer(serializers.ModelSerializer):
+    from_user = SimpleUserSerializer()
+    to_user = SimpleUserSerializer()
+
     class Meta:
         model = FriendRequest
         fields = ('id', 'from_user', 'to_user')

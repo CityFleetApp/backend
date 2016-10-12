@@ -2,6 +2,7 @@
 from __future__ import unicode_literals, absolute_import
 
 from model_utils.choices import Choices
+from model_utils.models import TimeStampedModel
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser, UserManager as BaseUserManager
@@ -156,7 +157,7 @@ class Photo(models.Model):
         }).url)
 
 
-class FriendRequest(models.Model):
+class FriendRequest(TimeStampedModel):
     error_messages = {
         'duplicate_error': _('You have already invited user to become your friend'),
         'user_is_already_friend_error': _('You have already had this user in you friends'),
