@@ -51,11 +51,14 @@ class Document(models.Model):
     plate_number = models.CharField(_('tlc plate number'), max_length=100, blank=True)
     status = models.PositiveSmallIntegerField(_('status'), choices=STATUS_CHOICES, default=UNDER_REVIEW)
 
-    def expired(self):
-        return self.document_type != Document.TLC_PLATE_NUMBER and self.expiry_date < timezone.now().date()
-    expired.boolean = True
-
     class Meta:
         unique_together = ('user', 'document_type')
         verbose_name = _('Document')
         verbose_name_plural = _('Documents')
+
+    def expired(self):
+        return self.document_type != Document.TLC_PLATE_NUMBER and self.expiry_date < timezone.now().date()
+    expired.boolean = True
+
+    def get_type_repr(self):
+        return dict(Document.DOCUMENT_TYPES)[self.document_type]

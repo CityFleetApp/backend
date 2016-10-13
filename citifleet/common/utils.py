@@ -27,6 +27,7 @@ PUSH_NOTIFICATION_MESSAGE_TYPES = Choices(
     ('report_removed', 'report_removed', _('Notification about new report remove')),
     ('tlc_report_withing_radius', 'tlc_report_withing_radius', _('Notification about TLC within radius')),
     ('mass_notification', 'mass_notification', _('Mass notification type')),
+    ('document_expire', 'document_expire', _('Notifications about documents expiration')),
 )
 
 
