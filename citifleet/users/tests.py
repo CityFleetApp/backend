@@ -432,7 +432,9 @@ class TestFriendRequestAPI(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(FriendRequest.objects.count(), 0)
         self.assertEqual(self.user1.friends.count(), 1)
+        self.assertEqual(self.user2.friends.count(), 1)
         self.assertTrue(self.user1.friends.filter(pk=self.user2.pk).exists())
+        self.assertTrue(self.user2.friends.filter(pk=self.user1.pk).exists())
 
     def test_friend_request_decline(self):
         self.client.force_authenticate(user=self.user1)
