@@ -45,4 +45,4 @@ class FriendsViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ChatFriendSerializer
 
     def get_queryset(self):
-        return self.request.user.friends.all()
+        return self.request.user.friends.all().exclude(pk=self.request.user.pk)

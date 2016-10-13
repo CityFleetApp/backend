@@ -154,8 +154,9 @@ class ContactsSerializer(serializers.Serializer):
     contacts = serializers.ListField(child=serializers.CharField())
 
     def validate(self, attrs):
+        request_user = self.context['user']
         contacts = [re.sub(r'\+\d', '', c) for c in attrs['contacts']]
-        attrs['users'] = User.objects.filter(phone__in=contacts)
+        attrs['users'] = User.objects.filter(phone__in=contacts).exclude(pk=request_user.pk)
         return attrs
 
 
