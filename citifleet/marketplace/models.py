@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.conf import settings
 
 from citifleet.fcm_notifications.utils import send_push_notifications
-from citifleet.common.utils import get_full_path
+from citifleet.common.utils import get_full_path, PUSH_NOTIFICATION_MESSAGE_TYPES
 
 
 class ExpiredManager(Manager):
@@ -267,7 +267,7 @@ class JobOffer(models.Model):
         self.save()
 
         notification_data = {
-            'notification_type': 'offer_covered',
+            'notification_type': PUSH_NOTIFICATION_MESSAGE_TYPES.offer_covered,
             'offer': {
                 'id': self.id,
             }

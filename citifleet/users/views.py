@@ -21,6 +21,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.views import APIView
 
+from citifleet.common.utils import PUSH_NOTIFICATION_MESSAGE_TYPES
 from citifleet.fcm_notifications.utils import send_mass_push_notifications
 from citifleet.users import serializers as users_serializers
 from citifleet.users.models import Photo, FriendRequest
@@ -243,7 +244,7 @@ class SendMassPushNotification(FormView):
 
     def form_valid(self, form):
         notification_data = {
-            'notification_type': 'mass_notification',
+            'notification_type': PUSH_NOTIFICATION_MESSAGE_TYPES.mass_notification,
         }
         send_mass_push_notifications(
             message_title=form.cleaned_data['text'],

@@ -1,9 +1,15 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 import random
 import re
 import string
 
 from urllib2 import HTTPError
+
+from model_utils.choices import Choices
+from constance import config
+from sodapy import Socrata
 
 from django import forms
 from django.conf import settings
@@ -11,10 +17,17 @@ from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from django.utils.translation import ugettext_lazy as _
 
-from constance import config
-from sodapy import Socrata
-
 USERNAME_REGEX = re.compile(r'^[\w.@+-]+$', re.UNICODE)
+
+PUSH_NOTIFICATION_MESSAGE_TYPES = Choices(
+    ('message_created', 'message_created', _('Notification about new message in chat')),
+    ('offer_covered', 'offer_covered', _('Notification about job offer accepted')),
+    ('job_offer_completed', 'job_offer_completed', _('Notification about job offer completion')),
+    ('report_created', 'report_created', _('Notification about new report created')),
+    ('report_removed', 'report_removed', _('Notification about new report remove')),
+    ('tlc_report_withing_radius', 'tlc_report_withing_radius', _('Notification about TLC within radius')),
+    ('mass_notification', 'mass_notification', _('Mass notification type')),
+)
 
 
 def validate_license(license_number, full_name):

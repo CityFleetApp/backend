@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import unicode_literals
+
 from collections import OrderedDict
 
 from django.views.generic import View
@@ -14,13 +18,15 @@ from rest_framework.decorators import detail_route
 from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
 
+from citifleet.common.utils import PUSH_NOTIFICATION_MESSAGE_TYPES
 from citifleet.fcm_notifications.utils import send_push_notifications
-from .models import Car, CarMake, CarModel, GeneralGood, JobOffer, CarPhoto, GoodPhoto, CarColor
-from .serializers import (CarSerializer, CarMakeSerializer, CarModelSerializer,
-                          RentCarPostingSerializer, SaleCarPostingSerializer,
-                          GeneralGoodSerializer, PostingGeneralGoodsSerializer,
-                          MarketplaceJobOfferSerializer, PostingJobOfferSerializer, CarColorSerializer,
-                          CarPhotoSerializer, GoodsPhotoSerializer, CompleteJobSerializer)
+from citifleet.marketplace.models import Car, CarMake, CarModel, GeneralGood, JobOffer, CarPhoto, GoodPhoto, CarColor
+from citifleet.marketplace.serializers import (
+    CarSerializer, CarMakeSerializer, CarModelSerializer, RentCarPostingSerializer,
+    SaleCarPostingSerializer, GeneralGoodSerializer, PostingGeneralGoodsSerializer,
+    MarketplaceJobOfferSerializer, PostingJobOfferSerializer, CarColorSerializer,
+    CarPhotoSerializer, GoodsPhotoSerializer, CompleteJobSerializer
+)
 
 
 class MarketPageNumberPagination(PageNumberPagination):
@@ -221,7 +227,7 @@ class MarketJobOfferViewSet(viewsets.ModelViewSet):
         offer.save()
 
         notification_data = {
-            'notification_type': 'job_offer_completed',
+            'notification_type': PUSH_NOTIFICATION_MESSAGE_TYPES.job_offer_completed,
             'offer': {
                 'id': offer.id,
                 'title': offer.title,

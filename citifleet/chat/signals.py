@@ -6,10 +6,9 @@ from django.dispatch import receiver
 from django.db.models import F
 
 from citifleet.fcm_notifications.utils import send_push_notifications
-from citifleet.common.utils import get_full_path
-
-from .models import Message, UserRoom
-from .serializers import MessageSerializer
+from citifleet.common.utils import get_full_path, PUSH_NOTIFICATION_MESSAGE_TYPES
+from citifleet.chat.models import Message, UserRoom
+from citifleet.chat.serializers import MessageSerializer
 
 
 @receiver(post_save, sender=Message)
@@ -21,7 +20,7 @@ def message_created(sender, instance, created, **kwargs):
             message_data['image'] = get_full_path(instance.image.url)
 
         notification_data = {
-            'notification_type': 'message_created',
+            'notification_type': PUSH_NOTIFICATION_MESSAGE_TYPES.message_created,
             'message': message_data
         }
         send_push_notifications(

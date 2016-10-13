@@ -1,16 +1,19 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import unicode_literals
 
-from django.db import models
-from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
+from django.db import models
 from django.utils import timezone
+from django.utils.translation import ugettext_lazy as _
 
 
 class Document(models.Model):
-    '''
+    """
     Store document info that driver can upload from app
     Unique together index prevent from creating several documents of the same type for one driver
-    '''
+    """
+
     DMV_LICENSE = 1
     HACK_LICENSE = 2
     INSURANCE = 3

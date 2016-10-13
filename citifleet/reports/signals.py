@@ -11,6 +11,7 @@ from django.utils.translation import ugettext as _
 
 from constance import config
 
+from citifleet.common.utils import PUSH_NOTIFICATION_MESSAGE_TYPES
 from citifleet.fcm_notifications.utils import send_push_notifications
 from citifleet.users.signals import user_location_changed
 from citifleet.reports.models import Report
@@ -32,7 +33,7 @@ def report_created_nearby(sender, instance, created, **kwargs):
                     instance.pk, instance.location, instance.user)
 
         notification_data = {
-            'notification_type': 'report_created',
+            'notification_type': PUSH_NOTIFICATION_MESSAGE_TYPES.report_created,
             'report': ReportSerializer(instance).data
         }
         driver_to_notify = User.objects.filter(location__isnull=False).exclude(pk=instance.user.pk)
@@ -47,7 +48,7 @@ def report_created_nearby(sender, instance, created, **kwargs):
             logger.debug('Send notification to \'%s\' users', driver_withing_report)
             message = _('TLC TRAP REPORTED {} miles away, tap here to see').format(config.TLC_PUSH_NOTIFICATION_RADIUS)
 
-            notification_data['notification_type'] = 'tlc_report_withing_radius'
+            notification_data['notification_type'] = PUSH_NOTIFICATION_MESSAGE_TYPES.tlc_report_withing_radius
             send_push_notifications(
                 driver_withing_report,
                 message_title=message,
@@ -64,7 +65,7 @@ def report_removed_nearby(sender, instance, **kwargs):
     logger.info('Report with id \'%s\' was deleted. Send hidden notification to all users', instance.pk)
     driver_to_notify = User.objects.filter(location__isnull=False)
     notification_data = {
-        'notification_type': 'report_removed',
+        'notification_type': PUSH_NOTIFICATION_MESSAGE_TYPES.report_removed,
         'report': ReportSerializer(instance).data
     }
     send_push_notifications(
@@ -95,7 +96,7 @@ def update_tlc_notifications(user, **kwargs):
         logger.info('User location changed signal with reports to notify. Found \'%s\' reports',
                     reports_to_notify_count)
         notification_data = {
-            'notification_type': 'tlc_report_withing_radius',
+            'notification_type': PUSH_NOTIFICATION_MESSAGE_TYPES.tlc_report_withing_radius,
         }
 
         message = _('TLC TRAPS REPORTED {} miles away, open CityFleet now to see')
