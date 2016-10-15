@@ -373,6 +373,8 @@ class SocialAuthenticateAPIView(GenericViewSet):
     def register(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        user = serializer.create()
+        return Response(users_serializers.UserLoginSerializer(user).data, status=status.HTTP_200_OK)
 
 SOCIAL_ACTIONS = {
     'post': 'authenticate',

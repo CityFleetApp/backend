@@ -372,20 +372,55 @@ class SocialAuthSerializer(SocialSerializerMixin, serializers.Serializer):
     access_token = serializers.CharField(required=True, allow_blank=False)
 
     def authenticate(self):
-        social_response = self.validated_data.get('social_response')
-        if social_response:
-            user_data = self._get_user_data(social_response)
-            user = self.match_user(social_response)
-            if user:
-                return self.update_user_social_id(user, social_response)
-            return User(**user_data)
+        social_response = self.validated_data['social_response']
+        user_data = self._get_user_data(social_response)
+        user = self.match_user(social_response)
+        if user:
+            return self.update_user_social_id(user, social_response)
+        return User(**user_data)
 
 
-class SocialRegistrationSerializer(serializers.Serializer):
+class SocialRegistrationSerializer(SocialSerializerMixin, serializers.ModelSerializer):
     access_token = serializers.CharField(required=True, allow_blank=False)
+    email = serializers.EmailField(
+        required=True,
+        error_messages={
+            'blank': _('Email field can not be blank'),
+            'required': _('Email field can not be blank'),
+        }
+    )
 
-    def validate(self, attrs):
-        pass
+    class Meta:
+        model = User
+        fields = ('access_token', 'username', 'email', 'full_name', 'phone', )
 
-    def create(self, validated_data):
-        pass
+    def validate_username(self, username):
+        if username:
+            username = validate_username(username)
+        return username
+
+    def validate_phone(self, value):
+        try:
+            int(value)
+        except ValueError:
+            raise serializers.ValidationError('The phone number entered is not valid.')
+        else:
+            if len(value) != 10:
+                raise serializers.ValidationError('The phone number entered is not valid.')
+            else:
+                return value
+
+    def validate_email(self, email):
+        if email and User.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError(_('This email is already in use.'))
+        return email
+
+    def create(self):
+        social_response = self.validated_data['social_response']
+        user = self.match_user(social_response)
+        if user:
+            return self.update_user_social_id(user, social_response)
+        user_data = self._get_user_data(social_response)
+        user = self.update_user_social_id(User(**user_data), social_response)
+        Token.objects.create(user=user)
+        return user
