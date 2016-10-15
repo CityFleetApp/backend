@@ -71,6 +71,7 @@ class User(AbstractUser):
     friends = models.ManyToManyField("self", null=True)
 
     facebook_id = models.CharField(_('facebook id'), max_length=200, blank=True)
+    google_id = models.CharField(_('google id'), max_length=200, blank=True)
     twitter_id = models.CharField(_('twitter id'), max_length=200, blank=True)
     instagram_id = models.CharField(_('instagram id'), max_length=200, blank=True)
 

@@ -16,6 +16,8 @@ friends_photos.register(r'', views.FriendPhotoModelViewSet, base_name='friends_p
 
 urlpatterns = [
     url(r'^signup/$', views.signup, name='signup'),
+    url(r'^auth/facebook/$', views.facebook_auth_view, name='facebook_auth'),
+    url(r'^auth/google/$', views.google_auth_view, name='google_auth'),
     url(r'^login/$', views.login, name='login'),
     url(r'^reset-password/$', views.reset_password, name='reset_password'),
     url(r'^change-password/$', views.change_password, name='change_password'),

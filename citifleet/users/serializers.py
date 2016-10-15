@@ -19,6 +19,7 @@ from rest_framework.authtoken.models import Token
 from citifleet.common.utils import validate_license, generate_username, validate_username
 from citifleet.common.geo_fields import PointField
 from citifleet.users.models import Photo, FriendRequest
+from citifleet.users.mixins import SocialSerializerMixin
 
 User = get_user_model()
 
@@ -348,3 +349,43 @@ class CreateFriendRequestSerializer(serializers.ModelSerializer):
             if FriendRequest.objects.filter(from_user=request.user, to_user=data['to_user']).exists():
                 raise serializers.ValidationError(FriendRequest.error_messages['duplicate_error'])
         return data
+
+
+class UserLoginSerializer(serializers.ModelSerializer):
+    token = serializers.CharField(source='auth_token')
+
+    class Meta:
+        model = User
+        fields = ('email', 'full_name', 'phone', 'hack_license', 'username',
+                  'bio', 'drives', 'avatar_url', 'documents_up_to_date',
+                  'jobs_completed', 'rating', 'id', 'user_type', 'token', )
+
+
+class SocialAuthFailedSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ('email', 'full_name', 'username', )
+
+
+class SocialAuthSerializer(SocialSerializerMixin, serializers.Serializer):
+    access_token = serializers.CharField(required=True, allow_blank=False)
+
+    def authenticate(self):
+        social_response = self.validated_data.get('social_response')
+        if social_response:
+            user_data = self._get_user_data(social_response)
+            user = self.match_user(social_response)
+            if user:
+                return self.update_user_social_id(user, social_response)
+            return User(**user_data)
+
+
+class SocialRegistrationSerializer(serializers.Serializer):
+    access_token = serializers.CharField(required=True, allow_blank=False)
+
+    def validate(self, attrs):
+        pass
+
+    def create(self, validated_data):
+        pass

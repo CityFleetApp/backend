@@ -41,7 +41,6 @@ class SignUpView(APIView):
         token = serializer.save()
         return Response({'token': token.key, 'id': token.user.id}, status=status.HTTP_200_OK)
 
-
 signup = SignUpView.as_view()
 
 
@@ -83,12 +82,8 @@ class LoginView(ObtainAuthToken):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
-        token, created = Token.objects.get_or_create(user=user)
-
-        user_data = users_serializers.UserDetailSerializer(user).data
-        user_data['token'] = token.key
-
-        return Response(user_data)
+        Token.objects.get_or_create(user=user)
+        return Response(users_serializers.UserLoginSerializer(user).data, status=status.HTTP_200_OK)
 
 login = LoginView.as_view()
 
@@ -343,3 +338,45 @@ class FriendRequestViewSet(ListModelMixin, CreateModelMixin, GenericViewSet):
         friend_request = self.get_object()
         friend_request.delete()
         return Response(status=status.HTTP_200_OK)
+
+
+class SocialAuthenticateAPIView(GenericViewSet):
+    permission_classes = (AllowAny, )
+    social_account_type = None
+
+    def get_serializer_class(self):
+        if self.action == 'register':
+            return users_serializers.SocialRegistrationSerializer
+        return users_serializers.SocialAuthSerializer
+
+    def get_social_account_type(self):
+        if not self.social_account_type:
+            raise NotImplementedError('Please set social_type property')
+        return self.social_account_type
+
+    def get_serializer_context(self):
+        ctx = super(GenericViewSet, self).get_serializer_context()
+        ctx['social_account'] = self.get_social_account_type()
+        return ctx
+
+    def authenticate(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.authenticate()
+        if user:
+            if user.pk:
+                Token.objects.get_or_create(user=user)
+                return Response(users_serializers.UserLoginSerializer(user).data, status=status.HTTP_200_OK)
+            return Response(users_serializers.SocialAuthFailedSerializer(user).data, status=status.HTTP_404_NOT_FOUND)
+        return Response({}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def register(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+SOCIAL_ACTIONS = {
+    'post': 'authenticate',
+    'put': 'register',
+}
+google_auth_view = SocialAuthenticateAPIView.as_view(social_account_type='google', actions=SOCIAL_ACTIONS)
+facebook_auth_view = SocialAuthenticateAPIView.as_view(social_account_type='facebook', actions=SOCIAL_ACTIONS)
