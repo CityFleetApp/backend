@@ -16,7 +16,7 @@ from open_facebook import OpenFacebook
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 
-from citifleet.common.utils import validate_license, generate_username, validate_username
+from citifleet.common.utils import generate_username, validate_username
 from citifleet.common.geo_fields import PointField
 from citifleet.users.models import Photo, FriendRequest
 from citifleet.users.mixins import SocialSerializerMixin
@@ -42,8 +42,7 @@ class SignupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('email', 'full_name', 'phone', 'hack_license', 'username',
-                  'password', 'password_confirm')
+        fields = ('email', 'full_name', 'phone', 'username', 'password', 'password_confirm')
 
     def validate_username(self, username):
         if username:
@@ -67,26 +66,21 @@ class SignupSerializer(serializers.ModelSerializer):
         return email
 
     def validate(self, attrs):
-        """ Validates driver's hack license and full name via SODA API """
-        if (attrs.get('hack_license') and attrs.get('full_name') and
-                not validate_license(attrs['hack_license'], attrs['full_name'])):
-            raise serializers.ValidationError(_('Invalid license number'))
-
         if attrs.get('password') and attrs.get('password_confirm'):
             if attrs['password'] != attrs['password_confirm']:
                 raise serializers.ValidationError(_('Passwords don\'t match'))
             del attrs['password_confirm']
-
         if not attrs.get('username'):
             attrs['username'] = generate_username(attrs.get('full_name', ''))
-
         return attrs
 
     def create(self, validated_data):
-        """ Saves user, creates and returns authentication token to skip login step """
-        user = User.objects.create_user(**validated_data)
-        token = Token.objects.create(user=user)
-        return token
+        password = validated_data.pop('password')
+        user = User(**validated_data)
+        user.set_password(password)
+        user.save()
+        Token.objects.create(user=user)
+        return user
 
 
 class ResetPasswordSerializer(serializers.Serializer):

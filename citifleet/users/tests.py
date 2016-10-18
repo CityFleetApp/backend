@@ -56,16 +56,18 @@ class TestSignup(TestCase):
     # User posts valid sign up data and receives authorization token
     def test_login_after_signup_successful(self):
         signup_data = {
-            'full_name': 'John Smith', 'email': 'john@example.com', 'username': 'johnsmith12',
-            'phone': '1524204242', 'hack_license': '123456', 'password': 'password',
-            'password_confirm': 'password'
+            'full_name': 'John Smith', 'email': 'john@example.com',
+            'username': 'johnsmith12', 'phone': '1524204242',
+            'password': 'password', 'password_confirm': 'password'
         }
         resp = self.client.post(reverse('users:signup'), data=signup_data)
-        token = Token.objects.get(user__email='john@example.com')
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
         login_data = {'username': 'john@example.com', 'password': 'password'}
         resp = self.client.post(reverse('users:login'), data=login_data)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+        token = Token.objects.get(user__email='john@example.com')
         self.assertEqual(resp.data['token'], token.key)
 
     def test_unique_email(self):

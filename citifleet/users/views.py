@@ -38,15 +38,14 @@ class SignUpView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        token = serializer.save()
-        return Response({'token': token.key, 'id': token.user.id}, status=status.HTTP_200_OK)
+        user = serializer.save()
+        return Response(users_serializers.UserLoginSerializer(user).data, status=status.HTTP_200_OK)
 
 signup = SignUpView.as_view()
 
 
 class ResetPassword(APIView):
     """ POST - resets password and send new password to user's email """
-
     serializer_class = users_serializers.ResetPasswordSerializer
     permission_classes = (AllowAny,)
 
@@ -73,11 +72,7 @@ change_password = ChangePassword.as_view()
 
 
 class LoginView(ObtainAuthToken):
-    """
-    Custom login API.
-    Login user, return auth token and user info in response
-    """
-
+    """ Login user, return auth token and user info in response """
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)

@@ -72,7 +72,7 @@ def generate_username(fullname):
     try_count = 0
     while not new_username and try_count < 10:
         fullname_upper = fullname.strip().upper()
-        name_parts = fullname_upper.split(' ')
+        name_parts = [p for p in fullname_upper.split(' ') if p]
         if len(name_parts) > 1:
             for name_part in name_parts:
                 new_username += name_part[0]
