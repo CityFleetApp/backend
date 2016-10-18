@@ -341,8 +341,12 @@ class SocialAuthenticateAPIView(GenericViewSet):
 
     def get_serializer_class(self):
         if self.social_account_type == 'facebook':
+            if self.action == 'register':
+                return users_serializers.FacebookSocialAccountCreateSerializer
             return users_serializers.FacebookAuthSerializer
         if self.social_account_type == 'google':
+            if self.action == 'register':
+                return users_serializers.GoogleSocialAccountCreateSerializer
             return users_serializers.GoogleAuthSeriaizer
 
     def authenticate(self, request, *args, **kwargs):
@@ -357,7 +361,10 @@ class SocialAuthenticateAPIView(GenericViewSet):
         return Response({}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def register(self, request, *args, **kwargs):
-        return Response({}, status=status.HTTP_200_OK)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.create(serializer.validated_data)
+        return Response(users_serializers.UserLoginSerializer(user).data, status=status.HTTP_200_OK)
 
 SOCIAL_ACTIONS = {
     'post': 'authenticate',

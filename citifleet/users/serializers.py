@@ -6,7 +6,6 @@ import re
 
 import requests
 from oauth2client import client, crypt
-from constance import config
 
 from django.db import models
 from django.conf import settings
@@ -18,72 +17,29 @@ import tweepy
 from instagram.client import InstagramAPI
 from open_facebook import OpenFacebook
 from rest_framework import serializers
-from rest_framework.authtoken.models import Token
 
-from citifleet.common.utils import generate_username, validate_username
+from citifleet.common.utils import validate_username
 from citifleet.common.geo_fields import PointField
 from citifleet.users.models import Photo, FriendRequest
+from citifleet.users.mixins import (RegistrationSerializerMixin, SocialAuthSerializerMixin,
+                                    SocialCreateSerializerMixin)
 
 User = get_user_model()
 
 
-class SignupSerializer(serializers.ModelSerializer):
-    """ Serializes sign up data. Creates new user and logins it automatically """
+class SignupSerializer(RegistrationSerializerMixin, serializers.ModelSerializer):
+    """ Serializes sign up data. Creates new user and login him automatically """
     password_confirm = serializers.CharField(max_length=128)
-    username = serializers.CharField(
-        max_length=User._meta.get_field('username').max_length,
-        allow_blank=True,
-        required=False,
-    )
-    email = serializers.EmailField(
-        required=True,
-        error_messages={
-            'blank': _('Email field can not be blank'),
-            'required': _('Email field can not be blank'),
-        }
-    )
 
-    class Meta:
-        model = User
-        fields = ('email', 'full_name', 'phone', 'username', 'password', 'password_confirm')
-
-    def validate_username(self, username):
-        if username:
-            username = validate_username(username)
-        return username
-
-    def validate_phone(self, value):
-        try:
-            int(value)
-        except ValueError:
-            raise serializers.ValidationError('The phone number entered is not valid.')
-        else:
-            if len(value) != 10:
-                raise serializers.ValidationError('The phone number entered is not valid.')
-            else:
-                return value
-
-    def validate_email(self, email):
-        if email and User.objects.filter(email__iexact=email).exists():
-            raise serializers.ValidationError(_('This email is already in use.'))
-        return email
+    class Meta(RegistrationSerializerMixin.Meta):
+        fields = RegistrationSerializerMixin.Meta.fields + ('password', 'password_confirm')
 
     def validate(self, attrs):
         if attrs.get('password') and attrs.get('password_confirm'):
             if attrs['password'] != attrs['password_confirm']:
                 raise serializers.ValidationError(_('Passwords don\'t match'))
             del attrs['password_confirm']
-        if not attrs.get('username'):
-            attrs['username'] = generate_username(attrs.get('full_name', ''))
-        return attrs
-
-    def create(self, validated_data):
-        password = validated_data.pop('password')
-        user = User(**validated_data)
-        user.set_password(password)
-        user.save()
-        Token.objects.create(user=user)
-        return user
+        return super(SignupSerializer, self).validate(attrs)
 
 
 class ResetPasswordSerializer(serializers.Serializer):
@@ -365,73 +321,30 @@ class SocialAuthFailedSerializer(serializers.ModelSerializer):
         fields = ('email', 'full_name', 'username', )
 
 
-class FacebookAuthSerializer(serializers.Serializer):
+class FacebookAuthSerializer(SocialAuthSerializerMixin, serializers.Serializer):
+    ACCOUNT_TYPE = 'facebook'
+
     token = serializers.CharField(required=True, allow_blank=False)
 
-    def match_user(self, social_response):
-        if User.objects.filter(facebook_id=social_response['id']).exists():
-            return User.objects.get(facebook_id=social_response['id'])
-
-        if social_response.get('email') and User.objects.filter(email=social_response['email']).exists():
-            return User.objects.get(email=social_response['email'])
-
-    def validate(self, attrs):
-        if attrs.get('token'):
-            social_account_url = 'https://graph.facebook.com/me/?fields=id,email,name,first_name,last_name&access_token=' + attrs['token']  # noqa
+    def validate_token(self, token):
+        if token:
+            social_account_url = 'https://graph.facebook.com/me/?fields=id,email,name,first_name,last_name&access_token=' + token  # noqa
             resp = requests.get(social_account_url)
-            if resp.status_code == 200:
-                response = resp.json()
-                attrs['social_response'] = response
-                attrs['user'] = self.match_user(response)
-                return attrs
-            raise serializers.ValidationError(_('Invalid access token'))
-        return attrs
-
-    def _get_user_data(self, social_response):
-        data = {
-            'username': generate_username(social_response['name']),
-            'full_name': social_response['name'],
-        }
-        if social_response.get('email'):
-            data['email'] = social_response['email']
-        return data
-
-    def authenticate(self):
-        social_response = self.validated_data['social_response']
-        user = self.validated_data['user']
-        user_data = self._get_user_data(social_response)
-        if user:
-            user.facebook_id = social_response['id']
-            user.save()
-            return user
-        return User(**user_data)
+            if resp.status_code != 200:
+                raise serializers.ValidationError(_('Invalid access token'))
+            self.social_response = resp.json()
+        return token
 
 
-class GoogleAuthSeriaizer(serializers.Serializer):
+class GoogleAuthSeriaizer(SocialAuthSerializerMixin, serializers.Serializer):
     ISS_LIST = ['accounts.google.com', 'https://accounts.google.com']
+    ACCOUNT_TYPE = 'google'
 
     token = serializers.CharField(required=True, allow_blank=False)
 
-    def match_user(self, social_response):
-        if User.objects.filter(google_id=social_response['sub']).exists():
-            return User.objects.get(google_id=social_response['sub'])
-
-        if social_response.get('email') and User.objects.filter(email=social_response['email']).exists():
-            return User.objects.get(email=social_response['email'])
-
-    def _get_user_data(self, social_response):
-        data = {
-            'username': generate_username(social_response['name']),
-            'full_name': social_response['name'],
-        }
-        if social_response.get('email'):
-            data['email'] = social_response['email']
-        return data
-
-    def validate(self, attrs):
-        if attrs.get('token'):
+    def validate_token(self, token):
+        if token:
             try:
-                token = attrs['token']
                 client_ids = settings.GOOGLE_CLIENT_IDS
                 response = client.verify_id_token(token, client_ids[0])
                 if response.get('aud') and response['aud'] not in client_ids:
@@ -442,17 +355,21 @@ class GoogleAuthSeriaizer(serializers.Serializer):
                     raise serializers.ValidationError(_('Invalid hosted domain'))
             except crypt.AppIdentityError:
                 raise serializers.ValidationError(_('Invalid Token ID'))
+            self.social_response = response
+        return token
 
-            attrs['social_response'] = response
-            attrs['user'] = self.match_user(response)
-        return attrs
 
-    def authenticate(self):
-        social_response = self.validated_data['social_response']
-        user = self.validated_data['user']
-        user_data = self._get_user_data(social_response)
-        if user:
-            user.google_id = social_response['sub']
-            user.save()
-            return user
-        return User(**user_data)
+class FacebookSocialAccountCreateSerializer(SocialCreateSerializerMixin, FacebookAuthSerializer,
+                                            serializers.ModelSerializer):
+    token = serializers.CharField(required=True, allow_blank=False)
+
+    class Meta(RegistrationSerializerMixin.Meta):
+        fields = RegistrationSerializerMixin.Meta.fields + ('token', )
+
+
+class GoogleSocialAccountCreateSerializer(SocialCreateSerializerMixin, GoogleAuthSeriaizer,
+                                          serializers.ModelSerializer):
+    token = serializers.CharField(required=True, allow_blank=False)
+
+    class Meta(RegistrationSerializerMixin.Meta):
+        fields = RegistrationSerializerMixin.Meta.fields + ('token', )
