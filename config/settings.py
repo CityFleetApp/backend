@@ -44,6 +44,9 @@ env = environ.Env(
 
     DJANGO_USE_DEBUG_TOOLBAR=(bool, False),
     DJANGO_CELERY_ALWAYS_EAGER=(bool, False),
+
+    DJANGO_GOOGLE_CLIENT_IDS=(list, []),
+    DJANGO_GOOGLE_APPS_DOMAIN_NAME=(str, ''),
 )
 environ.Env.read_env()
 
@@ -329,3 +332,6 @@ if env.bool('DJANGO_USE_DEBUG_TOOLBAR'):
     }
 
 FCM_SERVER_KEY = env.str('DJANGO_FCM_SERVER_KEY')
+
+GOOGLE_CLIENT_IDS = env.list('DJANGO_GOOGLE_CLIENT_IDS')
+GOOGLE_APPS_DOMAIN_NAME = env.list('DJANGO_GOOGLE_APPS_DOMAIN_NAME')
