@@ -21,14 +21,14 @@ from rest_framework import serializers
 from citifleet.common.utils import validate_username
 from citifleet.common.geo_fields import PointField
 from citifleet.users.models import Photo, FriendRequest
-from citifleet.users.mixins import (RegistrationSerializerMixin, SocialAuthSerializerMixin,
-                                    SocialCreateSerializerMixin)
+from citifleet.users.mixins import RegistrationSerializerMixin, SocialAuthSerializerMixin
 
 User = get_user_model()
 
 
 class SignupSerializer(RegistrationSerializerMixin, serializers.ModelSerializer):
     """ Serializes sign up data. Creates new user and login him automatically """
+    password = serializers.CharField(max_length=128)
     password_confirm = serializers.CharField(max_length=128)
 
     class Meta(RegistrationSerializerMixin.Meta):
@@ -359,17 +359,37 @@ class GoogleAuthSeriaizer(SocialAuthSerializerMixin, serializers.Serializer):
         return token
 
 
-class FacebookSocialAccountCreateSerializer(SocialCreateSerializerMixin, FacebookAuthSerializer,
-                                            serializers.ModelSerializer):
+class FacebookSocialAccountCreateSerializer(FacebookAuthSerializer, serializers.ModelSerializer):
     token = serializers.CharField(required=True, allow_blank=False)
 
     class Meta(RegistrationSerializerMixin.Meta):
         fields = RegistrationSerializerMixin.Meta.fields + ('token', )
 
+    def validate_token(self, token):
+        super(FacebookSocialAccountCreateSerializer, self).validate_token(token)
+        if self.social_account_in_use():
+            raise serializers.ValidationError(_('Social account is already in use'))
+        return token
 
-class GoogleSocialAccountCreateSerializer(SocialCreateSerializerMixin, GoogleAuthSeriaizer,
-                                          serializers.ModelSerializer):
+    def create(self, validated_data):
+        validated_data.pop('token', None)
+        validated_data['facebook_id'] = self.social_response['id']
+        return super(FacebookSocialAccountCreateSerializer, self).create(validated_data)
+
+
+class GoogleSocialAccountCreateSerializer(GoogleAuthSeriaizer, serializers.ModelSerializer):
     token = serializers.CharField(required=True, allow_blank=False)
 
     class Meta(RegistrationSerializerMixin.Meta):
         fields = RegistrationSerializerMixin.Meta.fields + ('token', )
+
+    def validate_token(self, token):
+        super(GoogleSocialAccountCreateSerializer, self).validate_token(token)
+        if self.social_account_in_use():
+            raise serializers.ValidationError(_('Social account is already in use'))
+        return token
+
+    def create(self, validated_data):
+        validated_data.pop('token', None)
+        validated_data['google_id'] = self.social_response['sub']
+        return super(GoogleSocialAccountCreateSerializer, self).create(validated_data)

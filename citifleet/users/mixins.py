@@ -74,11 +74,18 @@ class SocialAuthSerializerMixin(object):
         super(SocialAuthSerializerMixin, self).__init__(*args, **kwargs)
         self.social_response = None
 
+    def social_account_in_use(self):
+        if self.ACCOUNT_TYPE == 'facebook':
+            return User.objects.filter(facebook_id=self.social_response['id']).exists()
+        elif self.ACCOUNT_TYPE == 'google':
+            return User.objects.filter(google_id=self.social_response['sub']).exists()
+        return False
+
     def match_user(self):
-        if self.ACCOUNT_TYPE == 'facebook' and User.objects.filter(facebook_id=self.social_response['id']).exists():
+        if self.ACCOUNT_TYPE == 'facebook' and self.social_account_in_use():
             return User.objects.get(facebook_id=self.social_response['id'])
 
-        elif self.ACCOUNT_TYPE == 'google' and User.objects.filter(google_id=self.social_response['sub']).exists():
+        elif self.ACCOUNT_TYPE == 'google' and self.social_account_in_use():
             return User.objects.get(google_id=self.social_response['sub'])
 
         if self.social_response.get('email') and User.objects.filter(email=self.social_response['email']).exists():
@@ -105,10 +112,3 @@ class SocialAuthSerializerMixin(object):
             user.save()
             return user
         return User(**user_data)
-
-
-class SocialCreateSerializerMixin(RegistrationSerializerMixin):
-
-    def create(self, validated_data):
-        validated_data.pop('token', None)
-        return super(SocialCreateSerializerMixin, self).create(validated_data)
