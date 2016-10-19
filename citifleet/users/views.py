@@ -336,6 +336,7 @@ class FriendRequestViewSet(ListModelMixin, CreateModelMixin, GenericViewSet):
 
 
 class SocialAuthenticateAPIView(GenericViewSet):
+    # TODO: allow only unathorized users
     permission_classes = (AllowAny, )
     social_account_type = None
 

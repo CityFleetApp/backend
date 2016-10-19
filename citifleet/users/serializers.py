@@ -17,6 +17,7 @@ import tweepy
 from instagram.client import InstagramAPI
 from open_facebook import OpenFacebook
 from rest_framework import serializers
+from rest_framework.authtoken.models import Token
 
 from citifleet.common.utils import validate_username
 from citifleet.common.geo_fields import PointField
@@ -374,7 +375,9 @@ class FacebookSocialAccountCreateSerializer(FacebookAuthSerializer, serializers.
     def create(self, validated_data):
         validated_data.pop('token', None)
         validated_data['facebook_id'] = self.social_response['id']
-        return super(FacebookSocialAccountCreateSerializer, self).create(validated_data)
+        user = User.objects.create(**validated_data)
+        Token.objects.create(user=user)
+        return user
 
 
 class GoogleSocialAccountCreateSerializer(GoogleAuthSeriaizer, serializers.ModelSerializer):
@@ -392,4 +395,6 @@ class GoogleSocialAccountCreateSerializer(GoogleAuthSeriaizer, serializers.Model
     def create(self, validated_data):
         validated_data.pop('token', None)
         validated_data['google_id'] = self.social_response['sub']
-        return super(GoogleSocialAccountCreateSerializer, self).create(validated_data)
+        user = User.objects.create(**validated_data)
+        Token.objects.create(user=user)
+        return user
