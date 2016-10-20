@@ -13,7 +13,8 @@ from citifleet.common.utils import generate_username, validate_username
 User = get_user_model()
 
 
-class RegistrationSerializerMixin(object):
+class RegistrationSerializerMixin(serializers.Serializer):
+
     username = serializers.CharField(
         max_length=User._meta.get_field('username').max_length,
         allow_blank=True,

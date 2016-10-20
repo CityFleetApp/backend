@@ -94,14 +94,41 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.save()
 
 
+class SetPasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(max_length=128)
+    password_confirm = serializers.CharField(max_length=128)
+
+    def validate(self, attrs):
+        if attrs.get('password') and attrs.get('password_confirm'):
+            if attrs['password'] != attrs['password_confirm']:
+                raise serializers.ValidationError(_('Password should be the same'))
+        return attrs
+
+    def set_password(self, user):
+        user.set_password(self.validated_data['password'])
+        return user.save()
+
+
 class UserDetailSerializer(serializers.ModelSerializer):
     """ Serializer for user details screen """
+    has_google = serializers.SerializerMethodField()
+    has_facebook = serializers.SerializerMethodField()
+    has_site = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ('email', 'full_name', 'phone', 'hack_license', 'username',
                   'bio', 'drives', 'avatar_url', 'documents_up_to_date', 'jobs_completed',
-                  'rating', 'id', 'user_type', )
+                  'rating', 'id', 'user_type', 'has_google', 'has_facebook', 'has_site', )
+
+    def get_has_google(self, obj):
+        return bool(obj.google_id)
+
+    def get_has_facebook(self, obj):
+        return bool(obj.facebook_id)
+
+    def get_has_site(self, obj):
+        return obj.has_usable_password()
 
 
 class ContactsSerializer(serializers.Serializer):
@@ -373,7 +400,8 @@ class GoogleAuthSeriaizer(SocialAuthSerializerMixin, serializers.Serializer):
         return token
 
 
-class FacebookSocialAccountCreateSerializer(FacebookAuthSerializer, serializers.ModelSerializer):
+class FacebookSocialAccountCreateSerializer(FacebookAuthSerializer, RegistrationSerializerMixin,
+                                            serializers.ModelSerializer):
     token = serializers.CharField(required=True, allow_blank=False)
 
     class Meta(RegistrationSerializerMixin.Meta):
@@ -395,7 +423,8 @@ class FacebookSocialAccountCreateSerializer(FacebookAuthSerializer, serializers.
         return user
 
 
-class GoogleSocialAccountCreateSerializer(GoogleAuthSeriaizer, serializers.ModelSerializer):
+class GoogleSocialAccountCreateSerializer(GoogleAuthSeriaizer, RegistrationSerializerMixin,
+                                          serializers.ModelSerializer):
     token = serializers.CharField(required=True, allow_blank=False)
 
     class Meta(RegistrationSerializerMixin.Meta):

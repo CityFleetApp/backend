@@ -453,3 +453,38 @@ class TestFriendRequestAPI(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
         resp = self.client.post(reverse('users:friend-request-decline', kwargs={'pk': friend_request.pk}),)
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class TestSetPasswordForUserWithoutSiteAccount(APITestCase):
+
+    def setUp(self):
+        self.user1 = UserFactory.create(email='user1@example.com')
+        self.user1.set_password('test')
+        self.user1.save()
+
+    def test_user_with_usable_password_cant_set_password(self):
+        self.client.force_authenticate(user=self.user1)
+        resp = self.client.post(reverse('users:password_set'))
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_user_with_unusable_password_return_errors_with_invalid_data(self):
+        self.user1.set_unusable_password()
+        self.user1.save()
+
+        self.client.force_authenticate(user=self.user1)
+        resp = self.client.post(reverse('users:password_set'))
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        resp = self.client.post(reverse('users:password_set'), data={'password': 'admin', 'password_confirm': 'admin2'})
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_user_with_unusable_password_can_change_password(self):
+        self.user1.set_unusable_password()
+        self.user1.save()
+        new_pass = 'admin'
+
+        self.client.force_authenticate(user=self.user1)
+        resp = self.client.post(reverse('users:password_set'),
+                                data={'password': new_pass, 'password_confirm': new_pass})
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.user1.refresh_from_db()
+        self.user1.check_password(new_pass)

@@ -26,6 +26,7 @@ from citifleet.fcm_notifications.utils import send_mass_push_notifications
 from citifleet.users import serializers as users_serializers
 from citifleet.users.models import Photo, FriendRequest
 from citifleet.users.forms import NotificationForm
+from citifleet.common.rest_permissions import UserWithoutSiteAccountOnly, AnonymousOnly
 
 User = get_user_model()
 
@@ -336,8 +337,7 @@ class FriendRequestViewSet(ListModelMixin, CreateModelMixin, GenericViewSet):
 
 
 class SocialAuthenticateAPIView(GenericViewSet):
-    # TODO: allow only unathorized users
-    permission_classes = (AllowAny, )
+    permission_classes = (AnonymousOnly, )
     social_account_type = None
 
     def get_serializer_class(self):
@@ -367,9 +367,21 @@ class SocialAuthenticateAPIView(GenericViewSet):
         user = serializer.create(serializer.validated_data)
         return Response(users_serializers.UserLoginSerializer(user).data, status=status.HTTP_200_OK)
 
+
+class SetPasswordAPIView(APIView):
+    permission_classes = (UserWithoutSiteAccountOnly, )
+
+    def post(self, request, *args, **kwargs):
+        serializer = users_serializers.SetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.set_password(request.user)
+        return Response({}, status=status.HTTP_200_OK)
+
+
 SOCIAL_ACTIONS = {
     'post': 'authenticate',
     'put': 'register',
 }
 google_auth_view = SocialAuthenticateAPIView.as_view(social_account_type='google', actions=SOCIAL_ACTIONS)
 facebook_auth_view = SocialAuthenticateAPIView.as_view(social_account_type='facebook', actions=SOCIAL_ACTIONS)
+password_set = SetPasswordAPIView.as_view()
