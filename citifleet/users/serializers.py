@@ -307,12 +307,25 @@ class CreateFriendRequestSerializer(serializers.ModelSerializer):
 
 class UserLoginSerializer(serializers.ModelSerializer):
     token = serializers.CharField(source='auth_token')
+    has_google = serializers.SerializerMethodField()
+    has_facebook = serializers.SerializerMethodField()
+    has_site = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ('email', 'full_name', 'phone', 'hack_license', 'username',
                   'bio', 'drives', 'avatar_url', 'documents_up_to_date',
-                  'jobs_completed', 'rating', 'id', 'user_type', 'token', )
+                  'jobs_completed', 'rating', 'id', 'user_type', 'token',
+                  'has_google', 'has_facebook', 'has_site', )
+
+    def get_has_google(self, obj):
+        return bool(obj.google_id)
+
+    def get_has_facebook(self, obj):
+        return bool(obj.facebook_id)
+
+    def get_has_site(self, obj):
+        return obj.has_usable_password()
 
 
 class SocialAuthFailedSerializer(serializers.ModelSerializer):
@@ -375,7 +388,9 @@ class FacebookSocialAccountCreateSerializer(FacebookAuthSerializer, serializers.
     def create(self, validated_data):
         validated_data.pop('token', None)
         validated_data['facebook_id'] = self.social_response['id']
-        user = User.objects.create(**validated_data)
+        user = User(**validated_data)
+        user.set_unusable_password()
+        user.save()
         Token.objects.create(user=user)
         return user
 
@@ -395,6 +410,8 @@ class GoogleSocialAccountCreateSerializer(GoogleAuthSeriaizer, serializers.Model
     def create(self, validated_data):
         validated_data.pop('token', None)
         validated_data['google_id'] = self.social_response['sub']
-        user = User.objects.create(**validated_data)
+        user = User(**validated_data)
+        user.set_unusable_password()
+        user.save()
         Token.objects.create(user=user)
         return user

@@ -14,7 +14,10 @@ def send_mass_push_notifications(**kwargs):
 
 
 def update_fcmdevice_registration_id(old_registration_id, new_registration_id):
-    FCMDevice.objects.filter(registration_id=old_registration_id).update(registration_id=new_registration_id)
+    if FCMDevice.objects.filter(registration_id=new_registration_id).exists():
+        FCMDevice.objects.filter(registration_id=old_registration_id).delete()
+    else:
+        FCMDevice.objects.filter(registration_id=old_registration_id).update(registration_id=new_registration_id)
 
 
 def remove_fcmdevice_registration_id(registration_id):
