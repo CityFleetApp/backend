@@ -385,17 +385,22 @@ class GoogleAuthSeriaizer(SocialAuthSerializerMixin, serializers.Serializer):
 
     def validate_token(self, token):
         if token:
-            try:
-                client_ids = settings.GOOGLE_CLIENT_IDS
-                response = client.verify_id_token(token, client_ids[0])
-                if response.get('aud') and response['aud'] not in client_ids:
-                    raise serializers.ValidationError(_('Invalid client'))
-                if response.get('iss') and response['iss'] not in self.ISS_LIST:
-                    raise serializers.ValidationError(_('Invalid issuer'))
-                if response.get('hd') and response['hd'] != settings.GOOGLE_APPS_DOMAIN_NAME:
-                    raise serializers.ValidationError(_('Invalid hosted domain'))
-            except crypt.AppIdentityError:
+            response = None
+            for client_id in settings.GOOGLE_CLIENT_IDS:
+                try:
+                    response = client.verify_id_token(token, client_id)
+                except crypt.AppIdentityError:
+                    pass
+
+            if not response:
                 raise serializers.ValidationError(_('Invalid Token ID'))
+
+            if response.get('aud') and response['aud'] not in settings.GOOGLE_CLIENT_IDS:
+                raise serializers.ValidationError(_('Invalid client'))
+            if response.get('iss') and response['iss'] not in self.ISS_LIST:
+                raise serializers.ValidationError(_('Invalid issuer'))
+            if response.get('hd') and response['hd'] != settings.GOOGLE_APPS_DOMAIN_NAME:
+                raise serializers.ValidationError(_('Invalid hosted domain'))
             self.social_response = response
         return token
 
