@@ -32,7 +32,7 @@ env = environ.Env(
     DJANGO_EMAIL_URL=(environ.Env.email_url_config, 'consolemail://user@:password@localhost:25'),
     DJANGO_DEFAULT_FROM_EMAIL=(str, 'admin@example.com'),
     DJANGO_EMAIL_BACKEND=(str, 'django.core.mail.backends.smtp.EmailBackend'),
-    SERVER_EMAIL=(str, 'root@localhost.com'),
+    DJANGO_SERVER_EMAIL=(str, 'root@localhost.com'),
     CELERY_BROKER_URL=(str, 'redis://localhost:6379/0'),
     DJANGO_CELERY_BACKEND=(str, 'redis://localhost:6379/0'),
     DJANGO_FCM_SERVER_KEY=(str, ''),  # FCM server key
@@ -140,6 +140,7 @@ EMAIL_PORT = EMAIL_URL.get('EMAIL_PORT', '')
 EMAIL_USE_SSL = 'EMAIL_USE_SSL' in EMAIL_URL
 EMAIL_USE_TLS = 'EMAIL_USE_TLS' in EMAIL_URL
 EMAIL_FILE_PATH = EMAIL_URL.get('EMAIL_FILE_PATH', '')
+SERVER_EMAIL = env.str('DJANGO_SERVER_EMAIL')
 
 DEFAULT_FROM_EMAIL = env('DJANGO_DEFAULT_FROM_EMAIL')
 
