@@ -49,6 +49,7 @@ def document_expired_notifications():
                 message_body=message,
                 data_message=notification_data,
                 sound='default',
+                click_action=PUSH_NOTIFICATION_MESSAGE_TYPES.document_expire,
             )
 
     now_date = tz.now()

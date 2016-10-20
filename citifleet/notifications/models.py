@@ -104,7 +104,8 @@ class NotificationTemplate(NotificationBase):
             data_message={
                 'notification_type': NotificationTemplate.PUSH_TYPES[type],
                 'notification': extra,
-            }
+            },
+            click_action=NotificationTemplate.PUSH_TYPES[type],
         )
 
     class Meta:

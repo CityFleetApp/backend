@@ -55,6 +55,7 @@ def report_created_nearby(sender, instance, created, **kwargs):
                 message_body=message,
                 data_message=notification_data,
                 sound='default',
+                click_action=PUSH_NOTIFICATION_MESSAGE_TYPES.tlc_report_withing_radius,
             )
         logger.info('Report post_save signal processed')
 
@@ -111,6 +112,7 @@ def update_tlc_notifications(user, **kwargs):
             message_body=message,
             data_message=notification_data,
             sound='default',
+            click_action=PUSH_NOTIFICATION_MESSAGE_TYPES.tlc_report_withing_radius,
         )
         logger.info('User location changed signal with reports to notify processed')
 

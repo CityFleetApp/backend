@@ -240,6 +240,7 @@ class MarketJobOfferViewSet(viewsets.ModelViewSet):
             message_body='Job offer {} completed'.format(offer.title),
             sound='default',
             data_message=notification_data,
+            click_action=PUSH_NOTIFICATION_MESSAGE_TYPES.job_offer_completed,
         )
         return Response(status=status.HTTP_200_OK)
 

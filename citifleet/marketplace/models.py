@@ -278,4 +278,5 @@ class JobOffer(models.Model):
             message_body='Your job offer accepted',
             sound='default',
             data_message=notification_data,
+            click_action=PUSH_NOTIFICATION_MESSAGE_TYPES.offer_covered,
         )
