@@ -58,7 +58,7 @@ class UserRoomViewSet(viewsets.ModelViewSet):
                 default=Max('room__messages__created'),
                 output_field=DateTimeField(),
             )
-        ).order_by('-updated').select_related('room', ).prefetch_related('room__participants')
+        ).order_by('-updated').select_related('room', )
 
 
 class MessageViewSet(viewsets.ModelViewSet):
