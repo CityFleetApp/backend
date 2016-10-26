@@ -88,7 +88,7 @@ class UserRoomSerializer(serializers.ModelSerializer):
             UserRoom.objects.create(room=room, user=participant)
 
         message = {'type': 'room_invitation'}
-        message.update(UserRoomSerializer(user_room).data)
+        message.update(UserRoomListSerializer(user_room, context=self.context).data)
         json_message = json.dumps(message)
 
         for participant in chain(participants, [self.context['request'].user]):
@@ -100,16 +100,19 @@ class UserRoomSerializer(serializers.ModelSerializer):
         participants = validated_data['room'].pop('participants', [])
 
         if participants:
-            message = {'type': 'room_invitation'}
-            message.update(UserRoomSerializer(obj).data)
-            if message.get('last_message_timestamp'):
-                message['last_message_timestamp'] = message['last_message_timestamp'].isoformat()
-            json_message = json.dumps(message)
-
+            participants_to_notify = []
             for participant in participants:
                 _, created = UserRoom.objects.get_or_create(room=obj.room, user=participant)
                 if created:
-                    Group('chat-%s' % participant.id).send({'text': json_message})
+                    participants_to_notify.append(participant.pk)
+
+            message = {'type': 'room_invitation'}
+            message.update(UserRoomListSerializer(obj, context=self.context).data)
+            if message.get('last_message_timestamp'):
+                message['last_message_timestamp'] = message['last_message_timestamp'].isoformat()
+            json_message = json.dumps(message)
+            for participant_id in participants_to_notify:
+                Group('chat-%s' % participant_id).send({'text': json_message})
 
         if validated_data.get('room', {}).get('name'):
             obj.room.name = validated_data['room']['name']
