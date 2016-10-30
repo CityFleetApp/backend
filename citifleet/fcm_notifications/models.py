@@ -17,10 +17,15 @@ class FCMDeviceManager(models.Manager):
 
 
 class FCMDeviceQuerySet(models.query.QuerySet):
-    def send_push_notification(self, **kwargs):
+    def send_push_notification(self, device_os=None, **kwargs):
         if self:
-            reg_ids = list(self.filter(active=True).values_list('registration_id', flat=True))
-            send_push_notification_task.delay(settings.FCM_SERVER_KEY, reg_ids, kwargs)
+            qs = self
+            if device_os:
+                qs = qs.filter(device_os=device_os)
+
+            if qs:
+                reg_ids = list(qs.filter(active=True).values_list('registration_id', flat=True))
+                send_push_notification_task.delay(settings.FCM_SERVER_KEY, reg_ids, kwargs)
 
 
 @python_2_unicode_compatible
