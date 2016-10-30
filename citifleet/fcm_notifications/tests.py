@@ -2,6 +2,8 @@
 
 from __future__ import unicode_literals
 
+from copy import deepcopy
+
 from rest_framework import status
 from rest_framework.test import APITestCase
 from django.core.urlresolvers import reverse
@@ -55,8 +57,22 @@ class TestFCMDeviceAPI(APITestCase):
         self.assertEqual(device.registration_id, self.device_registration_id)
         self.assertEqual(device.device_id, self.device_id)
         self.assertEqual(device.user, self.user)
+        self.assertEqual(device.device_os, FCMDevice.DEVICE_OS_CHOICES.android)
         self.assertTrue(device.active)
         self.assertEqual(resp.data, FCMDeviceSerializer(device).data)
+
+    def test_device_with_ios_os_create(self):
+        data = deepcopy(self.device_create_data)
+        data['device_os'] = FCMDevice.DEVICE_OS_CHOICES.ios
+        resp = self.client.post(reverse('fcm_notifications:fcmdevice-list'), data=data)
+        device = FCMDevice.objects.get(registration_id=self.device_registration_id)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(FCMDevice.objects.count(), 1)
+        self.assertEqual(device.registration_id, self.device_registration_id)
+        self.assertEqual(device.device_id, self.device_id)
+        self.assertEqual(device.user, self.user)
+        self.assertEqual(device.device_os, FCMDevice.DEVICE_OS_CHOICES.ios)
+        self.assertTrue(device.active)
 
     def test_device_unable_to_create_duplicates(self):
         self.client.force_authenticate(user=self.user)
