@@ -37,6 +37,7 @@ def message_created(sender, instance, created, **kwargs):
             sound='default',
             message_body='%s: %s' % (instance.author.username.title(), instance.text),
             data_message=notification_data,
+            click_action=PUSH_NOTIFICATION_MESSAGE_TYPES.message_created,
         )
         participants = instance.room.participants.exclude(id=instance.author.id)
         UserRoom.objects.filter(room=instance.room, user__in=participants).update(unseen=F('unseen') + 1)
