@@ -9,7 +9,6 @@ from django.utils.translation import ugettext_lazy as _
 
 from model_utils.choices import Choices
 from citifleet.fcm_notifications.tasks import send_push_notification_task
-from citifleet.fcm_notifications.utils import NOTIFICATION_COLOR
 
 
 class FCMDeviceManager(models.Manager):
@@ -19,6 +18,8 @@ class FCMDeviceManager(models.Manager):
 
 class FCMDeviceQuerySet(models.query.QuerySet):
     def send_push_notification(self, device_os=None, **kwargs):
+        from citifleet.fcm_notifications.utils import NOTIFICATION_COLOR
+
         if self:
             qs = self
             if device_os:
