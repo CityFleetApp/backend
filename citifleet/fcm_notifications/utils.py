@@ -4,6 +4,8 @@ from __future__ import unicode_literals
 
 from citifleet.fcm_notifications.models import FCMDevice
 
+NOTIFICATION_COLOR = '#192c3b'
+
 
 def send_push_notifications(users, **kwargs):
     FCMDevice.objects.filter(user__in=users).send_push_notification(**kwargs)

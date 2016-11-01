@@ -9,6 +9,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from model_utils.choices import Choices
 from citifleet.fcm_notifications.tasks import send_push_notification_task
+from citifleet.fcm_notifications.utils import NOTIFICATION_COLOR
 
 
 class FCMDeviceManager(models.Manager):
@@ -24,6 +25,8 @@ class FCMDeviceQuerySet(models.query.QuerySet):
                 qs = qs.filter(device_os=device_os)
 
             if qs:
+                if not kwargs.get('color'):
+                    kwargs['color'] = NOTIFICATION_COLOR
                 reg_ids = list(qs.filter(active=True).values_list('registration_id', flat=True))
                 send_push_notification_task.delay(settings.FCM_SERVER_KEY, reg_ids, kwargs)
 
