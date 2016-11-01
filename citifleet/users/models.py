@@ -104,9 +104,11 @@ class User(AbstractUser):
             picture_url = self.avatar.url
         return get_full_path(picture_url)
 
-    def set_location(self, new_location, commit=True):
+    def set_location(self, new_location, in_background=False, commit=True):
         self.location = new_location
-        self.datetime_location_changed = timezone.now()
+        if not in_background:
+            self.datetime_location_changed = timezone.now()
+
         if commit:
             self.save()
 

@@ -274,13 +274,17 @@ class UsernameInUseSerializer(serializers.Serializer):
 
 class UpdateUserLocationSerializer(serializers.ModelSerializer):
     location = PointField()
+    in_background = serializers.BooleanField(required=False, default=False)
 
     class Meta:
         model = User
-        fields = ('location', )
+        fields = ('location', 'in_background', )
 
     def save(self, **kwargs):
-        return self.instance.set_location(self.validated_data['location'])
+        return self.instance.set_location(
+            self.validated_data['location'],
+            in_background=self.validated_data['in_background'],
+        )
 
 
 class SimpleUserSerializer(serializers.ModelSerializer):
