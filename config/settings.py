@@ -94,6 +94,7 @@ THIRD_PARTY_APPS = (
     'rest_framework_swagger',
     'easy_thumbnails',
     'image_cropping',
+    'push_notifications',
     'channels',
     'constance',
     'constance.backends.database',

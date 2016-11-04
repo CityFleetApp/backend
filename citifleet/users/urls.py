@@ -4,8 +4,13 @@ from __future__ import absolute_import, unicode_literals
 from django.conf.urls import url, include
 
 from rest_framework.routers import DefaultRouter
+from push_notifications.api.rest_framework import GCMDeviceAuthorizedViewSet, APNSDeviceAuthorizedViewSet
 
 from . import views
+
+device_router = DefaultRouter()
+device_router.register(r'device/apns', APNSDeviceAuthorizedViewSet)
+device_router.register(r'device/gcm', GCMDeviceAuthorizedViewSet)
 
 router = DefaultRouter()
 router.register(r'friend-request', views.FriendRequestViewSet, base_name='friend-request')
@@ -36,5 +41,6 @@ urlpatterns = [
     url(r'^username/check/$', views.check_username_in_use, name='check_username_in_use'),
     url(r'^location/update/$', views.update_user_location, name='update_user_location'),
     url(r'^contacts/$', views.friends_from_contacts, name='friends_from_contacts'),
+    url(r'^devices', include(device_router.urls)),  # TODO: remove after update
     url(r'^', include(router.urls)),
 ]
