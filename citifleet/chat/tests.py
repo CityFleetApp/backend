@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import unicode_literals
+
 from django.core.urlresolvers import reverse
 
 from test_plus.test import TestCase
@@ -6,8 +10,8 @@ from rest_framework import status
 
 from citifleet.users.factories import UserFactory
 
-from .models import Room
-from .factories import RoomFactory, MessageFactory
+from citifleet.chat.models import Room
+from citifleet.chat.factories import RoomFactory, MessageFactory
 
 
 class ChatTestCase(TestCase):
@@ -38,6 +42,11 @@ class ChatTestCase(TestCase):
         resp = self.client.post(reverse('chat:rooms-list'), data={'participants': [self.friend.id], 'name': 'Room'})
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(resp.data['id'], Room.objects.get().id)
+
+    def test_cant_create_with_himself(self):
+        self.client.force_authenticate(user=self.user)
+        resp = self.client.post(reverse('chat:rooms-list'), data={'participants': [self.user.id]})
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_room_ordering(self):
         room1, room2 = RoomFactory.create_batch(2, participants=[self.user])
@@ -73,7 +82,7 @@ class ChatTestCase(TestCase):
         self.client.force_authenticate(user=self.user)
 
         resp = self.client.patch(reverse('chat:rooms-detail', args=[room.id]),
-                                 data={'participants': [self.friend.id, self.user.id]})
+                                 data={'participants': [self.friend.id, ]})
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertTrue(self.friend in room.participants.all())
         self.assertTrue(self.user in room.participants.all())

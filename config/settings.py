@@ -32,20 +32,21 @@ env = environ.Env(
     DJANGO_EMAIL_URL=(environ.Env.email_url_config, 'consolemail://user@:password@localhost:25'),
     DJANGO_DEFAULT_FROM_EMAIL=(str, 'admin@example.com'),
     DJANGO_EMAIL_BACKEND=(str, 'django.core.mail.backends.smtp.EmailBackend'),
-    SERVER_EMAIL=(str, 'root@localhost.com'),
+    DJANGO_SERVER_EMAIL=(str, 'root@localhost.com'),
     CELERY_BROKER_URL=(str, 'redis://localhost:6379/0'),
     DJANGO_CELERY_BACKEND=(str, 'redis://localhost:6379/0'),
+    DJANGO_FCM_SERVER_KEY=(str, ''),  # FCM server key
     APP_TOKEN=(str, ''),  # Socrata token
     CONSUMER_KEY=(str, ''),  # twitter consumer key
     CONSUMER_SECRET=(str, ''),  # twitter consumer secret
     CLIENT_SECRET=(str, ''),  # instagram client secret
-    GCM_API_KEY=(str, ''),
-    APNS_CERTIFICATE_PATH=(str, ''),
-    APNS_CERTIFICATE_DEV_PATH=(str, ''),
     REDIS_URL=(str, 'redis://localhost:6379'),
 
     DJANGO_USE_DEBUG_TOOLBAR=(bool, False),
     DJANGO_CELERY_ALWAYS_EAGER=(bool, False),
+
+    DJANGO_GOOGLE_CLIENT_IDS=(list, []),
+    DJANGO_GOOGLE_APPS_DOMAIN_NAME=(str, ''),
 )
 environ.Env.read_env()
 
@@ -110,6 +111,7 @@ LOCAL_APPS = (
     'citifleet.marketplace.apps.MarketplaceConfig',
     'citifleet.chat.apps.ChatConfig',
     'citifleet.users.apps.UsersConfig',
+    'citifleet.fcm_notifications.apps.FcmNotificationsConfig',
 )
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -139,6 +141,7 @@ EMAIL_PORT = EMAIL_URL.get('EMAIL_PORT', '')
 EMAIL_USE_SSL = 'EMAIL_USE_SSL' in EMAIL_URL
 EMAIL_USE_TLS = 'EMAIL_USE_TLS' in EMAIL_URL
 EMAIL_FILE_PATH = EMAIL_URL.get('EMAIL_FILE_PATH', '')
+SERVER_EMAIL = env.str('DJANGO_SERVER_EMAIL')
 
 DEFAULT_FROM_EMAIL = env('DJANGO_DEFAULT_FROM_EMAIL')
 
@@ -239,14 +242,7 @@ INSTAGRAM_CLIENT_SECRET = env('CLIENT_SECRET')
 THUMBNAIL_PROCESSORS = (
     'image_cropping.thumbnail_processors.crop_corners',
 ) + thumbnail_settings.THUMBNAIL_PROCESSORS
-
 # Push notifications config
-PUSH_NOTIFICATIONS_SETTINGS = {
-        "GCM_API_KEY": env('GCM_API_KEY'),
-        "APNS_CERTIFICATE": env('APNS_CERTIFICATE_PATH'),
-        "APNS_CERTIFICATE_DEV": env('APNS_CERTIFICATE_DEV_PATH'),
-}
-
 # Channels Layer config
 CHANNEL_LAYERS = {
     "default": {
@@ -336,3 +332,8 @@ if env.bool('DJANGO_USE_DEBUG_TOOLBAR'):
         ],
         'SHOW_TEMPLATE_CONTEXT': True,
     }
+
+FCM_SERVER_KEY = env.str('DJANGO_FCM_SERVER_KEY')
+
+GOOGLE_CLIENT_IDS = env.list('DJANGO_GOOGLE_CLIENT_IDS')
+GOOGLE_APPS_DOMAIN_NAME = env.str('DJANGO_GOOGLE_APPS_DOMAIN_NAME')

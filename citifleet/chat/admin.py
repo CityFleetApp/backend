@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
 from django.contrib import admin
 
-# Register your models here.
+from citifleet.chat.models import Room
+
+
+@admin.register(Room)
+class RoomAdmin(admin.ModelAdmin):
+    pass

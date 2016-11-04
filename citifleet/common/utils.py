@@ -1,9 +1,15 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 import random
 import re
 import string
 
 from urllib2 import HTTPError
+
+from model_utils.choices import Choices
+from constance import config
+from sodapy import Socrata
 
 from django import forms
 from django.conf import settings
@@ -11,11 +17,18 @@ from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from django.utils.translation import ugettext_lazy as _
 
-from push_notifications.models import GCMDevice, APNSDevice
-from constance import config
-from sodapy import Socrata
-
 USERNAME_REGEX = re.compile(r'^[\w.@+-]+$', re.UNICODE)
+
+PUSH_NOTIFICATION_MESSAGE_TYPES = Choices(
+    ('message_created', 'message_created', _('Notification about new message in chat')),
+    ('offer_covered', 'offer_covered', _('Notification about job offer accepted')),
+    ('job_offer_completed', 'job_offer_completed', _('Notification about job offer completion')),
+    ('report_created', 'report_created', _('Notification about new report created')),
+    ('report_removed', 'report_removed', _('Notification about new report remove')),
+    ('tlc_report_withing_radius', 'tlc_report_withing_radius', _('Notification about TLC within radius')),
+    ('mass_notification', 'mass_notification', _('Mass notification type')),
+    ('document_expire', 'document_expire', _('Notifications about documents expiration')),
+)
 
 
 def validate_license(license_number, full_name):
@@ -59,7 +72,7 @@ def generate_username(fullname):
     try_count = 0
     while not new_username and try_count < 10:
         fullname_upper = fullname.strip().upper()
-        name_parts = fullname_upper.split(' ')
+        name_parts = [p for p in fullname_upper.split(' ') if p]
         if len(name_parts) > 1:
             for name_part in name_parts:
                 new_username += name_part[0]
@@ -90,16 +103,3 @@ def validate_username(username):
     except User.DoesNotExist:
         return username
     raise forms.ValidationError(_('This username is already taken. Please choose another.'))
-
-
-# TODO: send push notifications in celery task
-def send_gcm_push_notification(users_list, gcm_kwargs):
-    return GCMDevice.objects.filter(user__in=users_list, active=True).send_message(**gcm_kwargs)
-
-
-def send_apns_push_notification(users_list, apns_kwargs):
-    apns_devices_ids = APNSDevice.objects.filter(
-        user__in=users_list, active=True
-    ).only('id').values_list('id', flat=True)
-    for i in xrange(0, len(apns_devices_ids), 20):
-        APNSDevice.objects.filter(id__in=apns_devices_ids[i:i + 20]).send_message(**apns_kwargs)

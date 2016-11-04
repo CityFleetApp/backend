@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import unicode_literals
+
 import re
+
+import requests
+from oauth2client import client, crypt
 
 from django.db import models
 from django.conf import settings
@@ -14,76 +19,28 @@ from open_facebook import OpenFacebook
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 
-from citifleet.common.utils import validate_license, generate_username, validate_username
+from citifleet.common.utils import validate_username
 from citifleet.common.geo_fields import PointField
-from citifleet.users.models import Photo
+from citifleet.users.models import Photo, FriendRequest
+from citifleet.users.mixins import RegistrationSerializerMixin, SocialAuthSerializerMixin
 
 User = get_user_model()
 
 
-class SignupSerializer(serializers.ModelSerializer):
-    """ Serializes sign up data. Creates new user and logins it automatically """
+class SignupSerializer(RegistrationSerializerMixin, serializers.ModelSerializer):
+    """ Serializes sign up data. Creates new user and login him automatically """
+    password = serializers.CharField(max_length=128)
     password_confirm = serializers.CharField(max_length=128)
-    username = serializers.CharField(
-        max_length=User._meta.get_field('username').max_length,
-        allow_blank=True,
-        required=False,
-    )
-    email = serializers.EmailField(
-        required=True,
-        error_messages={
-            'blank': _('Email field can not be blank'),
-            'required': _('Email field can not be blank'),
-        }
-    )
 
-    class Meta:
-        model = User
-        fields = ('email', 'full_name', 'phone', 'hack_license', 'username',
-                  'password', 'password_confirm')
-
-    def validate_username(self, username):
-        if username:
-            username = validate_username(username)
-        return username
-
-    def validate_phone(self, value):
-        try:
-            int(value)
-        except ValueError:
-            raise serializers.ValidationError('The phone number entered is not valid.')
-        else:
-            if len(value) != 10:
-                raise serializers.ValidationError('The phone number entered is not valid.')
-            else:
-                return value
-
-    def validate_email(self, email):
-        if email and User.objects.filter(email__iexact=email).exists():
-            raise serializers.ValidationError(_('This email is already in use.'))
-        return email
+    class Meta(RegistrationSerializerMixin.Meta):
+        fields = RegistrationSerializerMixin.Meta.fields + ('password', 'password_confirm')
 
     def validate(self, attrs):
-        """ Validates driver's hack license and full name via SODA API """
-        if (attrs.get('hack_license') and attrs.get('full_name') and
-                not validate_license(attrs['hack_license'], attrs['full_name'])):
-            raise serializers.ValidationError(_('Invalid license number'))
-
         if attrs.get('password') and attrs.get('password_confirm'):
             if attrs['password'] != attrs['password_confirm']:
                 raise serializers.ValidationError(_('Passwords don\'t match'))
             del attrs['password_confirm']
-
-        if not attrs.get('username'):
-            attrs['username'] = generate_username(attrs.get('full_name', ''))
-
-        return attrs
-
-    def create(self, validated_data):
-        """ Saves user, creates and returns authentication token to skip login step """
-        user = User.objects.create_user(**validated_data)
-        token = Token.objects.create(user=user)
-        return token
+        return super(SignupSerializer, self).validate(attrs)
 
 
 class ResetPasswordSerializer(serializers.Serializer):
@@ -137,14 +94,41 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.save()
 
 
+class SetPasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(max_length=128)
+    password_confirm = serializers.CharField(max_length=128)
+
+    def validate(self, attrs):
+        if attrs.get('password') and attrs.get('password_confirm'):
+            if attrs['password'] != attrs['password_confirm']:
+                raise serializers.ValidationError(_('Password should be the same'))
+        return attrs
+
+    def set_password(self, user):
+        user.set_password(self.validated_data['password'])
+        return user.save()
+
+
 class UserDetailSerializer(serializers.ModelSerializer):
     """ Serializer for user details screen """
+    has_google = serializers.SerializerMethodField()
+    has_facebook = serializers.SerializerMethodField()
+    has_site = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ('email', 'full_name', 'phone', 'hack_license', 'username',
                   'bio', 'drives', 'avatar_url', 'documents_up_to_date', 'jobs_completed',
-                  'rating', 'id', 'user_type', )
+                  'rating', 'id', 'user_type', 'has_google', 'has_facebook', 'has_site', )
+
+    def get_has_google(self, obj):
+        return bool(obj.google_id)
+
+    def get_has_facebook(self, obj):
+        return bool(obj.facebook_id)
+
+    def get_has_site(self, obj):
+        return obj.has_usable_password()
 
 
 class ContactsSerializer(serializers.Serializer):
@@ -152,8 +136,9 @@ class ContactsSerializer(serializers.Serializer):
     contacts = serializers.ListField(child=serializers.CharField())
 
     def validate(self, attrs):
+        request_user = self.context['user']
         contacts = [re.sub(r'\+\d', '', c) for c in attrs['contacts']]
-        attrs['users'] = User.objects.filter(phone__in=contacts)
+        attrs['users'] = User.objects.filter(phone__in=contacts).exclude(pk=request_user.pk)
         return attrs
 
 
@@ -289,13 +274,17 @@ class UsernameInUseSerializer(serializers.Serializer):
 
 class UpdateUserLocationSerializer(serializers.ModelSerializer):
     location = PointField()
+    in_background = serializers.BooleanField(required=False, default=False)
 
     class Meta:
         model = User
-        fields = ('location', )
+        fields = ('location', 'in_background', )
 
     def save(self, **kwargs):
-        return self.instance.set_location(self.validated_data['location'])
+        return self.instance.set_location(
+            self.validated_data['location'],
+            in_background=self.validated_data['in_background'],
+        )
 
 
 class SimpleUserSerializer(serializers.ModelSerializer):
@@ -318,3 +307,149 @@ class FriendsFromContactsSerializer(serializers.Serializer):
             models.Q(email__in=emails) |
             models.Q(phone__in=phones)
         ).exclude(models.Q(pk=user.pk) | models.Q(pk__in=user.friends.only('id').values_list('id', flat=True)))
+
+
+class FriendRequestSerializer(serializers.ModelSerializer):
+    from_user = SimpleUserSerializer()
+    to_user = SimpleUserSerializer()
+
+    class Meta:
+        model = FriendRequest
+        fields = ('id', 'from_user', 'to_user')
+
+
+class CreateFriendRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FriendRequest
+        fields = ('id', 'to_user')
+
+    def validate(self, data):
+        request = self.context.get('request')
+        to_user = data.get('to_user')
+        if to_user and request and request.user and request.user.is_authenticated():
+            if request.user == data['to_user']:
+                raise serializers.ValidationError(FriendRequest.error_messages['user_try_to_invite_himself_error'])
+            if request.user.friends.filter(pk=data['to_user'].pk).exists():
+                raise serializers.ValidationError(FriendRequest.error_messages['user_is_already_friend_error'])
+            if FriendRequest.objects.filter(from_user=request.user, to_user=data['to_user']).exists():
+                raise serializers.ValidationError(FriendRequest.error_messages['duplicate_error'])
+        return data
+
+
+class UserLoginSerializer(serializers.ModelSerializer):
+    token = serializers.CharField(source='auth_token')
+    has_google = serializers.SerializerMethodField()
+    has_facebook = serializers.SerializerMethodField()
+    has_site = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ('email', 'full_name', 'phone', 'hack_license', 'username',
+                  'bio', 'drives', 'avatar_url', 'documents_up_to_date',
+                  'jobs_completed', 'rating', 'id', 'user_type', 'token',
+                  'has_google', 'has_facebook', 'has_site', )
+
+    def get_has_google(self, obj):
+        return bool(obj.google_id)
+
+    def get_has_facebook(self, obj):
+        return bool(obj.facebook_id)
+
+    def get_has_site(self, obj):
+        return obj.has_usable_password()
+
+
+class SocialAuthFailedSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ('email', 'full_name', 'username', )
+
+
+class FacebookAuthSerializer(SocialAuthSerializerMixin, serializers.Serializer):
+    ACCOUNT_TYPE = 'facebook'
+
+    token = serializers.CharField(required=True, allow_blank=False)
+
+    def validate_token(self, token):
+        if token:
+            social_account_url = 'https://graph.facebook.com/me/?fields=id,email,name,first_name,last_name&access_token=' + token  # noqa
+            resp = requests.get(social_account_url)
+            if resp.status_code != 200:
+                raise serializers.ValidationError(_('Invalid access token'))
+            self.social_response = resp.json()
+        return token
+
+
+class GoogleAuthSeriaizer(SocialAuthSerializerMixin, serializers.Serializer):
+    ISS_LIST = ['accounts.google.com', 'https://accounts.google.com']
+    ACCOUNT_TYPE = 'google'
+
+    token = serializers.CharField(required=True, allow_blank=False)
+
+    def validate_token(self, token):
+        if token:
+            response = None
+            for client_id in settings.GOOGLE_CLIENT_IDS:
+                try:
+                    response = client.verify_id_token(token, client_id)
+                except crypt.AppIdentityError:
+                    pass
+
+            if not response:
+                raise serializers.ValidationError(_('Invalid Token ID'))
+
+            if response.get('aud') and response['aud'] not in settings.GOOGLE_CLIENT_IDS:
+                raise serializers.ValidationError(_('Invalid client'))
+            if response.get('iss') and response['iss'] not in self.ISS_LIST:
+                raise serializers.ValidationError(_('Invalid issuer'))
+            if response.get('hd') and response['hd'] != settings.GOOGLE_APPS_DOMAIN_NAME:
+                raise serializers.ValidationError(_('Invalid hosted domain'))
+            self.social_response = response
+        return token
+
+
+class FacebookSocialAccountCreateSerializer(FacebookAuthSerializer, RegistrationSerializerMixin,
+                                            serializers.ModelSerializer):
+    token = serializers.CharField(required=True, allow_blank=False)
+
+    class Meta(RegistrationSerializerMixin.Meta):
+        fields = RegistrationSerializerMixin.Meta.fields + ('token', )
+
+    def validate_token(self, token):
+        super(FacebookSocialAccountCreateSerializer, self).validate_token(token)
+        if self.social_account_in_use():
+            raise serializers.ValidationError(_('Social account is already in use'))
+        return token
+
+    def create(self, validated_data):
+        validated_data.pop('token', None)
+        validated_data['facebook_id'] = self.social_response['id']
+        user = User(**validated_data)
+        user.set_unusable_password()
+        user.save()
+        Token.objects.create(user=user)
+        return user
+
+
+class GoogleSocialAccountCreateSerializer(GoogleAuthSeriaizer, RegistrationSerializerMixin,
+                                          serializers.ModelSerializer):
+    token = serializers.CharField(required=True, allow_blank=False)
+
+    class Meta(RegistrationSerializerMixin.Meta):
+        fields = RegistrationSerializerMixin.Meta.fields + ('token', )
+
+    def validate_token(self, token):
+        super(GoogleSocialAccountCreateSerializer, self).validate_token(token)
+        if self.social_account_in_use():
+            raise serializers.ValidationError(_('Social account is already in use'))
+        return token
+
+    def create(self, validated_data):
+        validated_data.pop('token', None)
+        validated_data['google_id'] = self.social_response['sub']
+        user = User(**validated_data)
+        user.set_unusable_password()
+        user.save()
+        Token.objects.create(user=user)
+        return user

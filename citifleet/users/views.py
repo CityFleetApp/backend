@@ -9,19 +9,24 @@ from django.contrib.auth import get_user_model
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils.decorators import method_decorator
 
-from rest_framework.generics import UpdateAPIView, RetrieveAPIView, RetrieveUpdateAPIView, GenericAPIView
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.mixins import ListModelMixin, CreateModelMixin
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
-from push_notifications.models import GCMDevice, APNSDevice
+from rest_framework.decorators import list_route, detail_route
+from rest_framework.generics import (UpdateAPIView, RetrieveAPIView,
+                                     RetrieveUpdateAPIView, GenericAPIView)
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.views import APIView
 
+from citifleet.common.utils import PUSH_NOTIFICATION_MESSAGE_TYPES
+from citifleet.fcm_notifications.utils import send_mass_push_notifications
 from citifleet.users import serializers as users_serializers
-from .models import Photo
-from .forms import NotificationForm
+from citifleet.users.models import Photo, FriendRequest
+from citifleet.users.forms import NotificationForm
+from citifleet.common.rest_permissions import UserWithoutSiteAccountOnly, AnonymousOnly
 
 User = get_user_model()
 
@@ -34,16 +39,14 @@ class SignUpView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        token = serializer.save()
-        return Response({'token': token.key, 'id': token.user.id}, status=status.HTTP_200_OK)
-
+        user = serializer.save()
+        return Response(users_serializers.UserLoginSerializer(user).data, status=status.HTTP_200_OK)
 
 signup = SignUpView.as_view()
 
 
 class ResetPassword(APIView):
     """ POST - resets password and send new password to user's email """
-
     serializer_class = users_serializers.ResetPasswordSerializer
     permission_classes = (AllowAny,)
 
@@ -70,21 +73,13 @@ change_password = ChangePassword.as_view()
 
 
 class LoginView(ObtainAuthToken):
-    """
-    Custom login API.
-    Login user, return auth token and user info in response
-    """
-
+    """ Login user, return auth token and user info in response """
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
-        token, created = Token.objects.get_or_create(user=user)
-
-        user_data = users_serializers.UserDetailSerializer(user).data
-        user_data['token'] = token.key
-
-        return Response(user_data)
+        Token.objects.get_or_create(user=user)
+        return Response(users_serializers.UserLoginSerializer(user).data, status=status.HTTP_200_OK)
 
 login = LoginView.as_view()
 
@@ -239,9 +234,14 @@ class SendMassPushNotification(FormView):
         return super(SendMassPushNotification, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
-        text = form.cleaned_data['text']
-        GCMDevice.objects.filter(active=True).send_message(text)
-        APNSDevice.objects.filter(active=True).send_message(text)
+        notification_data = {
+            'notification_type': PUSH_NOTIFICATION_MESSAGE_TYPES.mass_notification,
+        }
+        send_mass_push_notifications(
+            message_title=form.cleaned_data['text'],
+            message_body=form.cleaned_data['text'],
+            data_message=notification_data,
+        )
         messages.add_message(self.request, messages.SUCCESS, 'Push notification sent')
         return HttpResponseRedirect(reverse('admin:users_user_changelist'))
 
@@ -291,3 +291,97 @@ class FriendsFromContactsListView(APIView):
         return Response(user_data)
 
 friends_from_contacts = FriendsFromContactsListView.as_view()
+
+
+class FriendRequestViewSet(ListModelMixin, CreateModelMixin, GenericViewSet):
+    serializer_class = users_serializers.CreateFriendRequestSerializer
+    queryset = FriendRequest.objects.all()
+
+    def perform_create(self, serializer):
+        serializer.save(from_user=self.request.user)
+
+    def get_serializer_class(self):
+        if self.action in ['incoming', 'outgoing']:
+            return users_serializers.FriendRequestSerializer
+        return super(FriendRequestViewSet, self).get_serializer_class()
+
+    def get_queryset(self):
+        qs = super(FriendRequestViewSet, self).get_queryset()
+        if self.action in ['incoming', 'accept', 'decline']:
+            return qs.filter(to_user=self.request.user).order_by('-created')
+        elif self.action == 'outgoing':
+            return qs.filter(from_user=self.request.user).order_by('-created')
+        return qs
+
+    @list_route(methods=['get'])
+    def incoming(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @list_route(methods=['get'])
+    def outgoing(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @detail_route(methods=['post'])
+    def accept(self, request, pk=None, *args, **kwargs):
+        friend_request = self.get_object()
+        self.request.user.friends.add(friend_request.from_user)
+        friend_request.from_user.friends.add(friend_request.to_user)
+        friend_request.delete()
+        return Response(status=status.HTTP_200_OK)
+
+    @detail_route(methods=['post'])
+    def decline(self, request, pk=None, *args, **kwargs):
+        friend_request = self.get_object()
+        friend_request.delete()
+        return Response(status=status.HTTP_200_OK)
+
+
+class SocialAuthenticateAPIView(GenericViewSet):
+    permission_classes = (AnonymousOnly, )
+    social_account_type = None
+
+    def get_serializer_class(self):
+        if self.social_account_type == 'facebook':
+            if self.action == 'register':
+                return users_serializers.FacebookSocialAccountCreateSerializer
+            return users_serializers.FacebookAuthSerializer
+        if self.social_account_type == 'google':
+            if self.action == 'register':
+                return users_serializers.GoogleSocialAccountCreateSerializer
+            return users_serializers.GoogleAuthSeriaizer
+
+    def authenticate(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.authenticate()
+        if user:
+            if user.pk:
+                Token.objects.get_or_create(user=user)
+                return Response(users_serializers.UserLoginSerializer(user).data, status=status.HTTP_200_OK)
+            return Response(users_serializers.SocialAuthFailedSerializer(user).data, status=status.HTTP_404_NOT_FOUND)
+        return Response({}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def register(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.create(serializer.validated_data)
+        return Response(users_serializers.UserLoginSerializer(user).data, status=status.HTTP_200_OK)
+
+
+class SetPasswordAPIView(APIView):
+    permission_classes = (UserWithoutSiteAccountOnly, )
+
+    def post(self, request, *args, **kwargs):
+        serializer = users_serializers.SetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.set_password(request.user)
+        return Response({}, status=status.HTTP_200_OK)
+
+
+SOCIAL_ACTIONS = {
+    'post': 'authenticate',
+    'put': 'register',
+}
+google_auth_view = SocialAuthenticateAPIView.as_view(social_account_type='google', actions=SOCIAL_ACTIONS)
+facebook_auth_view = SocialAuthenticateAPIView.as_view(social_account_type='facebook', actions=SOCIAL_ACTIONS)
+password_set = SetPasswordAPIView.as_view()

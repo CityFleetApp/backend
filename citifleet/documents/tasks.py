@@ -1,19 +1,64 @@
-from datetime import timedelta
+# -*- coding: utf-8 -*-
 
-from django.utils import timezone
-from django.utils.translation import ugettext as _
+from __future__ import unicode_literals
 
 from celery.task import periodic_task
-from citifleet.notifications.models import Notification
+from celery.schedules import crontab
 
-from .models import Document
+from django.utils import timezone as tz
+from django.utils.translation import ugettext as _
+
+from citifleet.common.utils import PUSH_NOTIFICATION_MESSAGE_TYPES
+from citifleet.documents.models import Document
+from citifleet.fcm_notifications.utils import send_push_notifications
 
 
-@periodic_task(run_every=timedelta(days=1))
-def document_expired_notification():
-    """ Send notification when document becomes expired """
-    expiry_date = timezone.now() - timedelta(days=1)
-    users_to_notify = Document.objects.filter(expiry_date=expiry_date.date()).values('user', flat=True)
-    for user in users_to_notify:
-        Notification.objects.create(
-            user=user, title=_('Document has expired'), message=_('Document has expired'))
+@periodic_task(run_every=(crontab(hour='0', minute='0')))
+def document_expired_notifications():
+    """ Send notification about 30 days, 2 weeks and 5 days before document expiration """
+
+    def get_expired_documents(expire_date):
+        return Document.objects.filter(expiry_date=expire_date.date()).select_related('user')
+
+    def match_documents_to_types(docs_qs):
+        documents_to_types = {}
+        for doc in docs_qs:
+            documents_to_type = {'type_repr': doc.get_type_repr()}
+            current_docs = documents_to_types.get(
+                doc.document_type,
+                documents_to_type,
+            ).get('docs', [])
+            current_docs.append(doc)
+            documents_to_type.update({'docs': current_docs})
+            documents_to_types[doc.document_type] = documents_to_type
+
+        return documents_to_types
+
+    def send_push_about_expiration(expiry_date, msg_pattern):
+        docs = get_expired_documents(expiry_date)
+        match_to_types = match_documents_to_types(docs)
+        notification_data = {
+            'notification_type': PUSH_NOTIFICATION_MESSAGE_TYPES.document_expire,
+        }
+        for documents_data in match_to_types.values():
+            message = msg_pattern % documents_data['type_repr']
+            users = [d.user for d in documents_data['docs']]
+            send_push_notifications(
+                users,
+                message_title=message,
+                message_body=message,
+                data_message=notification_data,
+                sound='default',
+                click_action=PUSH_NOTIFICATION_MESSAGE_TYPES.document_expire,
+            )
+
+    now_date = tz.now()
+    expire_in_30_days_date = now_date + tz.timedelta(days=30)
+    expire_in_14_days_date = now_date + tz.timedelta(days=14)
+    expire_in_5_days_date = now_date + tz.timedelta(days=5)
+    expired_yesterday_date = now_date - tz.timedelta(days=1)
+
+    send_push_about_expiration(expire_in_30_days_date, _('Document \'%s\' will expire in 30 days'))
+    send_push_about_expiration(expire_in_14_days_date, _('Document \'%s\' will expire in 2 weeks'))
+    send_push_about_expiration(expire_in_5_days_date, _('Document \'%s\' will expire in 5 days'))
+    send_push_about_expiration(expired_yesterday_date, _('Document \'%s\' has been expired'))

@@ -1,4 +1,6 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 from datetime import timedelta
 
 from django.db import models
@@ -7,9 +9,8 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
 from django.conf import settings
 
-from push_notifications.models import APNSDevice, GCMDevice
-
-from citifleet.common.utils import get_full_path
+from citifleet.fcm_notifications.utils import send_push_notifications
+from citifleet.common.utils import get_full_path, PUSH_NOTIFICATION_MESSAGE_TYPES
 
 
 class ExpiredManager(Manager):
@@ -265,6 +266,17 @@ class JobOffer(models.Model):
         self.status = JobOffer.COVERED
         self.save()
 
-        push_message = {'type': 'offer_covered', 'id': self.id, 'title': 'Your job offer accepted'}
-        GCMDevice.objects.filter(user=self.driver).send_message(push_message)
-        APNSDevice.objects.filter(user=self.driver).send_message(push_message)
+        notification_data = {
+            'notification_type': PUSH_NOTIFICATION_MESSAGE_TYPES.offer_covered,
+            'offer': {
+                'id': self.id,
+            }
+        }
+        send_push_notifications(
+            [self.driver, ],
+            message_title='Your job offer accepted',
+            message_body='Your job offer accepted',
+            sound='default',
+            data_message=notification_data,
+            click_action=PUSH_NOTIFICATION_MESSAGE_TYPES.offer_covered,
+        )

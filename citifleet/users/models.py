@@ -2,9 +2,12 @@
 from __future__ import unicode_literals, absolute_import
 
 from model_utils.choices import Choices
+from model_utils.models import TimeStampedModel
 
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser, UserManager as BaseUserManager
 from django.core.urlresolvers import reverse
+from django.core.exceptions import ValidationError
 from django.contrib.gis.db import models
 from django.templatetags.static import static
 from django.utils.encoding import python_2_unicode_compatible
@@ -68,6 +71,7 @@ class User(AbstractUser):
     friends = models.ManyToManyField("self", null=True)
 
     facebook_id = models.CharField(_('facebook id'), max_length=200, blank=True)
+    google_id = models.CharField(_('google id'), max_length=200, blank=True)
     twitter_id = models.CharField(_('twitter id'), max_length=200, blank=True)
     instagram_id = models.CharField(_('instagram id'), max_length=200, blank=True)
 
@@ -100,9 +104,11 @@ class User(AbstractUser):
             picture_url = self.avatar.url
         return get_full_path(picture_url)
 
-    def set_location(self, new_location, commit=True):
+    def set_location(self, new_location, in_background=False, commit=True):
         self.location = new_location
-        self.datetime_location_changed = timezone.now()
+        if not in_background:
+            self.datetime_location_changed = timezone.now()
+
         if commit:
             self.save()
 
@@ -152,3 +158,35 @@ class Photo(models.Model):
             'crop': True,
             'detail': True,
         }).url)
+
+
+class FriendRequest(TimeStampedModel):
+    error_messages = {
+        'duplicate_error': _('You have already invited user to become your friend'),
+        'user_is_already_friend_error': _('You have already had this user in you friends'),
+        'user_try_to_invite_himself_error': _('You can\'t invite yourself to become a friend'),
+    }
+
+    from_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_('From User'),
+        related_name='outgoing_friend_requests',
+    )
+    to_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_('To User'),
+        related_name='incoming_friend_requests',
+    )
+
+    def __str__(self):
+        return 'Friend request from %s to %s' % (self.from_user, self.to_user)
+
+    def clean(self):
+        if self.from_user == self.to_user:
+            raise ValidationError(self.error_messages['user_try_to_invite_himself_error'])
+        if self.from_user.friends.filter(pk=self.to_user.pk).exists():
+            raise ValidationError(self.error_messages['user_is_already_friend_error'])
+
+        already_exitst_qs = FriendRequest.objects.filter(from_user=self.from_user, to_user=self.to_user)
+        if self.pk and already_exitst_qs.exclude(pk=self.pk).exists() or not self.pk and already_exitst_qs.exists():
+            raise ValidationError(self.error_messages['duplicate_error'])

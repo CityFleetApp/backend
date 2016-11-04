@@ -1,16 +1,19 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import unicode_literals
 
-from django.db import models
-from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
+from django.db import models
 from django.utils import timezone
+from django.utils.translation import ugettext_lazy as _
 
 
 class Document(models.Model):
-    '''
+    """
     Store document info that driver can upload from app
     Unique together index prevent from creating several documents of the same type for one driver
-    '''
+    """
+
     DMV_LICENSE = 1
     HACK_LICENSE = 2
     INSURANCE = 3
@@ -48,11 +51,14 @@ class Document(models.Model):
     plate_number = models.CharField(_('tlc plate number'), max_length=100, blank=True)
     status = models.PositiveSmallIntegerField(_('status'), choices=STATUS_CHOICES, default=UNDER_REVIEW)
 
-    def expired(self):
-        return self.document_type != Document.TLC_PLATE_NUMBER and self.expiry_date < timezone.now().date()
-    expired.boolean = True
-
     class Meta:
         unique_together = ('user', 'document_type')
         verbose_name = _('Document')
         verbose_name_plural = _('Documents')
+
+    def expired(self):
+        return self.document_type != Document.TLC_PLATE_NUMBER and self.expiry_date < timezone.now().date()
+    expired.boolean = True
+
+    def get_type_repr(self):
+        return dict(Document.DOCUMENT_TYPES)[self.document_type]

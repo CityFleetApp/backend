@@ -8,7 +8,7 @@ from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 from django.contrib.auth.forms import UserChangeForm, UserCreationForm
 
 from citifleet.marketplace.models import JobOffer, Car, GeneralGood
-from .models import User, Photo
+from citifleet.users.models import User, Photo, FriendRequest
 
 
 class MyUserChangeForm(UserChangeForm):
@@ -102,6 +102,11 @@ class UserAdmin(AuthUserAdmin):
     )
 
     change_list_template = 'users/change_list.html'
+
+
+@admin.register(FriendRequest)
+class FriendRequestAdmin(admin.ModelAdmin):
+    model = FriendRequest
 
 
 admin.site.register(User, UserAdmin)
