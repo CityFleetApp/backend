@@ -20,7 +20,6 @@ from easy_thumbnails.files import get_thumbnailer
 from citifleet.documents.models import Document
 from citifleet.common.utils import get_full_path
 from citifleet.marketplace.models import Car, JobOffer
-from citifleet.users.signals import user_location_changed
 from citifleet.common.utils import generate_username
 
 
@@ -105,6 +104,8 @@ class User(AbstractUser):
         return get_full_path(picture_url)
 
     def set_location(self, new_location, in_background=False, commit=True):
+        from citifleet.users.signals import user_location_changed
+
         self.location = new_location
         if not in_background:
             self.datetime_location_changed = timezone.now()
@@ -134,6 +135,11 @@ class User(AbstractUser):
     def rating(self):
         return JobOffer.objects.filter(status=JobOffer.COMPLETED, driver=self).aggregate(
             rating=Avg('driver_rating'))['rating'] or 5.0
+
+    def email_user(self, subject, message, from_email=None, **kwargs):
+        from citifleet.users.tasks import send_email_task
+
+        send_email_task.delay(subject, message, [self.email, ], from_email=from_email, **kwargs)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []

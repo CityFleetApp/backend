@@ -260,6 +260,14 @@ CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 CONSTANCE_CONFIG = {
     'SODA_CHECK_ENABLED': (True, 'Hack license check via SODA API enabled'),
     'TLC_PUSH_NOTIFICATION_RADIUS': (0.5, 'Radius in miles within which we should send notification about nearby TLC reports'),  # noqa
+    'WELCOME_EMAIL_SUBJECT': (
+        'Welcome to CityFleet!',
+        'Subject that will be sent in welcome email. You can use %(name)s or %(username)s to dynamically setup username or name'  # noqa
+    ),
+    'WELCOME_EMAIL_MESSAGE': (
+        'Welcome to CityFleet',
+        'Message that will be sent in welcome email. You can use %(name)s or %(username)s to dynamically setup username or name'  # noqa
+    ),
 }
 
 LOGGING = {
