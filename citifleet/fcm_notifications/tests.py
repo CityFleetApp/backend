@@ -62,11 +62,12 @@ class TestFCMDeviceAPI(APITestCase):
         self.assertEqual(resp.data, FCMDeviceSerializer(device).data)
 
     def test_device_with_ios_os_create(self):
+        self.client.force_authenticate(user=self.user)
         data = deepcopy(self.device_create_data)
         data['device_os'] = FCMDevice.DEVICE_OS_CHOICES.ios
         resp = self.client.post(reverse('fcm_notifications:fcmdevice-list'), data=data)
-        device = FCMDevice.objects.get(registration_id=self.device_registration_id)
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        device = FCMDevice.objects.get(registration_id=self.device_registration_id)
         self.assertEqual(FCMDevice.objects.count(), 1)
         self.assertEqual(device.registration_id, self.device_registration_id)
         self.assertEqual(device.device_id, self.device_id)

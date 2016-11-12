@@ -62,6 +62,7 @@ class TestSignup(TestCase):
         }
         resp = self.client.post(reverse('users:signup'), data=signup_data)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(mail.outbox), 1)
 
         login_data = {'username': 'john@example.com', 'password': 'password'}
         resp = self.client.post(reverse('users:login'), data=login_data)
@@ -101,6 +102,7 @@ class TestResetPassword(TestCase):
         self.user = UserFactory(email='test@example.com')
         self.client = APIClient()
         self.token = Token.objects.create(user=self.user)
+        mail.outbox = []
 
     # User sends email and receives new password
     def test_password_reset(self):
